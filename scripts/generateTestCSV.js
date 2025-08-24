@@ -178,7 +178,7 @@ function atTime (baseMonday, dow, hh, mm) { // dow: 1=Mon..7=Sun
 
 // ---------- Main ----------
 async function main () {
-  const header = 'ts,lat,lon,alt,spd_kmh,hdop,sats,course,temp,hum'
+  const header = 'timestamp,lat,lon,alt,speed_kmh,hdop,satellites,course,temp_c,hum_pct'
   const allRows = [header]
 
   for (const trip of weeklyPlan(START, WEEKS)) {

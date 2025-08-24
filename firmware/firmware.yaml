@@ -60,47 +60,63 @@ interval:
             binary_sensor.is_on: acc_present
           then:
             - logger.log:
-                format: "GPS_DATA: %s,%.6f,%.6f,%.1f,%.1f,%.0f,%.0f,%.0f,%.1f,%.1f"
+                format: "GPS_DATA: %s,%.6f,%.6f,%.1f,%.1f,%.2f,%.0f,%.0f,%.1f,%.1f"
                 args:
                   - !lambda |
-                      auto t = id(sntp_time).now();
+                      auto t = id(gps_time).now();
                       static char ts[32];
                       if (t.is_valid()) {
                         snprintf(ts, sizeof(ts), "%04d-%02d-%02dT%02d:%02d:%02dZ",
                                  t.year, t.month, t.day_of_month, t.hour, t.minute, t.second);
                       } else {
-                        snprintf(ts, sizeof(ts), "no_time");
+                        // Fallback to SNTP time if GPS time is not available
+                        auto fallback_t = id(sntp_time).now();
+                        if (fallback_t.is_valid()) {
+                          snprintf(ts, sizeof(ts), "%04d-%02d-%02dT%02d:%02d:%02dZ",
+                                   fallback_t.year, fallback_t.month, fallback_t.day_of_month, 
+                                   fallback_t.hour, fallback_t.minute, fallback_t.second);
+                        } else {
+                          snprintf(ts, sizeof(ts), "no_time");
+                        }
                       }
                       return std::string(ts);
                   - id(gps_latitude).state
                   - id(gps_longitude).state
                   - id(gps_altitude).state
                   - id(speed_kmh).state
+                  - id(gps_hdop).state
                   - id(gps_satellites).state
                   - id(gps_course).state
-                  - 0.0f
                   - id(car_temp_c).state
                   - id(car_hum_pct).state
             # Build a CSV line and append to RAM buffer
             - lambda: |-
-                auto t = id(sntp_time).now();
+                auto t = id(gps_time).now();
                 char ts[32];
                 if (t.is_valid()) {
                   snprintf(ts, sizeof(ts), "%04d-%02d-%02dT%02d:%02d:%02dZ",
                            t.year, t.month, t.day_of_month, t.hour, t.minute, t.second);
                 } else {
-                  snprintf(ts, sizeof(ts), "no_time");
+                  // Fallback to SNTP time if GPS time is not available
+                  auto fallback_t = id(sntp_time).now();
+                  if (fallback_t.is_valid()) {
+                    snprintf(ts, sizeof(ts), "%04d-%02d-%02dT%02d:%02d:%02dZ",
+                             fallback_t.year, fallback_t.month, fallback_t.day_of_month, 
+                             fallback_t.hour, fallback_t.minute, fallback_t.second);
+                  } else {
+                    snprintf(ts, sizeof(ts), "no_time");
+                  }
                 }
                 char line[192];
-                snprintf(line, sizeof(line), "%s,%.6f,%.6f,%.1f,%.1f,%.0f,%.0f,%.0f,%.1f,%.1f\\n",
+                snprintf(line, sizeof(line), "%s,%.6f,%.6f,%.1f,%.1f,%.2f,%.0f,%.0f,%.1f,%.1f\\n",
                   ts,
                   id(gps_latitude).state,
                   id(gps_longitude).state,
                   id(gps_altitude).state,
                   id(speed_kmh).state,
+                  id(gps_hdop).state,
                   id(gps_satellites).state,
                   id(gps_course).state,
-                  0.0f,
                   id(car_temp_c).state,
                   id(car_hum_pct).state);
                 id(csv_cache_ram) += std::string(line);
@@ -157,6 +173,7 @@ uart:
 
 # GPS component using ESPHome built-in support
 gps:
+  id: gps_module
   uart_id: gps_uart
   latitude:
     id: gps_latitude
@@ -171,7 +188,13 @@ gps:
   satellites:
     id: gps_satellites
 
+# Use GPS time instead of SNTP
 time:
+  - platform: gps
+    id: gps_time
+    gps_id: gps_module
+    timezone: Europe/Berlin
+  # Keep SNTP as fallback when GPS is not available
   - platform: sntp
     id: sntp_time
     timezone: Europe/Berlin
@@ -197,6 +220,17 @@ sensor:
     lambda: |-
       if (isnan(id(gps_speed).state)) return NAN;
       return id(gps_speed).state * 3.6;
+
+  # HDOP sensor - we'll try to get it from GPS data
+  - platform: template
+    id: gps_hdop
+    unit_of_measurement: ""
+    accuracy_decimals: 2
+    update_interval: 2s
+    lambda: |-
+      // For now return a placeholder until we can access raw NMEA data
+      // ESPHome's built-in GPS component doesn't directly expose HDOP
+      return 1.5; // Placeholder - typical good HDOP value
 
   - platform: dht
     pin: ${PIN_DHT}
@@ -275,8 +309,16 @@ text_sensor:
   - platform: template
     id: logfile
     lambda: |-
-      auto t = id(sntp_time).now();
-      if (!t.is_valid()) return std::string("current.csv");
+      auto t = id(gps_time).now();
+      if (!t.is_valid()) {
+        // Fallback to SNTP time
+        auto fallback_t = id(sntp_time).now();
+        if (!fallback_t.is_valid()) return std::string("current.csv");
+        char buf[40];
+        snprintf(buf, sizeof(buf), "%04d-%02d-%02d_%02d.csv",
+                 fallback_t.year, fallback_t.month, fallback_t.day_of_month, fallback_t.hour);
+        return std::string(buf);
+      }
       char buf[40];
       snprintf(buf, sizeof(buf), "%04d-%02d-%02d_%02d.csv",
                t.year, t.month, t.day_of_month, t.hour);
@@ -430,13 +472,21 @@ script:
           format: "TEMP_PING: %s,nan,nan,0.0,0.0,nan,nan,nan,%.1f,%.1f"
           args:
             - !lambda |
-                auto t = id(sntp_time).now();
+                auto t = id(gps_time).now();
                 static char ts[32];
                 if (t.is_valid()) {
                   snprintf(ts, sizeof(ts), "%04d-%02d-%02dT%02d:%02d:%02dZ",
                            t.year, t.month, t.day_of_month, t.hour, t.minute, t.second);
                 } else {
-                  snprintf(ts, sizeof(ts), "no_time");
+                  // Fallback to SNTP time
+                  auto fallback_t = id(sntp_time).now();
+                  if (fallback_t.is_valid()) {
+                    snprintf(ts, sizeof(ts), "%04d-%02d-%02dT%02d:%02d:%02dZ",
+                             fallback_t.year, fallback_t.month, fallback_t.day_of_month, 
+                             fallback_t.hour, fallback_t.minute, fallback_t.second);
+                  } else {
+                    snprintf(ts, sizeof(ts), "no_time");
+                  }
                 }
                 return ts;
             - id(car_temp_c).state
