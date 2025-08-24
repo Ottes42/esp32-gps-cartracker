@@ -10,7 +10,7 @@
     "lint": "standard",
     "lint:fix": "standard --fix",
     "testCsv": "node generateTestCSV.js",
-    "prepare": "command -v husky >/dev/null 2>&1 && husky install || true"
+    "prepare": "husky"
   },
   "dependencies": {
     "better-sqlite3": "^12.2.0",
