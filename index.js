@@ -89,7 +89,6 @@ app.use((req, res, next) => {
       console.warn(`Rejected development auth from non-localhost hostname: ${req.hostname}`)
       return res.status(401).json({ error: 'Authentication required' })
     }
-    console.log(`Development mode: localhost access from hostname ${req.hostname}`)
   } else if (authUser === undefined && req.hostname === 'localhost') {
     authUser = 'development'
   }
