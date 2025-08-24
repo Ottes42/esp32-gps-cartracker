@@ -145,14 +145,15 @@ async function parseReceipt (filePath) {
   }
 
   const data = await response.json()
-  console.log('Gemini API full response:', JSON.stringify(data, null, 2))
+  // Reduced logging for production - uncomment for debugging
+  // console.log('Gemini API full response:', JSON.stringify(data, null, 2))
 
   let txt = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
-  console.log('Extracted text from Gemini:', txt)
+  // console.log('Extracted text from Gemini:', txt)
 
   // Strip markdown code blocks if present
   txt = txt.replace(/^```(?:json)?\s*/, '').replace(/\s*```\s*$/, '').trim()
-  console.log('Cleaned JSON text:', txt)
+  console.log('OCR extracted JSON:', txt.length > 100 ? txt.substring(0, 100) + '...' : txt)
 
   return JSON.parse(txt)
 }

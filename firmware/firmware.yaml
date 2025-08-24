@@ -64,6 +64,9 @@ wifi:
       - script.execute: sync_logs
 
 logger:
+  level: INFO
+  logs:
+    component: WARN
 
 ota:
   - platform: esphome  # set password locally if needed
