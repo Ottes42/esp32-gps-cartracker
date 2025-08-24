@@ -2,11 +2,37 @@
 
 // Create test fuel data for development/testing
 import Database from 'better-sqlite3'
+import fs from 'fs'
 
-const DATA_PATH = process.env.DATA_PATH || './data/gps/'
+const DATA_PATH = process.env.DATA_PATH || '../data/gps/'
 const DB_FILE = DATA_PATH + 'cartracker.db'
 
+// Ensure data directory exists
+if (!fs.existsSync(DATA_PATH)) {
+  fs.mkdirSync(DATA_PATH, { recursive: true })
+}
+
 const db = new Database(DB_FILE)
+
+// Create tables if they don't exist
+db.exec(`
+  CREATE TABLE IF NOT EXISTS fuel (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts TEXT NOT NULL,
+    liters REAL,
+    price_per_l REAL,
+    amount_fuel REAL,
+    amount_total REAL,
+    station TEXT,
+    address TEXT,
+    receipt TEXT,
+    ocr_error TEXT,
+    lat REAL,
+    lon REAL,
+    user TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )
+`)
 
 // Sample fuel data based on the example drives timeline
 const testFuelData = [
@@ -62,18 +88,17 @@ console.log('Inserting test fuel data...')
 const insertStmt = db.prepare(`
   INSERT INTO fuel (
     ts, liters, price_per_l, amount_fuel, amount_total,
-    station_name, station_zip, station_city, station_address,
-    full_tank, lat, lon, user
+    station, address, lat, lon, user
   ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
   )
 `)
 
 for (const fuel of testFuelData) {
+  const address = `${fuel.station_zip} ${fuel.station_city}, ${fuel.station_address}`
   insertStmt.run(
     fuel.ts, fuel.liters, fuel.price_per_l, fuel.amount_fuel, fuel.amount_total,
-    fuel.station_name, fuel.station_zip, fuel.station_city, fuel.station_address,
-    fuel.full_tank ? 1 : 0, fuel.lat, fuel.lon, fuel.user
+    fuel.station_name, address, fuel.lat, fuel.lon, fuel.user
   )
   console.log(`✓ Added fuel record: ${fuel.station_name} - ${fuel.liters}L - ${fuel.amount_total.toFixed(2)}€`)
 }
@@ -84,9 +109,9 @@ console.log(`\n✓ Total fuel records in database: ${count.count}`)
 
 // Show sample data
 console.log('\nSample fuel records:')
-const samples = db.prepare('SELECT ts, station_name, liters, amount_total FROM fuel ORDER BY ts DESC LIMIT 3').all()
+const samples = db.prepare('SELECT ts, station, liters, amount_total FROM fuel ORDER BY ts DESC LIMIT 3').all()
 samples.forEach(row => {
-  console.log(`  ${row.ts} - ${row.station_name} - ${row.liters}L - ${row.amount_total.toFixed(2)}€`)
+  console.log(`  ${row.ts} - ${row.station} - ${row.liters}L - ${row.amount_total.toFixed(2)}€`)
 })
 
 db.close()

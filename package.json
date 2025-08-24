@@ -10,8 +10,8 @@
     "dev:docker": "node --env-file=.env --watch index.js",
     "lint": "standard",
     "lint:fix": "standard --fix",
-    "testCsv": "node generateTestCSV.js",
-    "testFuel": "node generateFuelData.js",
+    "testCsv": "node scripts/generateTestCSV.js",
+    "testFuel": "node scripts/generateFuelData.js",
     "prepare": "command -v husky >/dev/null 2>&1 && husky install || true"
   },
   "dependencies": {
