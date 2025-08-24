@@ -179,6 +179,82 @@ docker run --rm -v $(pwd):/config esphome/esphome upload /config/firmware/firmwa
 
 All API endpoints require HTTP Basic Authentication. The proxy must inject the `X-Auth-User` header containing the authenticated username.
 
+### Direct API Testing (Development)
+
+For local development on port 8080 without Nginx proxy, use these curl examples:
+
+```bash
+# Upload GPS CSV data (simulating ESP32)
+curl -X POST \
+  -H "Content-Type: text/csv" \
+  -H "X-Auth-User: gps-cartracker-dev" \
+  --data-binary @test-gps-data.csv \
+  http://localhost:8080/upload/test-trip-20250118.csv
+
+# Upload fuel receipt photo
+curl -X POST \
+  -H "X-Auth-User: testuser" \
+  -F "photo=@receipt.jpg" \
+  http://localhost:8080/uploadReceipt
+
+# Get fuel records with pagination
+curl -H "X-Auth-User: testuser" \
+  "http://localhost:8080/api/fuel?limit=10&offset=0"
+
+# Get monthly fuel statistics
+curl -H "X-Auth-User: testuser" \
+  http://localhost:8080/api/fuel/months
+
+# Get recent trips
+curl -H "X-Auth-User: testuser" \
+  "http://localhost:8080/api/trips?limit=5&offset=0"
+
+# Get specific trip details
+curl -H "X-Auth-User: testuser" \
+  http://localhost:8080/api/trip/2025-01-18T08:00:00.000Z
+
+# Retry failed receipt parsing
+curl -X POST \
+  -H "X-Auth-User: testuser" \
+  http://localhost:8080/retryReceipt/123
+
+# Health check (if implemented)
+curl http://localhost:8080/health
+```
+
+### GPS CSV Data Format
+
+Create a test CSV file for GPS data uploads:
+
+```csv
+# test-gps-data.csv
+timestamp,lat,lon,alt,speed,hdop,sats,course,temp,humidity
+2025-01-18T08:00:00.000Z,50.1234,8.5678,150.0,45.5,1.2,8,90.0,22.5,65.0
+2025-01-18T08:00:01.000Z,50.1235,8.5679,151.0,46.0,1.1,9,91.0,22.4,65.2
+2025-01-18T08:00:02.000Z,50.1236,8.5680,152.0,46.5,1.0,10,92.0,22.3,65.4
+```
+
+### Testing with Generated Data
+
+Use the test data generator for realistic testing:
+
+```bash
+# Generate test data and upload directly
+node generateTestCSV.js \
+  --start=2025-01-18 --weeks=1 \
+  --server=http://localhost:8080 \
+  --uploadName=test-week.csv \
+  --auth='gps-cartracker-dev:password'
+
+# Or generate locally first, then upload manually
+node generateTestCSV.js --start=2025-01-18 --weeks=1 --outfile=test.csv
+curl -X POST \
+  -H "Content-Type: text/csv" \
+  -H "X-Auth-User: gps-cartracker-dev" \
+  --data-binary @test.csv \
+  http://localhost:8080/upload/test.csv
+```
+
 ### Endpoints
 
 #### Data Upload
@@ -186,7 +262,7 @@ All API endpoints require HTTP Basic Authentication. The proxy must inject the `
 ```http
 POST /upload/:filename
 Content-Type: text/csv
-Authorization: Basic <base64_credentials>
+X-Auth-User: device-name
 
 # CSV format: timestamp,lat,lon,alt,speed,hdop,sats,course,temp,humidity
 ```
@@ -197,10 +273,12 @@ Authorization: Basic <base64_credentials>
 # Upload fuel receipt
 POST /uploadReceipt
 Content-Type: multipart/form-data
+X-Auth-User: username
 Body: photo file
 
 # Retry failed receipt parsing
 POST /retryReceipt/:id
+X-Auth-User: username
 ```
 
 #### Data Retrieval
@@ -208,15 +286,19 @@ POST /retryReceipt/:id
 ```http
 # Get fuel records
 GET /api/fuel?limit=50&offset=0
+X-Auth-User: username
 
 # Get monthly fuel statistics
 GET /api/fuel/months
+X-Auth-User: username
 
 # Get trips
 GET /api/trips?limit=20&offset=0
+X-Auth-User: username
 
 # Get trip details
 GET /api/trip/:start_timestamp
+X-Auth-User: username
 ```
 
 ## Data Format

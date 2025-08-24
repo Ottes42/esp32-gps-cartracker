@@ -11,7 +11,8 @@ services:
       - ./data/gps:/data
     networks:
       - gps_net
-    # no ports: only reachable via reverse proxy on same network
+    ports:
+      - "8080:8080" # only for dev situations, use NPM as reverse proxy
 
   # don't forget to add "proxy_set_header X-Auth-User $remote_user;", see readme
   npm: # see http://nginxproxymanager.com/ for documentation
