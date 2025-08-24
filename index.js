@@ -149,11 +149,11 @@ async function parseReceipt (filePath) {
 
   let txt = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
   console.log('Extracted text from Gemini:', txt)
-  
+
   // Strip markdown code blocks if present
   txt = txt.replace(/^```(?:json)?\s*/, '').replace(/\s*```\s*$/, '').trim()
   console.log('Cleaned JSON text:', txt)
-  
+
   return JSON.parse(txt)
 }
 
