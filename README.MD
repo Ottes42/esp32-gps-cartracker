@@ -15,6 +15,7 @@ A comprehensive GPS tracking solution for cars using ESP32-C3, featuring real-ti
 ## ✨ Features
 
 ### Hardware Tracking
+
 - **Real-time GPS tracking** with 1-second intervals when ACC is on
 - **Temperature and humidity monitoring** using DHT11 sensor
 - **Automatic power management** with deep sleep when ACC is off
@@ -22,6 +23,7 @@ A comprehensive GPS tracking solution for cars using ESP32-C3, featuring real-ti
 - **Automatic data upload** when WiFi is available
 
 ### Software Features
+
 - **Fuel tracking** with AI-powered receipt parsing using Google Gemini
 
 - **Trip analysis** with automatic trip detection
