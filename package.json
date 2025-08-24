@@ -17,7 +17,7 @@
     "express": "^5.1.0",
     "multer": "^2.0.2",
     "node-fetch": "^3.3.2",
-    "openai": "^4.104.0"
+    "openai": "^5.15.0"
   },
   "devDependencies": {
     "standard": "^17.1.2"
