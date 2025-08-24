@@ -120,7 +120,7 @@ substitutions:
 1. **Use published image (Production)**
 
    ```bash
-   # docker-compose.yaml uses: ghcr.io/ottes/gps-car-tracker:latest
+   # docker-compose.yaml uses: ottes/gps-cartracker:latest (Docker Hub)
    docker-compose up -d
    ```
 
@@ -134,12 +134,24 @@ substitutions:
 3. **Use specific version**
 
    ```bash
-   # Pull specific release
+   # Pull specific release from Docker Hub (recommended)
+   docker pull ottes/gps-cartracker:v1.2.3
+   
+   # Or pull from GitHub Container Registry
    docker pull ghcr.io/ottes/gps-car-tracker:v1.2.3
    
    # Update docker-compose.yaml image tag
-   image: ghcr.io/ottes/gps-car-tracker:v1.2.3
+   image: ottes/gps-cartracker:v1.2.3
    ```
+
+### Available Docker Repositories
+
+The GPS Car Tracker is available from two Docker repositories:
+
+- **Docker Hub (recommended)**: `ottes/gps-cartracker`
+- **GitHub Container Registry**: `ghcr.io/ottes/gps-car-tracker`
+
+Both repositories contain identical images with the same tags and are updated simultaneously on every release.
 
 ### Manual Deployment
 
