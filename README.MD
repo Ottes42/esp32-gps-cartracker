@@ -137,21 +137,15 @@ substitutions:
    # Pull specific release from Docker Hub (recommended)
    docker pull ottes/gps-cartracker:v1.2.3
    
-   # Or pull from GitHub Container Registry
-   docker pull ghcr.io/ottes/gps-car-tracker:v1.2.3
-   
    # Update docker-compose.yaml image tag
    image: ottes/gps-cartracker:v1.2.3
    ```
 
 ### Available Docker Repositories
 
-The GPS Car Tracker is available from two Docker repositories:
+The GPS Car Tracker is available from this Docker repository:
 
 - **Docker Hub (recommended)**: `ottes/gps-cartracker`
-- **GitHub Container Registry**: `ghcr.io/ottes/gps-car-tracker`
-
-Both repositories contain identical images with the same tags and are updated simultaneously on every release.
 
 ### Manual Deployment
 

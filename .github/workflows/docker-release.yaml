@@ -7,8 +7,6 @@ on:
   workflow_dispatch:
 
 env:
-  GHCR_REGISTRY: ghcr.io
-  GHCR_IMAGE_NAME: ${{ github.repository }}
   DOCKERHUB_IMAGE_NAME: ottes/gps-cartracker
 
 jobs:
