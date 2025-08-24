@@ -556,11 +556,13 @@ limit_req_zone $binary_remote_addr zone=dev_upload:10m rate=120r/m;
 ## Security Model
 
 ### Development (localhost only)
+
 - Direct API access with `X-Auth-User: development` header
 - Automatic rejection of development auth from remote sources
 - Visual "DEV MODE" indicator in web interface
 
 ### Production (via proxy)
+
 - HTTP Basic Auth enforced by Nginx Proxy Manager
 - Proxy injects `X-Auth-User` header with authenticated username
 - Rate limiting and file size controls applied

@@ -82,23 +82,16 @@ app.use(express.static('public'))
 
 // Authentication middleware
 app.use((req, res, next) => {
-  const authUser = req.get('x-auth-user')
-
+  let authUser = req.get('x-auth-user')
   // Only allow development header from localhost/127.0.0.1
   if (authUser === 'development') {
-    const clientIP = req.ip || req.connection.remoteAddress || req.socket.remoteAddress
-    const isLocalhost = clientIP === '127.0.0.1' ||
-                       clientIP === '::1' ||
-                       clientIP === '::ffff:127.0.0.1' ||
-                       req.hostname === 'localhost' ||
-                       req.hostname === '127.0.0.1'
-
-    if (!isLocalhost) {
-      console.warn(`Rejected development auth from non-localhost: ${clientIP}`)
+    if (req.hostname !== 'localhost' && req.hostname !== '127.0.0.1') {
+      console.warn(`Rejected development auth from non-localhost hostname: ${req.hostname}`)
       return res.status(401).json({ error: 'Authentication required' })
     }
-
-    console.log(`Development mode: localhost access from ${clientIP}`)
+    console.log(`Development mode: localhost access from hostname ${req.hostname}`)
+  } else if (authUser === undefined && req.hostname === 'localhost') {
+    authUser = 'development'
   }
 
   // In production, proxy must inject real username
