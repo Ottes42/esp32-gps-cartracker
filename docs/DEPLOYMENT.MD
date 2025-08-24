@@ -52,8 +52,8 @@ Create a `.env` file with:
 # Required: Google Gemini API for receipt parsing
 GEMINI_API_KEY=your_gemini_api_key_here
 
-# Optional: Custom model (default: gemini-1.5-pro-vision-latest)
-GEMINI_MODEL=gemini-1.5-pro-vision-latest
+# Optional: Custom model (default: gemini-1.5-flash)
+GEMINI_MODEL=gemini-1.5-flash
 
 # Optional: Data storage path (default: /data/)
 DATA_PATH=/data/

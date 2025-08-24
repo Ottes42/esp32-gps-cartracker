@@ -4,14 +4,13 @@ import Database from 'better-sqlite3'
 import multer from 'multer'
 import fs from 'fs'
 import fetch from 'node-fetch'
-import OpenAI from 'openai'
 
 const DATA_PATH = process.env.DATA_PATH || 'data/gps/'
 const DB_FILE = DATA_PATH + (process.env.DB_FILE || 'cartracker.db')
 const GEOCACHE = DATA_PATH + (process.env.GEOCACHE || 'geocache.json')
 const UPLOAD_DIR = DATA_PATH + (process.env.UPLOAD_DIR || 'uploads/')
 const GEMINI_KEY = process.env.GEMINI_API_KEY || ''
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-pro-vision-latest'
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
 const PORT = process.env.PORT || 8080
 
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true })
@@ -69,11 +68,6 @@ CREATE TABLE IF NOT EXISTS fuel (
 );
 `)
 
-const client = new OpenAI({
-  apiKey: GEMINI_KEY,
-  baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/'
-})
-
 // Middleware
 const app = express()
 app.use(cors())
@@ -114,23 +108,52 @@ app.get('/health', (req, res) => {
 // Helpers
 async function parseReceipt (filePath) {
   if (!GEMINI_KEY) throw new Error('GEMINI_API_KEY missing')
-  const resp = await client.chat.completions.create({
-    model: GEMINI_MODEL,
-    messages: [
-      {
-        role: 'system',
-        content: 'Extract JSON with fields: ts (ISO8601), liters, price_per_l, amount_fuel (fuel incl tax), amount_total (grand total incl tax), station_name, station_zip, station_city, station_address. Only return JSON.'
-      },
-      {
-        role: 'user',
-        content: [
-          { type: 'text', text: 'Parse this fuel receipt into JSON' },
-          { type: 'image_url', image_url: 'file://' + filePath }
-        ]
-      }
-    ]
+
+  // Read image file and convert to base64
+  const imageBuffer = fs.readFileSync(filePath)
+  const base64Image = imageBuffer.toString('base64')
+  const mimeType = filePath.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg'
+  console.log('Sending image to Gemini API for OCR processing...')
+  // Use direct Gemini REST API instead of OpenAI compatibility layer
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [
+            {
+              text: 'Extract JSON with fields: ts (ISO8601), liters, price_per_l, amount_fuel (fuel incl tax), amount_total (grand total incl tax), station_name, station_zip, station_city, station_address. Only return JSON.'
+            },
+            {
+              inline_data: {
+                mime_type: mimeType,
+                data: base64Image
+              }
+            }
+          ]
+        }
+      ]
+    })
   })
-  const txt = resp.choices?.[0]?.message?.content || '{}'
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`Gemini API error: ${response.status} - ${errorText}`)
+  }
+
+  const data = await response.json()
+  console.log('Gemini API full response:', JSON.stringify(data, null, 2))
+
+  let txt = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
+  console.log('Extracted text from Gemini:', txt)
+  
+  // Strip markdown code blocks if present
+  txt = txt.replace(/^```(?:json)?\s*/, '').replace(/\s*```\s*$/, '').trim()
+  console.log('Cleaned JSON text:', txt)
+  
   return JSON.parse(txt)
 }
 
@@ -217,15 +240,19 @@ app.post('/uploadReceipt', up.single('photo'), async (req, res) => {
   const user = req.authUser
   const path = req.file.path
 
+  console.log(`Processing receipt upload for user: ${user}, file: ${path}`)
+
   let parsed = null; let error = null; let lat = null; let lon = null
 
   try {
     parsed = await parseReceipt(path)
+    console.log('OCR parsing successful:', parsed)
     const addr = [parsed.station_address, parsed.station_zip, parsed.station_city].filter(Boolean).join(' ')
     const geo = await geocodeAddress(addr)
     if (geo) { lat = geo.lat; lon = geo.lon }
   } catch (e) {
     error = e.message || String(e)
+    console.error('OCR parsing failed:', error)
   }
 
   if (parsed) {
