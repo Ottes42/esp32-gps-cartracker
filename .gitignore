@@ -7,3 +7,5 @@ npm-debug.log*
 .esphome
 .DS_Store
 Thumbs.db
+firmware/.esphome
+firmware/secrets.yaml
