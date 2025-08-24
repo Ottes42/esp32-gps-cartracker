@@ -259,14 +259,42 @@ The device automatically:
 
 ## Development
 
+### Setup Development Environment
+
+1. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+2. **Set up pre-commit hooks**
+
+   ```bash
+   npm run prepare
+   ```
+
+   This installs git hooks that automatically lint and fix code before commits.
+
 ### Code Style
+
+The project uses StandardJS for consistent code formatting.
 
 ```bash
 # Lint code
 npm run lint
 
-# Fix linting issues
+# Fix linting issues automatically
 npm run lint:fix
+```
+
+**Pre-commit hooks** automatically run `standard --fix` on staged JavaScript files to ensure consistent code style.
+
+### Bypassing Pre-commit Hooks
+
+In exceptional cases, skip the pre-commit hook with:
+
+```bash
+git commit --no-verify -m "emergency fix"
 ```
 
 ### Test Data Generation
