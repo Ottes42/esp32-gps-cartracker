@@ -1,4 +1,5 @@
 // Global API helper with automatic auth header for development
+/* global L */
 class API {
   constructor () {
     this.baseURL = window.location.origin
@@ -128,6 +129,52 @@ window.fmtSpeed = function (kmh) {
 window.fmtLiters = function (liters) {
   if (!liters || isNaN(liters)) return '0.0L'
   return `${liters.toFixed(1)}L`
+}
+
+window.fmtNumber = function (value, decimals = 0) {
+  if (!value || isNaN(value)) return '0'
+  return Number(value).toFixed(decimals)
+}
+
+window.fmtMonthLocal = function (monthString) {
+  if (!monthString) return 'Unknown'
+  try {
+    // monthString is in format "2024-08"
+    const [year, month] = monthString.split('-')
+    const date = new Date(parseInt(year), parseInt(month) - 1)
+    return date.toLocaleDateString('de-DE', {
+      year: 'numeric',
+      month: 'long'
+    })
+  } catch (e) {
+    return monthString
+  }
+}
+
+window.loadFuelMarkers = async function (map, statusEl) {
+  try {
+    if (statusEl) statusEl.textContent = 'Loading fuel markers...'
+    const fuelData = await window.api.get('/api/fuel?limit=100')
+
+    fuelData.forEach(record => {
+      if (record.lat && record.lon) {
+        const marker = L.marker([record.lat, record.lon])
+          .bindPopup(`
+            <div>
+              <strong>${record.station_name || 'Fuel Station'}</strong><br>
+              ${window.fmtDate(record.ts)}<br>
+              ${window.fmtLiters(record.liters)} • ${window.fmtCurrencyEUR(record.amount_total)}
+            </div>
+          `)
+        marker.addTo(map)
+      }
+    })
+
+    if (statusEl) statusEl.textContent = `Loaded ${fuelData.length} fuel markers`
+  } catch (error) {
+    console.error('Failed to load fuel markers:', error)
+    if (statusEl) statusEl.textContent = 'Failed to load fuel markers'
+  }
 }
 
 // Development mode indicator

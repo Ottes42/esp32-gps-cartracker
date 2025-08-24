@@ -1,5 +1,3 @@
-import { fmtDateTimeLocal, fmtCurrencyEUR, fmtNumber } from './app.js'
-
 // Fuel page functionality
 let currentPage = 0
 const itemsPerPage = 20
@@ -37,11 +35,11 @@ function renderResult ({ ok, parsed, error, consumption }) {
   const html = `
     <div class="badge ok">Parsed</div>
     <div class="mt-8"><strong>${addr}</strong></div>
-    <div class="small">${fmtDateTimeLocal(parsed.ts)}</div>
+    <div class="small">${window.fmtDateTimeLocal(parsed.ts)}</div>
     <div class="mt-8 small">
-      Price: ${fmtNumber(parsed.price_per_l, 3)} €/L • Amount: ${fmtNumber(parsed.liters, 1)} L • Total: ${fmtCurrencyEUR(parsed.amount_total)}
+      Price: ${window.fmtNumber(parsed.price_per_l, 3)} €/L • Amount: ${window.fmtNumber(parsed.liters, 1)} L • Total: ${window.fmtCurrencyEUR(parsed.amount_total)}
     </div>
-    ${consumption ? `<div class="mt-8">Since previous full tank: <strong>${fmtNumber(consumption, 1)} L/100km</strong></div>` : ''}
+    ${consumption ? `<div class="mt-8">Since previous full tank: <strong>${window.fmtNumber(consumption, 1)} L/100km</strong></div>` : ''}
   `
   result.innerHTML = html
 }

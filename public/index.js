@@ -1,12 +1,10 @@
-import { loadFuelMarkers, fmtMonthLocal, fmtCurrencyEUR, fmtNumber } from './app.js'
-
 /* global L */
 
 window.addEventListener('DOMContentLoaded', async () => {
   // Map
   const map = L.map('map').setView([50.2, 8.6], 11)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map)
-  loadFuelMarkers(map, document.getElementById('status'))
+  window.loadFuelMarkers(map, document.getElementById('status'))
 
   // Monthly table
   try {
@@ -14,10 +12,10 @@ window.addEventListener('DOMContentLoaded', async () => {
     const tbody = document.getElementById('monthBody')
     rows.forEach(r => {
       const tr = document.createElement('tr')
-      tr.innerHTML = `<td>${fmtMonthLocal(r.month)}</td>
-                      <td>${fmtCurrencyEUR(r.cost)}</td>
-                      <td>${fmtNumber(r.km / 1000, 1)} km</td>
-                      <td>${fmtNumber(r.liters, 1)} L</td>`
+      tr.innerHTML = `<td>${window.fmtMonthLocal(r.month)}</td>
+                      <td>${window.fmtCurrencyEUR(r.cost)}</td>
+                      <td>${window.fmtNumber(r.km / 1000, 1)} km</td>
+                      <td>${window.fmtNumber(r.liters, 1)} L</td>`
       tbody.appendChild(tr)
     })
   } catch (e) {
