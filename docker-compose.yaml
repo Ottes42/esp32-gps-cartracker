@@ -3,7 +3,8 @@ networks:
 
 services:
   cartracker:
-    build: . # TODO: Set image?
+    image: ghcr.io/ottes/gps-car-tracker:latest  # Use published image
+    # build: .  # Comment out for production use
     container_name: cartracker
     restart: unless-stopped
     env_file: .env
@@ -13,6 +14,11 @@ services:
       - gps_net
     ports:
       - "8080:8080" # only for dev situations, use NPM as reverse proxy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # don't forget to add "proxy_set_header X-Auth-User $remote_user;", see readme
   npm: # see http://nginxproxymanager.com/ for documentation

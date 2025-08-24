@@ -15,6 +15,7 @@ const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-pro-vision-latest'
 const PORT = process.env.PORT || 8080
 
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true })
+if (!fs.existsSync(GEOCACHE)) fs.writeFileSync(GEOCACHE, JSON.stringify({}), 'utf8')
 
 let geocache = {}
 try {
@@ -68,7 +69,6 @@ CREATE TABLE IF NOT EXISTS fuel (
 );
 `)
 
-const upload = multer({ dest: UPLOAD_DIR })
 const client = new OpenAI({
   apiKey: GEMINI_KEY,
   baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/'
@@ -84,6 +84,15 @@ app.use((req, res, next) => {
   if (!user) return res.status(401).json({ ok: false, error: 'missing X-Auth-User (proxy must inject authenticated username)' })
   req.authUser = user
   return next()
+})
+
+// Health check endpoint for Docker
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  })
 })
 
 // Helpers
@@ -323,7 +332,9 @@ app.get('/api/trip/:start', (req, res) => {
 
 /* ---------------- Start & Shutdown ---------------- */
 
-const server = app.listen(PORT, () => console.log('cartracker api on', PORT))
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`cartracker api on ${PORT}`)
+})
 
 function shutdown () {
   console.log('Shutting down gracefully...')

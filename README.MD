@@ -115,25 +115,31 @@ substitutions:
 
 ## Deployment
 
-### Using Docker Compose
+### Using Docker Compose (Recommended)
 
-1. **Start the services**
+1. **Use published image (Production)**
 
-```bash
+   ```bash
+   # docker-compose.yaml uses: ghcr.io/ottes/gps-car-tracker:latest
    docker-compose up -d
-```
+   ```
 
-1. **Configure Nginx Proxy Manager**
-   - Access NPM at `http://localhost:81`
-   - Default credentials: `admin@example.com` / `changeme`
-   - Create a proxy host for your domain
-   - Configure SSL certificate (Let's Encrypt recommended)
-   - Set up HTTP Basic Auth with username matching your ESP32 device name
-   - **Important**: Add this custom header to your proxy host:
+2. **Build locally (Development)**
 
-```bash
-     proxy_set_header X-Auth-User $remote_user;
-```
+   ```bash
+   # Uncomment "build: ." in docker-compose.yaml
+   docker-compose up --build
+   ```
+
+3. **Use specific version**
+
+   ```bash
+   # Pull specific release
+   docker pull ghcr.io/ottes/gps-car-tracker:v1.2.3
+   
+   # Update docker-compose.yaml image tag
+   image: ghcr.io/ottes/gps-car-tracker:v1.2.3
+   ```
 
 ### Manual Deployment
 
