@@ -4,6 +4,7 @@ networks:
 services:
   cartracker:
     image: ottes/gps-cartracker:latest  # Docker Hub - Use published image
+    # image: ghcr.io/ottes/gps-car-tracker:latest  # GitHub Container Registry alternative   
     # build: .  # Comment out for production use
     container_name: cartracker
     restart: unless-stopped
