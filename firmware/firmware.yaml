@@ -22,6 +22,7 @@ substitutions:
 esphome:
   name: gps-cartracker
   friendly_name: GPS Cartracker
+  min_version: 2025.8.0
   on_shutdown:
     then:
       - script.execute: sync_logs
