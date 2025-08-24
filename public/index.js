@@ -24,7 +24,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('monthBody').innerHTML = '<tr><td colspan="4">Failed to load</td></tr>'
   }
 
-  // Dashboard functionality
+  // Dashboard functionality - no imports needed, uses global functions from app.js
   loadRecentTrips()
   loadRecentFuel()
   loadStats()
@@ -75,12 +75,12 @@ function renderRecentTrips (trips) {
   const html = trips.map(trip => `
     <div class="trip-item">
       <div class="trip-header">
-        <span class="trip-date">${formatDate(trip.start_ts)}</span>
-        <span class="trip-duration">${formatDuration(trip.duration_minutes)}</span>
+        <span class="trip-date">${window.fmtDate(trip.start_ts)}</span>
+        <span class="trip-duration">${window.fmtDuration(trip.duration_minutes)}</span>
       </div>
       <div class="trip-details">
-        <span class="trip-distance">${(trip.distance_km || 0).toFixed(1)} km</span>
-        <span class="trip-speed">${(trip.avg_speed_kmh || 0).toFixed(1)} km/h avg</span>
+        <span class="trip-distance">${window.fmtDistance(trip.distance_km)}</span>
+        <span class="trip-speed">${window.fmtSpeed(trip.avg_speed_kmh)} avg</span>
       </div>
     </div>
   `).join('')
@@ -100,11 +100,11 @@ function renderRecentFuel (records) {
   const html = records.map(record => `
     <div class="fuel-item">
       <div class="fuel-header">
-        <span class="fuel-date">${formatDate(record.timestamp)}</span>
-        <span class="fuel-amount">${record.liters || 'Unknown'}L</span>
+        <span class="fuel-date">${window.fmtDate(record.timestamp)}</span>
+        <span class="fuel-amount">${window.fmtLiters(record.liters)}</span>
       </div>
       <div class="fuel-details">
-        <span class="fuel-cost">€${record.amount_eur || 'Unknown'}</span>
+        <span class="fuel-cost">${window.fmtCurrencyEUR(record.amount_eur)}</span>
         ${record.station_name ? `<span class="fuel-station">${record.station_name}</span>` : ''}
       </div>
     </div>
@@ -128,15 +128,15 @@ function renderStats (monthsData) {
     <div class="stat-grid">
       <div class="stat-item">
         <span class="stat-label">This Month</span>
-        <span class="stat-value">${currentMonth.total_liters || 0}L</span>
+        <span class="stat-value">${window.fmtLiters(currentMonth.total_liters)}</span>
       </div>
       <div class="stat-item">
         <span class="stat-label">Total Cost</span>
-        <span class="stat-value">€${currentMonth.total_amount || 0}</span>
+        <span class="stat-value">${window.fmtCurrencyEUR(currentMonth.total_amount)}</span>
       </div>
       <div class="stat-item">
         <span class="stat-label">Avg Price</span>
-        <span class="stat-value">€${currentMonth.avg_price_per_liter || 0}/L</span>
+        <span class="stat-value">${window.fmtCurrencyEUR(currentMonth.avg_price_per_liter)}/L</span>
       </div>
       <div class="stat-item">
         <span class="stat-label">Fuel Stops</span>
@@ -161,20 +161,4 @@ function showError (elementId, message) {
   if (element) {
     element.innerHTML = `<div class="error-message">${message}</div>`
   }
-}
-
-function formatDate (timestamp) {
-  if (!timestamp) return 'Unknown'
-  return new Date(timestamp).toLocaleDateString('de-DE', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  })
-}
-
-function formatDuration (minutes) {
-  if (!minutes) return '0min'
-  const hours = Math.floor(minutes / 60)
-  const mins = Math.round(minutes % 60)
-  return hours > 0 ? `${hours}h ${mins}min` : `${mins}min`
 }
