@@ -40,5 +40,20 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/Ottes42/gps-car-tracker.git"
+  },
+  "eslintConfig": {
+    "overrides": [
+      {
+        "files": ["public/**/*.js"],
+        "env": {
+          "browser": true,
+          "node": false
+        },
+        "globals": {
+          "L": "readonly",
+          "Chart": "readonly"
+        }
+      }
+    ]
   }
 }
