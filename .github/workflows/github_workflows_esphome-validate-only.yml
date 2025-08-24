@@ -1,0 +1,32 @@
+name: ESPHome Config Validation
+
+on:
+  push:
+    branches: ["*"]
+  pull_request:
+    branches: ["*"]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    name: Validate ESPHome Configuration
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Extract ESPHome version from firmware.yaml
+      id: esphome_version
+      run: |
+        # Extract min_version from firmware.yaml
+        VERSION=$(grep -oP 'min_version:\s*\K[0-9]+\.[0-9]+\.[0-9]+' firmware/firmware.yaml)
+        echo "Found ESPHome version: $VERSION"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
+    - name: Validate ESPHome Configuration
+      run: |
+        echo "Validating with ESPHome version: ${{ steps.esphome_version.outputs.version }}"
+        docker run --rm \
+          -v "${PWD}":/config \
+          esphome/esphome:${{ steps.esphome_version.outputs.version }} \
+          config /config/firmware/firmware.yaml
