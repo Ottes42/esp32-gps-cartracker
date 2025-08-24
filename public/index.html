@@ -14,31 +14,55 @@
 </head>
 <body>
   <div class="container">
-    <div class="card center">
-      <button onclick="location.href='fuel.html'">➕ Upload fuel receipt</button>
-      <div class="small mt-8">Protected with Basic Auth at your reverse proxy.</div>
-    </div>
-
-    <h2>Map & Fuel Stops</h2>
-    <div id="map" class="card"></div>
-    <div id="status" class="card">Hover over a fuel marker to see details</div>
-
-    <!-- Dashboard sections -->
-    <div class="dashboard-grid">
-      <div class="card">
-        <h3>Recent Trips</h3>
-        <div id="recent-trips">Loading...</div>
+    <!-- Top section: Upload button and Statistics -->
+    <div class="top-section">
+      <div class="card upload-section">
+        <button onclick="location.href='fuel.html'">➕ Upload fuel receipt</button>
+        <div class="small mt-8">Protected with Basic Auth at your reverse proxy.</div>
       </div>
       
-      <div class="card">
-        <h3>Recent Fuel</h3>
-        <div id="recent-fuel">Loading...</div>
+      <div class="card stats-section">
+        <h3>Statistics</h3>
+        <div id="stats">Loading...</div>
       </div>
     </div>
 
-    <div class="card">
-      <h3>Statistics</h3>
-      <div id="stats">Loading...</div>
+    <!-- Map and Data section -->
+    <div class="main-layout">
+      <div class="map-section">
+        <h2>Map & Fuel Stops</h2>
+        <div id="map" class="card"></div>
+        <div id="status" class="card">Hover over a fuel marker to see details</div>
+      </div>
+
+      <div class="data-section card">
+        <div class="tab-container">
+          <div class="tab-bar">
+            <button class="tab-btn active" data-tab="trips">Recent Trips</button>
+            <button class="tab-btn" data-tab="fuel">Recent Fuel</button>
+          </div>
+          
+          <div class="tab-content">
+            <div id="trips-tab" class="tab-pane active">
+              <div class="pagination-controls">
+                <button id="trips-prev" class="nav-btn" disabled>↑ Previous</button>
+                <span id="trips-info" class="page-info">Loading...</span>
+                <button id="trips-next" class="nav-btn">↓ Next</button>
+              </div>
+              <div id="recent-trips">Loading...</div>
+            </div>
+            
+            <div id="fuel-tab" class="tab-pane">
+              <div class="pagination-controls">
+                <button id="fuel-prev" class="nav-btn" disabled>↑ Previous</button>
+                <span id="fuel-info" class="page-info">Loading...</span>
+                <button id="fuel-next" class="nav-btn">↓ Next</button>
+              </div>
+              <div id="recent-fuel">Loading...</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="card">
