@@ -1,31 +1,44 @@
-
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Trips</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trips - GPS Car Tracker</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
-  <script type="module" src="trips.js"></script>
 </head>
 <body>
-  <div class="container">
-    <div class="row">
-      <div class="card">
-        <h2>Trips</h2>
-        <table id="tripTable">
-          <thead><tr><th>Start</th><th>End</th></tr></thead>
-          <tbody></tbody>
-        </table>
-        <button id="moreBtn">Load more</button>
-      </div>
-      <div class="card" style="height:420px">
-        <h2>Speed & Temperature</h2>
-        <canvas id="tripChart"></canvas>
+  <nav class="navbar">
+    <div class="nav-brand">
+      <h1>GPS Car Tracker</h1>
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.html">Dashboard</a></li>
+      <li><a href="trips.html" class="active">Trips</a></li>
+      <li><a href="fuel.html">Fuel</a></li>
+    </ul>
+  </nav>
+
+  <main class="container">
+    <h2>Trip History</h2>
+    
+    <div class="trips-container">
+      <div id="trips-list" class="loading">Loading trips...</div>
+      
+      <div class="pagination">
+        <button id="prev-page" disabled>← Previous</button>
+        <span id="page-info">Page 1</span>
+        <button id="next-page">Next →</button>
       </div>
     </div>
-  </div>
+
+    <div id="trip-details" class="trip-details-container" style="display: none;">
+      <h3>Trip Details</h3>
+      <div id="trip-details-content"></div>
+      <button id="close-details">Close Details</button>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+  <script src="trips.js"></script>
 </body>
 </html>
