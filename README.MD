@@ -261,6 +261,25 @@ curl -X POST \
   http://localhost:8080/upload/test.csv
 ```
 
+### Testing Fuel Data
+
+For testing the fuel tracking features, generate sample fuel receipts:
+
+```bash
+# Generate test fuel data directly in database
+npm run testFuel
+
+# Or run directly
+node generateFuelData.js
+```
+
+This creates realistic fuel receipt data with:
+
+- German gas stations (Shell, Aral, Esso)
+- Frankfurt area coordinates matching the GPS test data
+- Proper fuel prices and amounts
+- Timestamps that correlate with the generated GPS trips
+
 ### Endpoints
 
 #### Data Upload
@@ -407,6 +426,9 @@ node generateTestCSV.js --server=https://gps.example.org
 
 # Use npm script shortcut
 npm run testCsv -- --start=2025-08-18 --weeks=2
+
+# Generate test fuel data
+npm run testFuel
 ```
 
 ### Database Schema

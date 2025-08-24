@@ -32,7 +32,7 @@ async function loadRecentTrips () {
   try {
     showLoading('recent-trips')
     const data = await window.api.get('/api/trips?limit=5&offset=0')
-    renderRecentTrips(data.trips || [])
+    renderRecentTrips(data || [])
   } catch (error) {
     console.error('Failed to load recent trips:', error)
     showError('recent-trips', 'Failed to load trips: ' + error.message)
@@ -43,7 +43,7 @@ async function loadRecentFuel () {
   try {
     showLoading('recent-fuel')
     const data = await window.api.get('/api/fuel?limit=5&offset=0')
-    renderRecentFuel(data.records || [])
+    renderRecentFuel(data || [])
   } catch (error) {
     console.error('Failed to load recent fuel:', error)
     showError('recent-fuel', 'Failed to load fuel data: ' + error.message)
@@ -53,10 +53,10 @@ async function loadRecentFuel () {
 async function loadStats () {
   try {
     showLoading('stats')
-    const monthsData = await window.api.get('/api/fuel/months')
-    renderStats(monthsData)
+    const data = await window.api.get('/api/fuel/months')
+    renderStats(data || [])
   } catch (error) {
-    console.error('Failed to load statistics:', error)
+    console.error('Failed to load stats:', error)
     showError('stats', 'Failed to load statistics: ' + error.message)
   }
 }
@@ -70,40 +70,45 @@ function renderRecentTrips (trips) {
     return
   }
 
-  const html = trips.map(trip => `
-    <div class="trip-item">
-      <div class="trip-header">
-        <span class="trip-date">${window.fmtDate(trip.start_ts)}</span>
-        <span class="trip-duration">${window.fmtDuration(trip.duration_minutes)}</span>
+  const html = trips.map(trip => {
+    const duration = trip.start_ts && trip.end_ts
+      ? Math.round((new Date(trip.end_ts) - new Date(trip.start_ts)) / 1000 / 60)
+      : 0
+
+    return `
+      <div class="trip-item">
+        <div class="trip-info">
+          <span class="trip-date">${window.fmtDate(trip.start_ts)}</span>
+          <span class="trip-device">${trip.device}</span>
+        </div>
+        <div class="trip-stats">
+          <span class="trip-duration">${duration} min</span>
+        </div>
       </div>
-      <div class="trip-details">
-        <span class="trip-distance">${window.fmtDistance(trip.distance_km)}</span>
-        <span class="trip-speed">${window.fmtSpeed(trip.avg_speed_kmh)} avg</span>
-      </div>
-    </div>
-  `).join('')
+    `
+  }).join('')
 
   container.innerHTML = html
 }
 
-function renderRecentFuel (records) {
+function renderRecentFuel (fuelRecords) {
   const container = document.getElementById('recent-fuel')
   if (!container) return
 
-  if (!records || records.length === 0) {
+  if (!fuelRecords || fuelRecords.length === 0) {
     container.innerHTML = '<p class="no-data">No fuel records found</p>'
     return
   }
 
-  const html = records.map(record => `
+  const html = fuelRecords.map(record => `
     <div class="fuel-item">
-      <div class="fuel-header">
-        <span class="fuel-date">${window.fmtDate(record.timestamp)}</span>
-        <span class="fuel-amount">${window.fmtLiters(record.liters)}</span>
+      <div class="fuel-info">
+        <span class="fuel-date">${window.fmtDate(record.ts)}</span>
+        ${record.station_name ? `<span class="fuel-station">${record.station_name}</span>` : ''}
       </div>
       <div class="fuel-details">
-        <span class="fuel-cost">${window.fmtCurrencyEUR(record.amount_eur)}</span>
-        ${record.station_name ? `<span class="fuel-station">${record.station_name}</span>` : ''}
+        <span class="fuel-amount">${window.fmtLiters(record.liters)}</span>
+        <span class="fuel-cost">${window.fmtCurrencyEUR(record.amount_total)}</span>
       </div>
     </div>
   `).join('')
@@ -122,23 +127,27 @@ function renderStats (monthsData) {
 
   // Get current month stats
   const currentMonth = monthsData[0] || {}
+  const avgPricePerLiter = currentMonth.cost && currentMonth.liters
+    ? currentMonth.cost / currentMonth.liters
+    : 0
+
   const html = `
     <div class="stat-grid">
       <div class="stat-item">
         <span class="stat-label">This Month</span>
-        <span class="stat-value">${window.fmtLiters(currentMonth.total_liters)}</span>
+        <span class="stat-value">${window.fmtLiters(currentMonth.liters)}</span>
       </div>
       <div class="stat-item">
         <span class="stat-label">Total Cost</span>
-        <span class="stat-value">${window.fmtCurrencyEUR(currentMonth.total_amount)}</span>
+        <span class="stat-value">${window.fmtCurrencyEUR(currentMonth.cost)}</span>
       </div>
       <div class="stat-item">
         <span class="stat-label">Avg Price</span>
-        <span class="stat-value">${window.fmtCurrencyEUR(currentMonth.avg_price_per_liter)}/L</span>
+        <span class="stat-value">${window.fmtCurrencyEUR(avgPricePerLiter)}/L</span>
       </div>
       <div class="stat-item">
-        <span class="stat-label">Fuel Stops</span>
-        <span class="stat-value">${currentMonth.fuel_count || 0}</span>
+        <span class="stat-label">Distance</span>
+        <span class="stat-value">${window.fmtNumber(currentMonth.km / 1000, 1)} km</span>
       </div>
     </div>
   `

@@ -10,6 +10,7 @@
     "lint": "standard",
     "lint:fix": "standard --fix",
     "testCsv": "node generateTestCSV.js",
+    "testFuel": "node generateFuelData.js",
     "prepare": "command -v husky >/dev/null 2>&1 && husky install || true"
   },
   "dependencies": {
