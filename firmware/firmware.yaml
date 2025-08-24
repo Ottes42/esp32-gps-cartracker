@@ -6,13 +6,13 @@ substitutions:
   STATIC_GW_1: "192.168.1.1"
   STATIC_MASK_1: "255.255.255.0"
   
-  # GPIO Pin Assignments for BerryBase NodeMCU-ESP32
+  # GPIO Pin Assignments for BerryBase NodeMCU-ESP32 (standard ESP32)
   PIN_UART_RX: "GPIO16"
-  PIN_UART_TX: "GPIO17"
-  PIN_DHT: "GPIO21"
+  PIN_UART_TX: "GPIO17" 
+  PIN_DHT: "GPIO21"     # Safe pin, away from SD card
   DHT_MODEL: "DHT11"
-  PIN_ACC_SENSE: "GPIO18"
-  PIN_LED: "GPIO19"
+  PIN_ACC_SENSE: "GPIO18" # Safe pin, away from SD card
+  PIN_LED: "GPIO19"     # Safe pin, away from SD card
   
   # Upload Configuration
   UPLOAD_TARGET: "https://gps.example.com/upload/"
@@ -28,7 +28,7 @@ esphome:
       - script.execute: sync_logs
 
 esp32:
-  # Board updated to BerryBase NodeMCU-ESP32
+  # Board updated to BerryBase NodeMCU-ESP32 (standard ESP32, not ESP32-C3)
   board: nodemcu-32s
   framework:
     type: esp-idf
@@ -40,15 +40,16 @@ external_components:
   - source: github://n-serrette/esphome_sd_card@main
     components: [ sd_mmc_card ]
 
-# SD card custom component configuration
+# SD card custom component configuration - Standard ESP32 SDMMC pins
+# Note: GPIO15, GPIO2, GPIO12 are strapping pins but are standard for SD card interface
 sd_mmc_card:
   id: sd_card
   clk_pin: GPIO14
-  cmd_pin: GPIO27  # Changed from GPIO15 (strapping pin)
-  data0_pin: GPIO26  # Changed from GPIO2 (strapping pin)
-  data1_pin: GPIO25  # Changed from GPIO4
-  data2_pin: GPIO33  # Changed from GPIO12 (strapping pin)
-  data3_pin: GPIO32  # Changed from GPIO13
+  cmd_pin: GPIO15  # Strapping pin - accepted for SD card functionality
+  data0_pin: GPIO2  # Strapping pin - accepted for SD card functionality  
+  data1_pin: GPIO4
+  data2_pin: GPIO12  # Strapping pin - accepted for SD card functionality
+  data3_pin: GPIO13
 # Top-level intervals
 interval:
   # 2s driving log when ACC is on
@@ -268,51 +269,75 @@ script:
   - id: sync_logs
     mode: queued
     then:
-      # Vor Upload: RAM-Buffer auf SD-Karte flushen
-      - sd_mmc_card.append_file:
-          path: "/gpslog.csv"
-          data: !lambda |-
-            std::string str = id(csv_cache_ram);
+      # Vor Upload: RAM-Buffer auf SD-Karte flushen (use consistent file paths)
+      - lambda: |-
+          std::string str = id(csv_cache_ram);
+          if (str.size() > 0) {
             id(csv_cache_ram).clear();
-            return std::vector<uint8_t>(str.begin(), str.end());
+            // Write to SD using standard file operations (/sdcard/ mount point)
+            FILE* f = fopen("/sdcard/gpslog.csv", "a");
+            if (f) {
+              fwrite(str.c_str(), 1, str.length(), f);
+              fclose(f);
+            }
+          }
       - logger.log: "RAM cache flushed to SD card."
       
-      # Upload: CSV von SD-Karte lesen (mit direkten FILE* Operationen)
+      # Upload: CSV von SD-Karte lesen und senden
       - lambda: |-
           FILE* f = fopen("/sdcard/gpslog.csv", "r");
           if (f) {
             fseek(f, 0, SEEK_END);
             long len = ftell(f);
-            fseek(f, 0, SEEK_SET);
-            std::string content(len, '\0');
-            fread(&content[0], 1, len, f);
-            fclose(f);
-            id(upload_data) = content;
+            if (len > 0) {
+              fseek(f, 0, SEEK_SET);
+              std::string content(len, '\0');
+              fread(&content[0], 1, len, f);
+              fclose(f);
+              id(upload_data) = content;
+              ESP_LOGI("sync_logs", "Read %ld bytes from SD card for upload", len);
+            } else {
+              fclose(f);
+              ESP_LOGW("sync_logs", "SD card file is empty, nothing to upload");
+              id(upload_data) = "";
+            }
+          } else {
+            ESP_LOGW("sync_logs", "Could not open SD card file for reading");
+            id(upload_data) = "";
           }
-      - http_request.post:
-          url: !lambda 'return (std::string("${UPLOAD_TARGET}") + id(logfile).state.c_str()).c_str();'
-          request_headers:
-            Authorization: !lambda 'return (std::string("Basic ") + id(auth_b64)).c_str();'
-            Content-Type: text/csv
-          body: !lambda 'return id(upload_data);'
-      - logger.log: "Upload von SD-Karte durchgeführt."
-
-      # Nach Upload: Datei auf SD-Karte löschen
-      - sd_mmc_card.delete_file:
-          path: "/gpslog.csv"
-      - logger.log: "CSV-Datei auf SD-Karte gelöscht."
+      - if:
+          condition:
+            lambda: 'return !id(upload_data).empty();'
+          then:
+            - http_request.post:
+                url: !lambda 'return (std::string("${UPLOAD_TARGET}") + id(logfile).state.c_str()).c_str();'
+                request_headers:
+                  Authorization: !lambda 'return (std::string("Basic ") + id(auth_b64)).c_str();'
+                  Content-Type: text/csv
+                body: !lambda 'return id(upload_data);'
+            - logger.log: "Upload von SD-Karte durchgeführt."
+            # Nach Upload: Datei auf SD-Karte löschen
+            - lambda: 'remove("/sdcard/gpslog.csv");'
+            - logger.log: "CSV-Datei auf SD-Karte gelöscht."
+          else:
+            - logger.log: "Kein Upload - keine Daten auf SD-Karte gefunden."
 
   - id: shutdown_sequence
     mode: restart
     then:
         - delay: 60s
         # Vor Deep Sleep: RAM-Buffer auf SD-Karte flushen
-        - sd_mmc_card.append_file:
-            path: !lambda 'return std::string("/gpslog.csv");'
-            data: !lambda |-
-              std::string str = id(csv_cache_ram);
+        - lambda: |-
+            std::string str = id(csv_cache_ram);
+            if (str.size() > 0) {
               id(csv_cache_ram).clear();
-              return std::vector<uint8_t>(str.begin(), str.end());
+              // Write to SD using standard file operations
+              FILE* f = fopen("/sdcard/gpslog.csv", "a");
+              if (f) {
+                fwrite(str.c_str(), 1, str.length(), f);
+                fclose(f);
+              }
+            }
         - if:
             condition:
               binary_sensor.is_off: acc_present
