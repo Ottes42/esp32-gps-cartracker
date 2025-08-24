@@ -157,70 +157,6 @@ function renderTrips (trips) {
   container.innerHTML = html
 }
 
-function renderTripDetails (trip) {
-  const container = document.getElementById('trip-details-content')
-
-  const html = `
-    <div class="trip-detail-grid">
-      <div class="detail-section">
-        <h4>Trip Overview</h4>
-        <div class="detail-stats">
-          <div class="detail-stat">
-            <span class="label">Start Time</span>
-            <span class="value">${formatDateTime(trip.start_ts)}</span>
-          </div>
-          <div class="detail-stat">
-            <span class="label">End Time</span>
-            <span class="value">${formatDateTime(trip.end_ts)}</span>
-          </div>
-          <div class="detail-stat">
-            <span class="label">Duration</span>
-            <span class="value">${formatDuration(trip.duration_minutes)}</span>
-          </div>
-        </div>
-      </div>
-      
-      <div class="detail-section">
-        <h4>Distance & Speed</h4>
-        <div class="detail-stats">
-          <div class="detail-stat">
-            <span class="label">Total Distance</span>
-            <span class="value">${(trip.distance_km || 0).toFixed(1)} km</span>
-          </div>
-          <div class="detail-stat">
-            <span class="label">Average Speed</span>
-            <span class="value">${(trip.avg_speed_kmh || 0).toFixed(1)} km/h</span>
-          </div>
-          <div class="detail-stat">
-            <span class="label">Maximum Speed</span>
-            <span class="value">${(trip.max_speed_kmh || 0).toFixed(1)} km/h</span>
-          </div>
-        </div>
-      </div>
-      
-      <div class="detail-section">
-        <h4>GPS Data</h4>
-        <div class="detail-stats">
-          <div class="detail-stat">
-            <span class="label">Data Points</span>
-            <span class="value">${trip.point_count || 0}</span>
-          </div>
-          <div class="detail-stat">
-            <span class="label">Average HDOP</span>
-            <span class="value">${(trip.avg_hdop || 0).toFixed(1)}</span>
-          </div>
-          <div class="detail-stat">
-            <span class="label">Average Satellites</span>
-            <span class="value">${Math.round(trip.avg_sats || 0)}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  `
-
-  container.innerHTML = html
-}
-
 function updatePagination () {
   const prevBtn = document.getElementById('prev-page')
   const nextBtn = document.getElementById('next-page')
@@ -245,11 +181,6 @@ function formatDate (timestamp) {
     month: '2-digit',
     year: 'numeric'
   })
-}
-
-function formatDateTime (timestamp) {
-  if (!timestamp) return 'Unknown'
-  return new Date(timestamp).toLocaleString('de-DE')
 }
 
 function formatDuration (minutes) {

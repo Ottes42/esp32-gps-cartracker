@@ -90,11 +90,26 @@ PIN_LED:       GPIO8   # Status LED
 Create a `.env` file with:
 
 ```bash
-# Google Gemini API for receipt parsing
+# Required: Google Gemini API for receipt parsing
 GEMINI_API_KEY=your_gemini_api_key_here
 
 # Optional: Custom model (default: gemini-1.5-pro-vision-latest)
 GEMINI_MODEL=gemini-1.5-pro-vision-latest
+
+# Optional: Data storage path (default: /data/)
+DATA_PATH=/data/
+
+# Optional: Database filename (default: cartracker.db)
+DB_FILE=cartracker.db
+
+# Optional: Geocoding cache file (default: geocache.json)
+GEOCACHE=geocache.json
+
+# Optional: Upload directory (default: uploads)
+UPLOAD_DIR=uploads
+
+# Optional: Server port (default: 8080)
+PORT=8080
 ```
 
 ### Firmware Configuration
