@@ -57,11 +57,11 @@ html,body{ height:100%; margin:0; padding:0; background:var(--bg); color:var(--t
   color: #1a1d21;
 }
 
-/* Layout */
+/* Container */
 .container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1.5rem; /* Reduced padding to give more space */
 }
 
 /* Top section */
@@ -70,6 +70,7 @@ html,body{ height:100%; margin:0; padding:0; background:var(--bg); color:var(--t
   grid-template-columns: auto 1fr;
   gap: 2rem;
   margin-bottom: 2rem;
+  padding: 1.5rem 0;
 }
 
 .upload-section {
@@ -85,14 +86,19 @@ html,body{ height:100%; margin:0; padding:0; background:var(--bg); color:var(--t
   display: grid;
   grid-template-columns: 1fr 400px;
   gap: 2rem;
+  min-height: 70vh; /* Ensures minimum height for the entire layout */
 }
 
 .map-section {
   min-width: 0; /* Allows map to shrink */
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .data-section {
   min-width: 400px;
+  min-height: 600px; /* Ensures proper height for data section */
 }
 
 /* Tab system */
@@ -100,41 +106,49 @@ html,body{ height:100%; margin:0; padding:0; background:var(--bg); color:var(--t
   height: 100%;
   display: flex;
   flex-direction: column;
+  min-height: 600px; /* Ensures proper height for tabs */
 }
 
 .tab-bar {
   display: flex;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem; /* Increased spacing */
+  background: var(--card-2);
+  border-radius: 8px 8px 0 0;
 }
 
 .tab-btn {
   flex: 1;
-  padding: 0.75rem 1rem;
+  padding: 1rem 1.5rem; /* Increased padding */
   background: transparent;
   color: var(--muted);
   border: none;
-  border-bottom: 2px solid transparent;
+  border-bottom: 3px solid transparent; /* Thicker border */
   cursor: pointer;
   transition: all 0.2s;
   font-weight: 500;
+  font-size: 0.95rem;
 }
 
 .tab-btn:hover {
   color: var(--text);
-  background: var(--card-2);
+  background: var(--card-3);
 }
 
 .tab-btn.active {
   color: var(--accent);
   border-bottom-color: var(--accent);
-  background: transparent;
+  background: var(--card);
 }
 
 .tab-content {
   flex: 1;
   display: flex;
   flex-direction: column;
+  padding: 1rem; /* Added padding inside content */
+  background: var(--card);
+  border-radius: 0 0 8px 8px;
+  min-height: 500px; /* Ensures content area height */
 }
 
 .tab-pane {
@@ -191,16 +205,32 @@ html,body{ height:100%; margin:0; padding:0; background:var(--bg); color:var(--t
 @media (max-width: 1200px) {
   .main-layout {
     grid-template-columns: 1fr;
+    min-height: auto; /* Allow flexible height on smaller screens */
   }
   
   .data-section {
     min-width: auto;
+    min-height: 500px; /* Adjusted for smaller screens */
+  }
+  
+  #map {
+    height: 450px; /* Slightly smaller on medium screens */
+    min-height: 450px;
   }
 }
 
 @media (max-width: 768px) {
   .top-section {
     grid-template-columns: 1fr;
+    padding: 1rem 0;
+  }
+  
+  .container {
+    padding: 1rem;
+  }
+  
+  .main-layout {
+    gap: 1.5rem;
   }
 }
 
@@ -623,11 +653,13 @@ input[type="file"]:focus {
 
 /* Map styles */
 #map {
-  height: 400px;
-  min-height: 400px;
+  height: 500px; /* Increased from 400px */
+  min-height: 500px; /* Increased from 400px */
   width: 100%;
   border-radius: 8px;
   overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  margin-bottom: 1rem;
 }
 
 /* Table styles */
@@ -826,8 +858,18 @@ tr:hover td {
 /* Responsive map */
 @media (max-width: 768px) {
   #map {
-    height: 300px;
-    min-height: 300px;
+    height: 350px; /* Increased from 300px for mobile */
+    min-height: 350px;
+  }
+  
+  .tab-content {
+    padding: 0.75rem;
+    min-height: 400px; /* Adjusted for mobile */
+  }
+  
+  .tab-btn {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
   }
   
   .dashboard-grid {
