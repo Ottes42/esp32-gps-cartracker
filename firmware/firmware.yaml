@@ -69,15 +69,7 @@ interval:
                         snprintf(ts, sizeof(ts), "%04d-%02d-%02dT%02d:%02d:%02dZ",
                                  t.year, t.month, t.day_of_month, t.hour, t.minute, t.second);
                       } else {
-                        // Fallback to SNTP time if GPS time is not available
-                        auto fallback_t = id(sntp_time).now();
-                        if (fallback_t.is_valid()) {
-                          snprintf(ts, sizeof(ts), "%04d-%02d-%02dT%02d:%02d:%02dZ",
-                                   fallback_t.year, fallback_t.month, fallback_t.day_of_month, 
-                                   fallback_t.hour, fallback_t.minute, fallback_t.second);
-                        } else {
-                          snprintf(ts, sizeof(ts), "no_time");
-                        }
+                        snprintf(ts, sizeof(ts), "no_time");
                       }
                       return std::string(ts);
                   - id(gps_latitude).state
@@ -97,15 +89,7 @@ interval:
                   snprintf(ts, sizeof(ts), "%04d-%02d-%02dT%02d:%02d:%02dZ",
                            t.year, t.month, t.day_of_month, t.hour, t.minute, t.second);
                 } else {
-                  // Fallback to SNTP time if GPS time is not available
-                  auto fallback_t = id(sntp_time).now();
-                  if (fallback_t.is_valid()) {
-                    snprintf(ts, sizeof(ts), "%04d-%02d-%02dT%02d:%02d:%02dZ",
-                             fallback_t.year, fallback_t.month, fallback_t.day_of_month, 
-                             fallback_t.hour, fallback_t.minute, fallback_t.second);
-                  } else {
-                    snprintf(ts, sizeof(ts), "no_time");
-                  }
+                  snprintf(ts, sizeof(ts), "no_time");
                 }
                 char line[192];
                 snprintf(line, sizeof(line), "%s,%.6f,%.6f,%.1f,%.1f,%.2f,%.0f,%.0f,%.1f,%.1f\\n",
@@ -194,10 +178,6 @@ time:
     id: gps_time
     gps_id: gps_module
     timezone: Europe/Berlin
-  # Keep SNTP as fallback when GPS is not available
-  - platform: sntp
-    id: sntp_time
-    timezone: Europe/Berlin
 
 # Placeholder HTTP upload component: implement auth and post details as needed
 http_request:
@@ -207,7 +187,7 @@ http_request:
 web_server:
   port: 80
   auth:
-    username: admin
+    username: gps-cartracker
     password: admin
   include_internal: true
 
@@ -292,11 +272,6 @@ globals:
     type: std::string
     restore_value: no
     initial_value: ""
-  # Flash-Buffer für CSV-Cache
-  - id: csv_cache_flash
-    type: std::string
-    restore_value: no
-    initial_value: ""
   
   # Upload data buffer
   - id: upload_data
@@ -310,15 +285,6 @@ text_sensor:
     id: logfile
     lambda: |-
       auto t = id(gps_time).now();
-      if (!t.is_valid()) {
-        // Fallback to SNTP time
-        auto fallback_t = id(sntp_time).now();
-        if (!fallback_t.is_valid()) return std::string("current.csv");
-        char buf[40];
-        snprintf(buf, sizeof(buf), "%04d-%02d-%02d_%02d.csv",
-                 fallback_t.year, fallback_t.month, fallback_t.day_of_month, fallback_t.hour);
-        return std::string(buf);
-      }
       char buf[40];
       snprintf(buf, sizeof(buf), "%04d-%02d-%02d_%02d.csv",
                t.year, t.month, t.day_of_month, t.hour);
@@ -478,15 +444,7 @@ script:
                   snprintf(ts, sizeof(ts), "%04d-%02d-%02dT%02d:%02d:%02dZ",
                            t.year, t.month, t.day_of_month, t.hour, t.minute, t.second);
                 } else {
-                  // Fallback to SNTP time
-                  auto fallback_t = id(sntp_time).now();
-                  if (fallback_t.is_valid()) {
-                    snprintf(ts, sizeof(ts), "%04d-%02d-%02dT%02d:%02d:%02dZ",
-                             fallback_t.year, fallback_t.month, fallback_t.day_of_month, 
-                             fallback_t.hour, fallback_t.minute, fallback_t.second);
-                  } else {
-                    snprintf(ts, sizeof(ts), "no_time");
-                  }
+                  snprintf(ts, sizeof(ts), "no_time");
                 }
                 return ts;
             - id(car_temp_c).state
