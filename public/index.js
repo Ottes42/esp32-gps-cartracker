@@ -9,64 +9,147 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Store current trip layer for cleanup
   window.currentTripLayer = null
 
+  // Initialize pagination state
+  window.tripsPage = 0
+  window.fuelPage = 0
+  window.itemsPerPage = 5
+
+  // Initialize tabs
+  initializeTabs()
+
+  // Initialize pagination controls
+  initializePaginationControls()
+
   // Monthly table
   try {
     const rows = await fetch('/api/fuel/months').then(r => r.json())
     const tbody = document.getElementById('monthBody')
-    rows.forEach(r => {
-      const tr = document.createElement('tr')
-      tr.innerHTML = `<td>${window.fmtMonthLocal(r.month)}</td>
-                      <td>${window.fmtCurrencyEUR(r.cost)}</td>
-                      <td>${window.fmtNumber(r.km / 1000, 1)} km</td>
-                      <td>${window.fmtNumber(r.liters, 1)} L</td>`
-      tbody.appendChild(tr)
-    })
+    if (tbody) {
+      rows.forEach(r => {
+        const tr = document.createElement('tr')
+        tr.innerHTML = `<td>${window.fmtMonthLocal(r.month)}</td>
+                        <td>${window.fmtCurrencyEUR(r.cost)}</td>
+                        <td>${window.fmtNumber(r.km / 1000, 1)} km</td>
+                        <td>${window.fmtNumber(r.liters, 1)} L</td>`
+        tbody.appendChild(tr)
+      })
+    }
   } catch (e) {
-    document.getElementById('monthBody').innerHTML = '<tr><td colspan="4">Failed to load</td></tr>'
+    const tbody = document.getElementById('monthBody')
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="4">Failed to load</td></tr>'
+    }
   }
 
-  // Dashboard functionality - no imports needed, uses global functions from app.js
-  window.tripsOffset = 0
-  window.fuelOffset = 0
-  window.tripsLimit = 5
-  window.fuelLimit = 5
-  loadRecentTrips()
-  loadRecentFuel()
+  // Load initial data
+  loadTripsPage()
+  loadFuelPage()
   loadStats()
 })
 
-async function loadRecentTrips (append = false) {
-  try {
-    if (!append) {
-      showLoading('recent-trips')
-      window.tripsOffset = 0
-    }
-    const data = await window.api.get(`/api/trips?limit=${window.tripsLimit}&offset=${window.tripsOffset}`)
-    renderRecentTrips(data || [], append)
+// Tab system
+function initializeTabs () {
+  const tabBtns = document.querySelectorAll('.tab-btn')
+  const tabPanes = document.querySelectorAll('.tab-pane')
 
-    // Update offset for next load
-    window.tripsOffset += data?.length || 0
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetTab = btn.dataset.tab
+
+      // Remove active class from all tabs and panes
+      tabBtns.forEach(b => b.classList.remove('active'))
+      tabPanes.forEach(p => p.classList.remove('active'))
+
+      // Add active class to clicked tab and corresponding pane
+      btn.classList.add('active')
+      document.getElementById(`${targetTab}-tab`).classList.add('active')
+    })
+  })
+}
+
+// Pagination controls
+function initializePaginationControls () {
+  // Trips pagination
+  document.getElementById('trips-prev').addEventListener('click', () => {
+    if (window.tripsPage > 0) {
+      window.tripsPage--
+      loadTripsPage()
+    }
+  })
+
+  document.getElementById('trips-next').addEventListener('click', () => {
+    window.tripsPage++
+    loadTripsPage()
+  })
+
+  // Fuel pagination
+  document.getElementById('fuel-prev').addEventListener('click', () => {
+    if (window.fuelPage > 0) {
+      window.fuelPage--
+      loadFuelPage()
+    }
+  })
+
+  document.getElementById('fuel-next').addEventListener('click', () => {
+    window.fuelPage++
+    loadFuelPage()
+  })
+}
+
+// New pagination-based loading functions
+async function loadTripsPage () {
+  try {
+    showLoading('recent-trips')
+    const offset = window.tripsPage * window.itemsPerPage
+    const data = await window.api.get(`/api/trips?limit=${window.itemsPerPage}&offset=${offset}`)
+
+    renderRecentTrips(data || [])
+    updateTripsNavigation(data?.length || 0)
   } catch (error) {
-    console.error('Failed to load recent trips:', error)
+    console.error('Failed to load trips page:', error)
     showError('recent-trips', 'Failed to load trips: ' + error.message)
   }
 }
 
-async function loadRecentFuel (append = false) {
+async function loadFuelPage () {
   try {
-    if (!append) {
-      showLoading('recent-fuel')
-      window.fuelOffset = 0
-    }
-    const data = await window.api.get(`/api/fuel?limit=${window.fuelLimit}&offset=${window.fuelOffset}`)
-    renderRecentFuel(data || [], append)
+    showLoading('recent-fuel')
+    const offset = window.fuelPage * window.itemsPerPage
+    const data = await window.api.get(`/api/fuel?limit=${window.itemsPerPage}&offset=${offset}`)
 
-    // Update offset for next load
-    window.fuelOffset += data?.length || 0
+    renderRecentFuel(data || [])
+    updateFuelNavigation(data?.length || 0)
   } catch (error) {
-    console.error('Failed to load recent fuel:', error)
+    console.error('Failed to load fuel page:', error)
     showError('recent-fuel', 'Failed to load fuel data: ' + error.message)
   }
+}
+
+// Navigation state updates
+function updateTripsNavigation (itemsLoaded) {
+  const prevBtn = document.getElementById('trips-prev')
+  const nextBtn = document.getElementById('trips-next')
+  const infoSpan = document.getElementById('trips-info')
+
+  prevBtn.disabled = window.tripsPage === 0
+  nextBtn.disabled = itemsLoaded < window.itemsPerPage
+
+  const start = window.tripsPage * window.itemsPerPage + 1
+  const end = start + itemsLoaded - 1
+  infoSpan.textContent = itemsLoaded > 0 ? `${start}-${end}` : 'No trips'
+}
+
+function updateFuelNavigation (itemsLoaded) {
+  const prevBtn = document.getElementById('fuel-prev')
+  const nextBtn = document.getElementById('fuel-next')
+  const infoSpan = document.getElementById('fuel-info')
+
+  prevBtn.disabled = window.fuelPage === 0
+  nextBtn.disabled = itemsLoaded < window.itemsPerPage
+
+  const start = window.fuelPage * window.itemsPerPage + 1
+  const end = start + itemsLoaded - 1
+  infoSpan.textContent = itemsLoaded > 0 ? `${start}-${end}` : 'No fuel records'
 }
 
 async function loadStats () {
@@ -80,14 +163,12 @@ async function loadStats () {
   }
 }
 
-function renderRecentTrips (trips, append = false) {
+function renderRecentTrips (trips) {
   const container = document.getElementById('recent-trips')
   if (!container) return
 
   if (!trips || trips.length === 0) {
-    if (!append) {
-      container.innerHTML = '<p class="no-data">No trips found</p>'
-    }
+    container.innerHTML = '<p class="no-data">No trips found</p>'
     return
   }
 
@@ -109,44 +190,20 @@ function renderRecentTrips (trips, append = false) {
     `
   }).join('')
 
-  if (append) {
-    // Remove existing load more button
-    const existingButton = container.querySelector('.load-more-btn')
-    if (existingButton) existingButton.remove()
-
-    // Append new trips
-    const tempDiv = document.createElement('div')
-    tempDiv.innerHTML = html
-    while (tempDiv.firstChild) {
-      container.appendChild(tempDiv.firstChild)
-    }
-  } else {
-    container.innerHTML = html
-  }
-
-  // Add load more button if we got a full batch (suggests there might be more)
-  if (trips.length === window.tripsLimit) {
-    const loadMoreBtn = document.createElement('button')
-    loadMoreBtn.className = 'load-more-btn'
-    loadMoreBtn.textContent = 'Load more trips'
-    loadMoreBtn.onclick = () => loadRecentTrips(true)
-    container.appendChild(loadMoreBtn)
-  }
+  container.innerHTML = html
 }
 
-function renderRecentFuel (fuelRecords, append = false) {
+function renderRecentFuel (fuelRecords) {
   const container = document.getElementById('recent-fuel')
   if (!container) return
 
   if (!fuelRecords || fuelRecords.length === 0) {
-    if (!append) {
-      container.innerHTML = '<p class="no-data">No fuel records found</p>'
-    }
+    container.innerHTML = '<p class="no-data">No fuel records found</p>'
     return
   }
 
   const html = fuelRecords.map(record => `
-    <div class="fuel-item">
+    <div class="fuel-item" onclick="showFuelPopup(${record.lat}, ${record.lon}, ${JSON.stringify(record).replace(/"/g, '&quot;')})">
       <div class="fuel-info">
         <span class="fuel-date">${window.fmtDate(record.ts)}</span>
         ${record.station_name ? `<span class="fuel-station">${record.station_name}</span>` : ''}
@@ -159,29 +216,7 @@ function renderRecentFuel (fuelRecords, append = false) {
     </div>
   `).join('')
 
-  if (append) {
-    // Remove existing load more button
-    const existingButton = container.querySelector('.load-more-btn')
-    if (existingButton) existingButton.remove()
-
-    // Append new fuel records
-    const tempDiv = document.createElement('div')
-    tempDiv.innerHTML = html
-    while (tempDiv.firstChild) {
-      container.appendChild(tempDiv.firstChild)
-    }
-  } else {
-    container.innerHTML = html
-  }
-
-  // Add load more button if we got a full batch (suggests there might be more)
-  if (fuelRecords.length === window.fuelLimit) {
-    const loadMoreBtn = document.createElement('button')
-    loadMoreBtn.className = 'load-more-btn'
-    loadMoreBtn.textContent = 'Load more fuel records'
-    loadMoreBtn.onclick = () => loadRecentFuel(true)
-    container.appendChild(loadMoreBtn)
-  }
+  container.innerHTML = html
 }
 
 function renderStats (monthsData) {
@@ -370,5 +405,21 @@ function getSpeedColor (speed) {
   return '#e74c3c' // Red for very fast
 }
 
-// Make function globally available
+// Make functions globally available
 window.showTripOnMap = showTripOnMap
+window.showFuelPopup = showFuelPopup
+
+// Show fuel popup when clicking fuel item
+function showFuelPopup (lat, lon, record) {
+  if (!lat || !lon) return
+
+  // Pan map to location and open popup
+  window.map.setView([lat, lon], 15)
+
+  // Find the fuel marker and open its popup
+  window.map.eachLayer(layer => {
+    if (layer instanceof L.Marker && layer.getLatLng().lat === lat && layer.getLatLng().lng === lon) {
+      layer.openPopup()
+    }
+  })
+}
