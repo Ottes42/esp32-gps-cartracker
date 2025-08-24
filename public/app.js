@@ -162,8 +162,14 @@ window.loadFuelMarkers = async function (map, statusEl) {
           .bindPopup(`
             <div>
               <strong>${record.station_name || 'Fuel Station'}</strong><br>
-              ${window.fmtDate(record.ts)}<br>
-              ${window.fmtLiters(record.liters)} • ${window.fmtCurrencyEUR(record.amount_total)}
+              ${record.station_address ? `${record.station_address}<br>` : ''}
+              ${record.station_zip ? `${record.station_zip} ${record.station_city}<br>` : ''}
+              <br>
+              <strong>${window.fmtDate(record.ts)}</strong><br>
+              <strong>${window.fmtLiters(record.liters)}</strong> @ <strong>${window.fmtCurrencyEUR(record.price_per_l)}/L</strong><br>
+              Fuel: ${window.fmtCurrencyEUR(record.amount_fuel || record.amount_total)}<br>
+              ${record.amount_total !== record.amount_fuel ? `Total: <strong>${window.fmtCurrencyEUR(record.amount_total)}</strong><br>` : ''}
+              ${record.full_tank ? '<em>Full tank</em>' : '<em>Partial fill</em>'}
             </div>
           `)
         marker.addTo(map)
