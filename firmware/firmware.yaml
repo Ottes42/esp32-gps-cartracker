@@ -2,9 +2,9 @@ substitutions:
   # WiFi Configuration
   WIFI_SSID_1: !secret wifi_ssid
   WIFI_PASS_1: !secret wifi_password
-  STATIC_IP_1: "192.168.1.25"
-  STATIC_GW_1: "192.168.1.1"
-  STATIC_MASK_1: "255.255.255.0"
+  #STATIC_IP_1: "192.168.1.25" # TODO
+  #STATIC_GW_1: "192.168.1.1"
+  #STATIC_MASK_1: "255.255.255.0"
   
   # GPIO Pin Assignments for BerryBase NodeMCU-ESP32 (standard ESP32)
   PIN_UART_RX: "GPIO16"
@@ -243,15 +243,15 @@ globals:
   - id: server_url
     type: std::string
     restore_value: no
-    initial_value: "${UPLOAD_TARGET}"
+    initial_value: '"${UPLOAD_TARGET}"'
   - id: basic_auth_user
     type: std::string
     restore_value: no
-    initial_value: "${BASIC_AUTH_USER}"
+    initial_value: '"${BASIC_AUTH_USER}"'
   - id: basic_auth_pass
     type: std::string
     restore_value: no
-    initial_value: "${BASIC_AUTH_PASS}"
+    initial_value: '"${BASIC_AUTH_PASS}"'
 
   # RAM-Buffer für CSV-Cache (anpassbar, z.B. 8kB)
   - id: csv_cache_ram
