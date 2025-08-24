@@ -338,7 +338,7 @@ app.get('/api/trip/:start', (req, res) => {
     )
     SELECT device,end_ts FROM trips WHERE start_ts=?`).get(start)
   if (!row?.end_ts) return res.json([])
-  const pts = db.prepare('SELECT ts, spd_kmh, temp_c FROM car_track WHERE device=? AND ts BETWEEN ? AND ? ORDER BY ts').all(row.device, start, row.end_ts)
+  const pts = db.prepare('SELECT ts, lat, lon, spd_kmh, temp_c, alt_m, hdop, sats FROM car_track WHERE device=? AND ts BETWEEN ? AND ? ORDER BY ts').all(row.device, start, row.end_ts)
   let out = pts
   if (pts.length > 3000) {
     const step = Math.ceil(pts.length / 3000)
