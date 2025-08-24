@@ -2,622 +2,105 @@
 
 A comprehensive GPS tracking solution for cars using ESP32-C3, featuring real-time location logging, fuel consumption tracking with AI-powered receipt parsing, and a web dashboard.
 
-## Features
+## 📖 Documentation
+
+- **[Hardware Setup](docs/HARDWARE.MD)** - ESP32-C3 setup and pin configuration
+- **[Deployment Guide](docs/DEPLOYMENT.MD)** - Docker and manual deployment instructions
+- **[API Documentation](docs/API.MD)** - Complete API reference and testing
+- **[Development Guide](docs/DEVELOPMENT.MD)** - Development setup and contribution guidelines
+- **[Security Model](docs/SECURITY.MD)** - Authentication and security configuration
+- **[Nginx Configuration](docs/NGINX.MD)** - Reverse proxy setup instructions
+- **[Nginx Proxy Manager](docs/NGINX-PRROXY-MANAGER.MD)** - Step-by-step NPM configuration
+
+## ✨ Features
 
 ### Hardware Tracking
-
 - **Real-time GPS tracking** with 1-second intervals when ACC is on
 - **Temperature and humidity monitoring** using DHT11 sensor
 - **Automatic power management** with deep sleep when ACC is off
 - **SD card logging** for offline data storage
 - **Automatic data upload** when WiFi is available
-- **Status LED** for visual feedback
 
 ### Software Features
-
 - **Fuel tracking** with AI-powered receipt parsing using Google Gemini
+
 - **Trip analysis** with automatic trip detection
 - **Monthly consumption reports**
 - **RESTful API** for data access
-- **Basic HTTP authentication** for secure access
-- **Geocoding** for fuel station locations
-- **Web dashboard** (coming soon)
+- **Web dashboard** with interactive maps and statistics
+- **Secure authentication** with rate limiting
 
-## Hardware Requirements
+## 🚀 Quick Start
 
-### ESP32-C3 Setup
-
-- ESP32-C3 DevKit (tested with esp32-c3-devkitm-1) or any other compatible board, but you have to update the board configuration in the firmware
-- GPS module (UART, 9600 baud)
-- MicroSD card module (SPI)
-- DHT11 temperature/humidity sensor
-- Status LED
-- ACC voltage sensor circuit
-
-### Pin Configuration
-
-```yaml
-PIN_UART_RX:   GPIO20  # GPS RX
-PIN_UART_TX:   GPIO21  # GPS TX
-PIN_SD_CS:     GPIO10  # SD Card CS
-PIN_SPI_SCLK:  GPIO6   # SPI Clock
-PIN_SPI_MOSI:  GPIO7   # SPI MOSI
-PIN_SPI_MISO:  GPIO2   # SPI MISO
-PIN_DHT:       GPIO1   # DHT11 Data
-PIN_ACC_SENSE: GPIO4   # ACC Detection
-PIN_LED:       GPIO8   # Status LED
-```
-
-## Software Setup
-
-### Prerequisites
-
-- Node.js 20+  
-- Docker & Docker Compose
-- ESPHome CLI (for firmware compilation)
-
-### Installation
-
-1. **Clone the repository**
-
-   ```bash
-   git clone https://github.com/yourusername/gps-car-tracker.git
-   cd gps-car-tracker
-   ```
-
-2. **Install dependencies**
-
-   ```bash
-   npm install
-   ```
-
-3. **Configure environment**
-
-   ```bash
-   cp .env.example .env
-   # Edit .env with your settings
-   ```
-
-4. **Configure firmware**
-
-   ```bash
-   # Edit firmware/firmware.yaml
-   # Update WiFi credentials, upload URL, and auth credentials
-   ```
-
-### Environment Variables
-
-Create a `.env` file with:
+### 1. Software Setup
 
 ```bash
-# Required: Google Gemini API for receipt parsing
-GEMINI_API_KEY=your_gemini_api_key_here
+# Clone and setup
+git clone https://github.com/yourusername/gps-car-tracker.git
+cd gps-car-tracker
+npm install
 
-# Optional: Custom model (default: gemini-1.5-pro-vision-latest)
-GEMINI_MODEL=gemini-1.5-pro-vision-latest
+# Configure environment
+cp .env.example .env
+# Edit .env with your Gemini API key and settings
 
-# Optional: Data storage path (default: /data/)
-DATA_PATH=/data/
-
-# Optional: Database filename (default: cartracker.db)
-DB_FILE=cartracker.db
-
-# Optional: Geocoding cache file (default: geocache.json)
-GEOCACHE=geocache.json
-
-# Optional: Upload directory (default: uploads)
-UPLOAD_DIR=uploads
-
-# Optional: Server port (default: 8080)
-PORT=8080
-```
-
-### Firmware Configuration
-
-Edit `firmware/firmware.yaml`:
-
-```yaml
-substitutions:
-  # WiFi Configuration
-  WIFI_SSID_1: "Your_WiFi_SSID"
-  WIFI_PASS_1: "Your_WiFi_Password"
-  
-  # Server Configuration
-  UPLOAD_TARGET: "https://your-domain.com/upload/"
-  BASIC_AUTH_USER: "your-device-name"
-  BASIC_AUTH_PASS: "your-secure-password"
-```
-
-## Deployment
-
-### Using Docker Compose (Recommended)
-
-1. **Use published image (Production)**
-
-   ```bash
-   # docker-compose.yaml uses: ottes/gps-cartracker:latest (Docker Hub)
-   docker-compose up -d
-   ```
-
-2. **Build locally (Development)**
-
-   ```bash
-   # Uncomment "build: ." in docker-compose.yaml
-   docker-compose up --build
-   ```
-
-3. **Use specific version**
-
-   ```bash
-   # Pull specific release from Docker Hub (recommended)
-   docker pull ottes/gps-cartracker:v1.2.3
-   
-   # Update docker-compose.yaml image tag
-   image: ottes/gps-cartracker:v1.2.3
-   ```
-
-### Available Docker Repositories
-
-The GPS Car Tracker is available from this Docker repository:
-
-- **Docker Hub (recommended)**: `ottes/gps-cartracker`
-
-### Manual Deployment
-
-```bash
-# Development mode
+# Start development server
 npm run dev
-
-# Production mode
-npm start
 ```
 
-## Firmware Installation
+### 2. Hardware Setup
 
-### Option 1: Manual Compilation
+See **[Hardware Setup Guide](docs/HARDWARE.MD)** for detailed ESP32-C3 configuration.
+
+### 3. Production Deployment
 
 ```bash
-# Install ESPHome
-pip install esphome
-
-# Edit firmware/firmware.yaml with your settings first!
-# Update WiFi credentials, server URL, and authentication
-
-# Compile firmware
-esphome compile firmware/firmware.yaml
-
-# Flash to device
-esphome upload firmware/firmware.yaml
+# Using Docker Compose (recommended)
+docker-compose up -d
 ```
 
-### Option 2: use ESPHome Docker image
+See **[Deployment Guide](docs/DEPLOYMENT.MD)** for complete deployment instructions.
+
+## 📱 Usage
+
+1. **Install ESP32 firmware** following the [Hardware Guide](docs/HARDWARE.MD)
+2. **Configure WiFi and server settings** in firmware
+3. **Deploy backend server** using [Deployment Guide](docs/DEPLOYMENT.MD)
+4. **Set up reverse proxy** following [Security Guide](docs/SECURITY.MD)
+5. **Access web dashboard** at your configured domain
+
+## 🔧 Development
 
 ```bash
-# Compile firmware
-docker run --rm -v $(pwd):/config esphome/esphome compile /config/firmware/firmware.yaml
-
-# Flash to device
-docker run --rm -v $(pwd):/config esphome/esphome upload /config/firmware/firmware.yaml
+# Available commands
+npm run dev          # Development server with .env loading
+npm run testCsv      # Generate GPS test data
+npm run testFuel     # Generate fuel test data
+npm run lint         # Check code style
 ```
 
-## API Documentation
+See **[Development Guide](docs/DEVELOPMENT.MD)** for detailed development setup.
 
-### Authentication
+## 📊 API
 
-All API endpoints require HTTP Basic Authentication. The proxy must inject the `X-Auth-User` header containing the authenticated username.
+The system provides RESTful APIs for:
 
-### Direct API Testing (Development)
+- GPS data upload from ESP32
+- Fuel receipt processing with AI
+- Trip and consumption data retrieval
+- Web dashboard data queries
 
-For local development on port 8080 **from localhost only**, the API automatically accepts a development header:
+See **[API Documentation](docs/API.MD)** for complete API reference.
 
-```bash
-# These work ONLY from localhost/127.0.0.1
-curl -H "X-Auth-User: development" http://localhost:8080/api/fuel
-curl -H "X-Auth-User: development" -F "photo=@receipt.jpg" http://localhost:8080/uploadReceipt
-```
+## 🔒 Security
 
-**Security Note**: The development header is rejected from non-localhost sources. Production deployments require Nginx proxy with HTTP Basic Auth.
+- HTTP Basic Authentication for all endpoints
+- Rate limiting per endpoint type
+- SSL/TLS encryption in production
+- Development mode with localhost-only access
 
-### Production API Access
+See **[Security Model](docs/SECURITY.MD)** for detailed security configuration.
 
-Production requires proper authentication through the Nginx proxy:
+## 📄 License
 
-```bash
-# Via proxy with Basic Auth (production)
-curl -u "gps-device:password" https://gps.yourdomain.com/api/fuel
-curl -u "gps-device:password" -F "photo=@receipt.jpg" https://gps.yourdomain.com/uploadReceipt
-```
-
-### GPS CSV Data Format
-
-Create a test CSV file for GPS data uploads:
-
-```csv
-# test-gps-data.csv
-timestamp,lat,lon,alt,speed,hdop,sats,course,temp,humidity
-2025-01-18T08:00:00.000Z,50.1234,8.5678,150.0,45.5,1.2,8,90.0,22.5,65.0
-2025-01-18T08:00:01.000Z,50.1235,8.5679,151.0,46.0,1.1,9,91.0,22.4,65.2
-2025-01-18T08:00:02.000Z,50.1236,8.5680,152.0,46.5,1.0,10,92.0,22.3,65.4
-```
-
-### Testing with Generated Data
-
-Use the test data generator for realistic testing:
-
-```bash
-# Generate test data and upload directly
-node generateTestCSV.js \
-  --start=2025-01-18 --weeks=1 \
-  --server=http://localhost:8080 \
-  --uploadName=test-week.csv \
-  --auth='gps-cartracker-dev:password'
-
-# Or generate locally first, then upload manually
-node generateTestCSV.js --start=2025-01-18 --weeks=1 --outfile=test.csv
-curl -X POST \
-  -H "Content-Type: text/csv" \
-  -H "X-Auth-User: gps-cartracker-dev" \
-  --data-binary @test.csv \
-  http://localhost:8080/upload/test.csv
-```
-
-### Testing Fuel Data
-
-For testing the fuel tracking features, generate sample fuel receipts:
-
-```bash
-# Generate test fuel data directly in database
-npm run testFuel
-
-# Or run directly
-node generateFuelData.js
-```
-
-This creates realistic fuel receipt data with:
-
-- German gas stations (Shell, Aral, Esso)
-- Frankfurt area coordinates matching the GPS test data
-- Proper fuel prices and amounts
-- Timestamps that correlate with the generated GPS trips
-
-### Endpoints
-
-#### Data Upload
-
-```http
-POST /upload/:filename
-Content-Type: text/csv
-X-Auth-User: device-name
-
-# CSV format: timestamp,lat,lon,alt,speed,hdop,sats,course,temp,humidity
-```
-
-#### Fuel Tracking
-
-```http
-# Upload fuel receipt
-POST /uploadReceipt
-Content-Type: multipart/form-data
-X-Auth-User: username
-Body: photo file
-
-# Retry failed receipt parsing
-POST /retryReceipt/:id
-X-Auth-User: username
-```
-
-#### Data Retrieval
-
-```http
-# Get fuel records
-GET /api/fuel?limit=50&offset=0
-X-Auth-User: username
-
-# Get monthly fuel statistics
-GET /api/fuel/months
-X-Auth-User: username
-
-# Get trips
-GET /api/trips?limit=20&offset=0
-X-Auth-User: username
-
-# Get trip details
-GET /api/trip/:start_timestamp
-X-Auth-User: username
-```
-
-## Data Format
-
-### GPS Tracking Data
-
-Each GPS log entry contains:
-
-- Timestamp (ISO 8601)
-- Latitude/Longitude (decimal degrees)
-- Altitude (meters)
-- Speed (km/h)
-- GPS accuracy (HDOP)
-- Satellite count
-- Course (degrees)
-- Temperature (°C)
-- Humidity (%)
-
-### Fuel Data
-
-Fuel records include:
-
-- Timestamp
-- Volume (liters)
-- Price per liter
-- Fuel amount and total cost
-- Station information (name, address, location)
-- Photo path and OCR text
-- Consumption calculation
-
-## Power Management
-
-The device automatically:
-
-- **Deep sleeps** for 30 minutes when ACC is off
-- **Wakes up** immediately when ACC is detected
-- **Logs temperature** once before sleeping
-- **Prevents sleep** while ACC is on
-- **Syncs data** before entering sleep mode
-
-## Development
-
-### Setup Development Environment
-
-1. **Install dependencies**
-
-   ```bash
-   npm install
-   ```
-
-2. **Set up pre-commit hooks**
-
-   ```bash
-   npm run prepare
-   ```
-
-   This installs git hooks that automatically lint and fix code before commits.
-
-### Code Style
-
-The project uses StandardJS for consistent code formatting.
-
-```bash
-# Lint code
-npm run lint
-
-# Fix linting issues automatically
-npm run lint:fix
-```
-
-**Pre-commit hooks** automatically run `standard --fix` on staged JavaScript files to ensure consistent code style.
-
-### Bypassing Pre-commit Hooks
-
-In exceptional cases, skip the pre-commit hook with:
-
-```bash
-git commit --no-verify -m "emergency fix"
-```
-
-### Test Data Generation
-
-Generate test GPS tracking data for development and testing:
-
-```bash
-# Generate test CSV file locally
-node generateTestCSV.js --start=2025-08-18 --weeks=1 --outfile=example_drives.csv
-
-# Generate and directly upload to server
-node generateTestCSV.js \
-  --start=2025-08-18 --weeks=1 \
-  --outfile=example_drives.csv \
-  --server=https://gps.example.org \
-  --uploadName=example_drives.csv \
-  --auth='gps-esp32:supersecret'
-
-# Use environment variable for authentication
-export BASIC_AUTH='gps-esp32:supersecret'
-node generateTestCSV.js --server=https://gps.example.org
-
-# Use npm script shortcut
-npm run testCsv -- --start=2025-08-18 --weeks=2
-
-# Generate test fuel data
-npm run testFuel
-```
-
-### Database Schema
-
-The application uses SQLite with two main tables:
-
-- `car_track`: GPS tracking data
-- `fuel`: Fuel consumption records
-
-## Troubleshooting
-
-### Common Issues
-
-#### Device not connecting to WiFi
-
-- Check WiFi credentials in firmware configuration
-- Verify WiFi network compatibility (2.4GHz required)
-- Check device logs via ESPHome
-
-#### Data not uploading
-
-- Verify server URL and authentication
-- Check network connectivity
-- Ensure proxy is configured with correct headers
-
-#### GPS not working
-
-- Verify GPS module connections
-- Check antenna placement (needs clear sky view)
-- Monitor GPS status in logs
-
-#### SD card issues
-
-- Verify SD card formatting (FAT32)
-- Check SPI connections
-- Ensure adequate power supply
-
-### Logs
-
-```bash
-# View container logs
-docker-compose logs -f cartracker
-
-# View ESP32 logs
-esphome logs firmware/firmware.yaml
-```
-
-## Nginx Proxy Manager Configuration
-
-### Basic Proxy Host Setup
-
-1. **Create new Proxy Host**:
-   - Domain: `gps.yourdomain.com`
-   - Scheme: `http`
-   - Forward Hostname: `cartracker`
-   - Forward Port: `8080`
-
-2. **SSL Certificate**:
-   - Enable "Force SSL"
-   - Use Let's Encrypt or upload custom certificate
-   - Enable "HTTP/2 Support"
-
-3. **Access List** (Basic Auth):
-   - Create new Access List with your device credentials
-   - Username must match ESP32 device name (e.g., `gps-cartracker-a1b2c3`)
-
-### Advanced Configuration
-
-#### Custom Nginx Configuration
-
-Add to the "Advanced" tab of your proxy host:
-
-```nginx
-# Rate Limiting
-limit_req_zone $binary_remote_addr zone=gps_upload:10m rate=30r/m;
-limit_req_zone $binary_remote_addr zone=receipt_upload:10m rate=10r/m;
-limit_req_zone $binary_remote_addr zone=api_calls:10m rate=60r/m;
-
-# File size limits for different endpoints
-location ~ ^/upload/ {
-    limit_req zone=gps_upload burst=5 nodelay;
-    client_max_body_size 10M;  # CSV files
-    proxy_set_header X-Auth-User $remote_user;
-    proxy_pass http://cartracker:8080;
-}
-
-location /uploadReceipt {
-    limit_req zone=receipt_upload burst=2 nodelay;
-    client_max_body_size 50M;  # Phone camera photos
-    proxy_read_timeout 60s;    # OCR processing time
-    proxy_set_header X-Auth-User $remote_user;
-    proxy_pass http://cartracker:8080;
-}
-
-location /api/ {
-    limit_req zone=api_calls burst=10 nodelay;
-    proxy_set_header X-Auth-User $remote_user;
-    proxy_pass http://cartracker:8080;
-}
-
-# Default for dashboard and static files
-location / {
-    limit_req zone=api_calls burst=20 nodelay;
-    proxy_set_header X-Auth-User $remote_user;
-    proxy_pass http://cartracker:8080;
-}
-```
-
-#### Rate Limiting Explained
-
-- **GPS Upload**: 30 requests/minute (ESP32 uploads every 1-2 minutes)
-- **Receipt Upload**: 10 requests/minute (manual user uploads)
-- **API Calls**: 60 requests/minute (dashboard queries)
-- **Burst**: Allows temporary spikes above the rate limit
-
-#### File Size Limits
-
-- **GPS CSV uploads**: 10MB (large trip files)
-- **Receipt photos**: 50MB (modern phone cameras: 12-48MP photos)
-- **General requests**: 1MB (API calls, small data)
-
-### Troubleshooting Rate Limits
-
-#### Common HTTP Status Codes
-
-- `429 Too Many Requests`: Rate limit exceeded
-- `413 Request Entity Too Large`: File size limit exceeded
-- `408 Request Timeout`: Upload took too long
-
-#### Monitoring Rate Limits
-
-Check Nginx error logs for rate limit violations:
-
-```bash
-docker-compose logs npm | grep "limiting requests"
-```
-
-#### Adjusting Limits for Development
-
-For testing, temporarily increase limits:
-
-```nginx
-# Development: More permissive limits
-limit_req_zone $binary_remote_addr zone=dev_upload:10m rate=120r/m;
-```
-
-## Security Model
-
-### Development (localhost only)
-
-- Direct API access with `X-Auth-User: development` header
-- Automatic rejection of development auth from remote sources
-- Visual "DEV MODE" indicator in web interface
-
-### Production (via proxy)
-
-- HTTP Basic Auth enforced by Nginx Proxy Manager
-- Proxy injects `X-Auth-User` header with authenticated username
-- Rate limiting and file size controls applied
-- SSL/TLS encryption required
-
-## Contributing
-
-We welcome contributions to the project! Please follow these steps:
-
-1. **Fork the Repository**: Create your own fork of the repository on GitHub.
-
-2. **Create a Branch**: Create a new branch for your feature or bug fix:
-
-   ```bash
-   git checkout -b my-feature-branch
-   ```
-
-3. **Make Changes**: Make your changes in the codebase.
-
-4. **Test Your Changes**: Ensure that your changes work as expected and do not break existing functionality.
-
-5. **Commit Your Changes**: Commit your changes with a descriptive commit message:
-
-   ```bash
-   git commit -m "Add my feature"
-   ```
-
-6. **Push to Your Fork**: Push your changes to your fork on GitHub:
-
-   ```bash
-   git push origin my-feature-branch
-   ```
-
-7. **Create a Pull Request**: Go to the original repository and create a pull request from your branch.
-
-Thank you for your contributions!
+MIT License - see LICENSE file for details.
