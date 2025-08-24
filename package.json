@@ -10,18 +10,18 @@
     "lint": "standard",
     "lint:fix": "standard --fix",
     "testCsv": "node generateTestCSV.js",
-    "prepare": "husky install"
+    "prepare": "command -v husky >/dev/null 2>&1 && husky install || true"
   },
   "dependencies": {
     "better-sqlite3": "^12.2.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",
-    "husky": "^9.1.7",
     "multer": "^2.0.2",
     "node-fetch": "^3.3.2",
     "openai": "^5.15.0"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
     "standard": "^17.1.2"
   },
   "engines": {

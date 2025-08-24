@@ -15,7 +15,7 @@ LABEL org.opencontainers.image.description="GPS tracking solution with ESP32-C3 
 RUN apk add --no-cache python3 make g++
 
 WORKDIR /app
-COPY package.json ./
+COPY package*.json ./
 RUN npm ci --omit=dev
 
 COPY . .
