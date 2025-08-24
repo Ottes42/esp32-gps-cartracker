@@ -125,10 +125,10 @@ wifi:
   networks:
     - ssid: ${WIFI_SSID_1}
       password: ${WIFI_PASS_1}
-      manual_ip:
-        static_ip: ${STATIC_IP_1}
-        gateway: ${STATIC_GW_1}
-        subnet: ${STATIC_MASK_1}
+#      manual_ip:  # TODO: comment out to use second IP
+#        static_ip: ${STATIC_IP_1}
+#        gateway: ${STATIC_GW_1}
+#        subnet: ${STATIC_MASK_1}
 
   ap:
     ssid: "gps-cartracker-setup"
@@ -179,6 +179,14 @@ time:
 # Placeholder HTTP upload component: implement auth and post details as needed
 http_request:
   useragent: "gps-cartracker/1.0"
+
+# Simple web server for configuration
+web_server:
+  port: 80
+  auth:
+    username: admin
+    password: admin
+  include_internal: true
 
 sensor:
   - platform: template
@@ -231,6 +239,20 @@ globals:
     restore_value: no
     initial_value: ""
 
+  # Configurable server settings (reset on restart unless persisted)
+  - id: server_url
+    type: std::string
+    restore_value: no
+    initial_value: "${UPLOAD_TARGET}"
+  - id: basic_auth_user
+    type: std::string
+    restore_value: no
+    initial_value: "${BASIC_AUTH_USER}"
+  - id: basic_auth_pass
+    type: std::string
+    restore_value: no
+    initial_value: "${BASIC_AUTH_PASS}"
+
   # RAM-Buffer für CSV-Cache (anpassbar, z.B. 8kB)
   - id: csv_cache_ram
     type: std::string
@@ -260,6 +282,19 @@ text_sensor:
                t.year, t.month, t.day_of_month, t.hour);
       return std::string(buf);
 
+  # Configuration display sensors
+  - platform: template
+    name: "Server URL"
+    id: server_url_display
+    lambda: 'return id(server_url);'
+    update_interval: 10s
+
+  - platform: template  
+    name: "Auth User"
+    id: auth_user_display
+    lambda: 'return id(basic_auth_user);'
+    update_interval: 10s
+
 light:
   - platform: status_led
     id: status_light
@@ -269,6 +304,27 @@ script:
   - id: sync_logs
     mode: queued
     then:
+      # Generate Basic Auth header from current settings
+      - lambda: |-
+          std::string creds = id(basic_auth_user) + ":" + id(basic_auth_pass);
+          // Simple base64 encoding
+          const std::string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+          std::string result;
+          int i = 0;
+          while (i < creds.length()) {
+            uint32_t a = i < creds.length() ? (uint8_t)creds[i++] : 0;
+            uint32_t b = i < creds.length() ? (uint8_t)creds[i++] : 0;
+            uint32_t c = i < creds.length() ? (uint8_t)creds[i++] : 0;
+            uint32_t bitmap = (a << 16) | (b << 8) | c;
+            result += chars[(bitmap >> 18) & 63];
+            result += chars[(bitmap >> 12) & 63];
+            result += chars[(bitmap >> 6) & 63];
+            result += chars[bitmap & 63];
+          }
+          // Add padding
+          while (result.length() % 4) result += '=';
+          id(auth_b64) = result;
+      
       # Vor Upload: RAM-Buffer auf SD-Karte flushen (use consistent file paths)
       - lambda: |-
           std::string str = id(csv_cache_ram);
@@ -310,9 +366,9 @@ script:
             lambda: 'return !id(upload_data).empty();'
           then:
             - http_request.post:
-                url: !lambda 'return (std::string("${UPLOAD_TARGET}") + id(logfile).state.c_str()).c_str();'
-                request_headers:
-                  Authorization: !lambda 'return (std::string("Basic ") + id(auth_b64)).c_str();'
+                url: !lambda 'return (id(server_url) + id(logfile).state).c_str();'
+                request_headers: # leave this request_headers. it was changed!
+                  Authorization: !lambda 'return ("Basic " + id(auth_b64)).c_str();'
                   Content-Type: text/csv
                 body: !lambda 'return id(upload_data);'
             - logger.log: "Upload von SD-Karte durchgeführt."
@@ -321,6 +377,28 @@ script:
             - logger.log: "CSV-Datei auf SD-Karte gelöscht."
           else:
             - logger.log: "Kein Upload - keine Daten auf SD-Karte gefunden."
+
+  # Configuration update scripts
+  - id: update_server_url
+    parameters:
+      new_url: string
+    then:
+      - lambda: 'id(server_url) = new_url;'
+      - logger.log: 
+          format: "Server URL updated to: %s"
+          args: ['new_url.c_str()']
+
+  - id: update_auth_credentials
+    parameters:
+      new_user: string
+      new_pass: string
+    then:
+      - lambda: |-
+          id(basic_auth_user) = new_user;
+          id(basic_auth_pass) = new_pass;
+      - logger.log: 
+          format: "Auth credentials updated for user: %s"
+          args: ['new_user.c_str()']
 
   - id: shutdown_sequence
     mode: restart
