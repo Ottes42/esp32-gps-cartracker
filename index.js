@@ -6,10 +6,10 @@ import fs from 'fs'
 import fetch from 'node-fetch'
 import OpenAI from 'openai'
 
-const DATA_PATH = process.env.DATA_PATH || '/data/'
+const DATA_PATH = process.env.DATA_PATH || 'data/gps/'
 const DB_FILE = DATA_PATH + (process.env.DB_FILE || 'cartracker.db')
 const GEOCACHE = DATA_PATH + (process.env.GEOCACHE || 'geocache.json')
-const UPLOAD_DIR = DATA_PATH + (process.env.UPLOAD_DIR || 'uploads')
+const UPLOAD_DIR = DATA_PATH + (process.env.UPLOAD_DIR || 'uploads/')
 const GEMINI_KEY = process.env.GEMINI_API_KEY || ''
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-pro-vision-latest'
 const PORT = process.env.PORT || 8080
