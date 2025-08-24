@@ -1,0 +1,27 @@
+
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Upload Fuel Receipt</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="fuel.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h2>Fuel receipt</h2>
+      <form id="fuelForm">
+        <label>Photo (camera)</label>
+        <input type="file" id="photo" accept="image/*" capture="environment" required>
+        <div class="mt-8">
+          <label class="flex"><input type="checkbox" id="full" checked style="margin-right:8px"> Full tank</label>
+        </div>
+        <button type="submit" class="mt-16">Upload</button>
+      </form>
+      <div id="result" class="mt-16 small"></div>
+    </div>
+  </div>
+</body>
+</html>

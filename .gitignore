@@ -1,0 +1,9 @@
+.env
+node_modules
+data/
+npm-debug.log*
+*.log
+*.csv
+.esphome
+.DS_Store
+Thumbs.db

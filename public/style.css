@@ -1,0 +1,90 @@
+
+/* ============= Theme (tweak here) ============= */
+:root{
+  --bg: #101214;
+  --card: #15181b;
+  --card-2: #1b2024;
+  --text: #e9eef2;
+  --muted: #a9b4bf;
+  --border: #2a2f36;
+  --accent: #ff8a00;     /* primary orange */
+  --accent-2: #ffb74d;   /* light orange for secondary lines */
+  --ok: #27ae60;
+  --warn: #f39c12;
+  --err: #e74c3c;
+  --shadow: rgba(0,0,0,.35);
+}
+
+*{ box-sizing: border-box; }
+html,body{ height:100%; margin:0; padding:0; background:var(--bg); color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+
+/* Layout */
+.container{ max-width: 1100px; margin: 20px auto; padding: 0 16px; }
+.row{ display:grid; grid-template-columns: 1fr; gap:16px; }
+@media(min-width: 900px){ .row{ grid-template-columns: 1fr 1fr; } }
+
+h1,h2,h3{ margin: 0 0 12px; font-weight: 700; }
+h2{ font-size: 1.25rem; }
+a{ color: var(--accent); text-decoration: none; }
+a:hover{ text-decoration: underline; }
+
+.card{
+  background: linear-gradient(180deg, var(--card), var(--card-2));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 30px var(--shadow);
+}
+
+button, .btn{
+  background: var(--accent);
+  color: #111;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(255,138,0,.25);
+}
+button:hover{ filter: brightness(1.05); }
+button:disabled{ opacity:.6; cursor:not-allowed; }
+
+input[type="file"], input[type="text"], input[type="number"], select{
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #0e1012;
+  color: var(--text);
+}
+
+label{ display:block; margin: 8px 0 6px; color: var(--muted); }
+
+table{ width:100%; border-collapse: collapse; }
+th, td{ text-align:left; padding:10px 8px; border-bottom:1px solid var(--border); }
+th{ color: var(--muted); font-weight: 600; }
+tr:hover{ background: rgba(255,255,255,.02); }
+
+/* Map */
+#map{ height: 420px; border-radius: 16px; }
+.leaflet-container{ background: #0d0f11; }
+.leaflet-popup-content-wrapper, .leaflet-popup-tip{ background: var(--card-2); color: var(--text); }
+.leaflet-control-attribution{ color: var(--muted); }
+
+/* Status box */
+#status{ font-size: .95rem; color: var(--muted); }
+
+/* Chips / badges */
+.badge{ display:inline-block; padding: 2px 8px; border-radius: 999px; font-size: .8rem; font-weight: 700; background: #0f1316; border:1px solid var(--border); color: var(--muted); }
+.badge.ok{ color:#0bd27c; border-color:#0bd27c22; }
+.badge.warn{ color:#ffbf47; border-color:#ffbf4722; }
+.badge.err{ color:#ff6b6b; border-color:#ff6b6b22; }
+
+/* Utility */
+.mt-8{ margin-top: 8px; }
+.mt-16{ margin-top: 16px; }
+.flex{ display:flex; gap:10px; align-items:center; }
+.center{ text-align:center; }
+.wrap{ flex-wrap: wrap; }
+.small{ font-size: .9rem; color: var(--muted); }
+.code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }

@@ -1,0 +1,38 @@
+
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cartracker Dashboard</title>
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script type="module" src="index.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="card center">
+      <button onclick="location.href='fuel.html'">➕ Upload fuel receipt</button>
+      <div class="small mt-8">Protected with Basic Auth at your reverse proxy.</div>
+    </div>
+
+    <h2>Map & Fuel Stops</h2>
+    <div id="map" class="card"></div>
+    <div id="status" class="card">Hover over a fuel marker to see details</div>
+
+    <div class="card">
+      <h2>Monthly costs (last 12)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Month</th><th>Cost</th><th>km</th><th>Liters</th>
+          </tr>
+        </thead>
+        <tbody id="monthBody"></tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

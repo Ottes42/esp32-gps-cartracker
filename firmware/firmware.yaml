@@ -1,0 +1,301 @@
+esphome:
+  name: gps-cartracker
+  friendly_name: GPS Cartracker
+  name_add_mac_suffix: true
+  min_version: 2024.6.0
+  platformio_options:
+    board_build.f_flash: 40000000L
+    board_build.flash_mode: dio
+    board_build.flash_size: 4MB
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_BT_BLE_42_FEATURES_SUPPORTED: y
+      CONFIG_BT_BLE_50_FEATURES_SUPPORTED: n
+
+substitutions:
+  WIFI_SSID_1: "CHANGEME_WIFI"
+  WIFI_PASS_1: "CHANGEME_PASSWORD"
+  # add these for multiple WiFi networks, see wifi.networks array
+  # for details and static or dynamic ip settings per network
+  # WIFI_SSID_2: ""
+  # WIFI_PASS_2: ""
+  # STATIC_IP_2: "192.168.1.25"
+  # STATIC_GW_2: "192.168.1.1"
+  # STATIC_MASK_2: "255.255.255.0"
+
+  # Upload target URL and Basic Auth Credentials, username = device
+  UPLOAD_TARGET: "https://gps.example.com/upload/"
+  BASIC_AUTH_USER: "gps-catracker"
+  BASIC_AUTH_PASS: "CHANGEME_SECRET"
+
+  # custom GPIO pins
+  PIN_UART_RX:   GPIO20
+  PIN_UART_TX:   GPIO21
+  PIN_SD_CS:     GPIO10
+  PIN_SPI_SCLK:  GPIO6
+  PIN_SPI_MOSI:  GPIO7
+  PIN_SPI_MISO:  GPIO2
+  PIN_DHT:       GPIO1
+  DHT_MODEL:     "DHT11"
+  PIN_ACC_SENSE: GPIO4
+  PIN_LED:       GPIO8
+
+wifi:
+  networks:
+    - ssid: ${WIFI_SSID_1}
+      password: ${WIFI_PASS_1}
+    # - ssid: ${WIFI_SSID_2}
+    #   password: ${WIFI_PASS_2}
+    #   manual_ip:
+    #     static_ip: ${STATIC_IP_2}
+    #     gateway: ${STATIC_GW_2}
+    #     subnet: ${STATIC_MASK_2}
+
+  ap:
+    ssid: "gps-cartracker-setup"
+    password: "setup-setup"
+
+  on_connect:
+    then:
+      - script.execute: sync_logs
+
+logger:
+
+ota:
+  - platform: esphome  # set password locally if needed
+
+uart:
+  id: gps_uart
+  rx_pin: ${PIN_UART_RX}
+  tx_pin: ${PIN_UART_TX}
+  baud_rate: 9600
+
+gps:
+  uart_id: gps_uart
+  update_interval: 1s
+  latitude:   { id: gps_lat }
+  longitude:  { id: gps_lon }
+  altitude:   { id: gps_alt }
+  speed:      { id: gps_speed_mps }
+  satellites: { id: gps_sat }
+  accuracy:   { id: gps_hdop }
+  course:     { id: gps_course }
+
+time:
+  - platform: gps
+    id: gps_time
+
+sensor:
+  - platform: template
+    id: speed_kmh
+    unit_of_measurement: "km/h"
+    accuracy_decimals: 1
+    update_interval: 1s
+    lambda: |-
+      if (isnan(id(gps_speed_mps).state)) return NAN;
+      return id(gps_speed_mps).state * 3.6;
+
+  - platform: dht
+    pin: ${PIN_DHT}
+    model: ${DHT_MODEL}
+    temperature:
+      id: car_temp_c
+    humidity:
+      id: car_hum_pct
+    update_interval: 15s
+
+binary_sensor:
+  - platform: gpio
+    id: acc_present
+    pin:
+      number: ${PIN_ACC_SENSE}
+      mode:
+        input: true
+        pullup: false
+        pulldown: true
+    filters:
+      - delayed_on: 50ms
+      - delayed_off: 500ms
+    on_press:
+      then:
+        - deep_sleep.prevent: ds1
+        - script.stop: shutdown_sequence
+    on_release:
+      then:
+        - script.execute: shutdown_sequence
+
+spi:
+  clk_pin: ${PIN_SPI_SCLK}
+  mosi_pin: ${PIN_SPI_MOSI}
+  miso_pin: ${PIN_SPI_MISO}
+
+sdcard:
+  id: sd
+  cs_pin: ${PIN_SD_CS}
+  spi_id: spi0
+  mode: 1bit
+  card_detect_pin: ~
+
+text_sensor:
+  - platform: template
+    id: logfile
+    lambda: |-
+      auto t = id(gps_time).now();
+      if (!t.is_valid()) return std::string("current.csv");
+      char buf[40];
+      snprintf(buf, sizeof(buf), "%04d-%02d-%02d_%02d.csv",
+               t.year, t.month, t.day_of_month, t.hour);
+      return std::string(buf);
+
+light:
+  - platform: status_led
+    pin: ${PIN_LED}
+    id: status_led
+
+http_request:
+  id: http_cli
+  useragent: esphome-cartracker/${BASIC_AUTH_USER}
+  timeout: 30s
+  verify_ssl: true
+
+globals:
+  - id: auth_b64
+    type: std::string
+    restore_value: no
+    initial_value: ""
+
+on_boot:
+  priority: -100
+  then:
+    - lambda: |-
+        // Authorization: Basic base64(user:pass)
+        std::string creds = std::string("${BASIC_AUTH_USER}") + ":" + std::string("${BASIC_AUTH_PASS}");
+        auto b64 = [](const std::string &in)->std::string {
+          static const char tbl[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+          std::string out; out.reserve(((in.size()+2)/3)*4);
+          size_t i=0; 
+          while (i+3<=in.size()) {
+            uint32_t n = ((uint8_t)in[i]<<16)|((uint8_t)in[i+1]<<8)|((uint8_t)in[i+2]);
+            out.push_back(tbl[(n>>18)&63]);
+            out.push_back(tbl[(n>>12)&63]);
+            out.push_back(tbl[(n>>6)&63]);
+            out.push_back(tbl[n&63]);
+            i+=3;
+          }
+          if (i+1==in.size()) {
+            uint32_t n = ((uint8_t)in[i]<<16);
+            out.push_back(tbl[(n>>18)&63]); out.push_back(tbl[(n>>12)&63]); out.push_back('='); out.push_back('=');
+          } else if (i+2==in.size()) {
+            uint32_t n = ((uint8_t)in[i]<<16)|((uint8_t)in[i+1]<<8);
+            out.push_back(tbl[(n>>18)&63]); out.push_back(tbl[(n>>12)&63]); out.push_back(tbl[(n>>6)&63]); out.push_back('=');
+          }
+          return out;
+        };
+        id(auth_b64) = b64(creds);
+    # If ACC is off at boot: single temp ping then sleep
+    - if:
+        condition:
+          binary_sensor.is_off: acc_present
+        then:
+          - script.execute: temp_ping_once
+          - delay: 2s
+          - deep_sleep.enter: ds1
+
+interval:
+  # 2s driving log when ACC on
+  - interval: 2s
+    then:
+      - if:
+          condition:
+            binary_sensor.is_on: acc_present
+          then:
+            - lambda: |-
+                auto t = id(gps_time).now();
+                char ts[32];
+                if (t.is_valid()) {
+                  snprintf(ts, sizeof(ts), "%04d-%02d-%02dT%02d:%02d:%02dZ",
+                           t.year, t.month, t.day_of_month, t.hour, t.minute, t.second);
+                } else {
+                  snprintf(ts, sizeof(ts), "no_time");
+                }
+                char line[240];
+                snprintf(line, sizeof(line),
+                  "%s,%.6f,%.6f,%.1f,%.1f,%.2f,%.0f,%.0f,%.1f,%.1f\n",
+                  ts,
+                  (double) id(gps_lat).state,
+                  (double) id(gps_lon).state,
+                  (double) id(gps_alt).state,
+                  (double) id(speed_kmh).state,
+                  (double) id(gps_hdop).state,
+                  (double) id(gps_sat).state,
+                  (double) id(gps_course).state,
+                  (double) id(car_temp_c).state,
+                  (double) id(car_hum_pct).state
+                );
+                std::string path = std::string("/") + id(logfile).state.c_str();
+                File f = id(sd).open(path.c_str(), "a");
+                if (f) { f.print(line); f.close(); }
+
+script:
+  - id: sync_logs
+    mode: queued
+    then:
+      - http_request.post:
+          url: !lambda 'return std::string("${UPLOAD_TARGET}") + std::string(id(logfile).state.c_str());'
+          headers:
+            Authorization: !lambda 'return std::string("Basic ") + id(auth_b64);'
+            Content-Type: text/csv
+          body: !lambda |-
+            std::string path = "/" + std::string(id(logfile).state.c_str());
+            File f2 = id(sd).open(path.c_str(), "r");
+            std::string body2;
+            if (f2) {
+              while (f2.available()) { body2 += f2.readStringUntil('\n').c_str(); body2 += "\n"; }
+              f2.close();
+            }
+            return body2;
+      - lambda: |-
+          std::string path = "/" + std::string(id(logfile).state.c_str());
+          id(sd).remove(path.c_str());
+
+  - id: shutdown_sequence
+    mode: restart
+    then:
+      - delay: 60s
+      - if:
+          condition:
+            binary_sensor.is_off: acc_present
+          then:
+            - script.execute: sync_logs
+            - delay: 3s
+            - deep_sleep.enter: ds1
+
+  - id: temp_ping_once
+    then:
+      - lambda: |-
+          auto t = id(gps_time).now();
+          char ts[32];
+          if (t.is_valid()) {
+            snprintf(ts, sizeof(ts), "%04d-%02d-%02dT%02d:%02d:%02dZ",
+                     t.year, t.month, t.day_of_month, t.hour, t.minute, t.second);
+          } else {
+            snprintf(ts, sizeof(ts), "no_time");
+          }
+          char line[200];
+          snprintf(line, sizeof(line),
+            "%s,%s,%s,%.1f,%.1f,%s,%s,%s,%.1f,%.1f\n",
+            ts, "nan", "nan", 0.0, 0.0, "nan", "nan", "nan",
+            (double) id(car_temp_c).state,
+            (double) id(car_hum_pct).state
+          );
+          std::string path = std::string("/") + id(logfile).state.c_str();
+          File f = id(sd).open(path.c_str(), "a");
+          if (f) { f.print(line); f.close(); }
+
+deep_sleep:
+  id: ds1
+  sleep_duration: 30min

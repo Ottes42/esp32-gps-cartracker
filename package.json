@@ -1,0 +1,41 @@
+{
+  "name": "gps-car-tracker",
+  "version": "1.0.0",
+  "description": "GPS car tracker with fuel consumption tracking",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "lint": "standard",
+    "lint:fix": "standard --fix",
+    "testCsv": "node generateTestCSV.js"  },
+  "dependencies": {
+    "better-sqlite3": "^9.2.2",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "node-fetch": "^3.3.2",
+    "openai": "^4.24.7"
+  },
+  "devDependencies": {
+    "standard": "^17.1.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "gps",
+    "tracking",
+    "car",
+    "fuel",
+    "esphome",
+    "iot"
+  ],
+  "author": "Michael Freund <ottes@ottes-techno.de>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ottes42/gps-car-tracker.git"
+  }
+}

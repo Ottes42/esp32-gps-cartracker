@@ -1,0 +1,29 @@
+networks:
+  gps_net:
+
+services:
+  cartracker:
+    build: . # TODO: Set image?
+    container_name: cartracker
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data/gps:/data
+    networks:
+      - gps_net
+    # no ports: only reachable via reverse proxy on same network
+
+  # don't forget to add "proxy_set_header X-Auth-User $remote_user;", see readme
+  npm: # see http://nginxproxymanager.com/ for documentation
+    image: jc21/nginx-proxy-manager:latest
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "81:81" # NPM admin UI, close or add proxyhost too
+      - "443:443"
+    volumes:
+      - ./data/npm/data:/data
+      - ./data/npm/letsencrypt:/etc/letsencrypt
+    networks:
+      - gps_net
