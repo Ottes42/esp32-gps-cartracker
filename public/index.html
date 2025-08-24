@@ -1,15 +1,13 @@
-
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Cartracker Dashboard</title>
+  <title>GPS Car Tracker</title>
 
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script type="module" src="index.js"></script>
 </head>
 <body>
   <div class="container">
@@ -34,5 +32,9 @@
       </table>
     </div>
   </div>
+
+  <!-- Load API helper first -->
+  <script src="app.js"></script>
+  <script type="module" src="index.js"></script>
 </body>
 </html>

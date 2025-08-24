@@ -79,11 +79,35 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 app.use(express.static('public'))
+
+// Authentication middleware
 app.use((req, res, next) => {
-  const user = req.get('x-auth-user')
-  if (!user) return res.status(401).json({ ok: false, error: 'missing X-Auth-User (proxy must inject authenticated username)' })
-  req.authUser = user
-  return next()
+  let authUser = req.get('x-auth-user')
+  
+  // Only allow development header from localhost/127.0.0.1
+  if (authUser === 'development') {
+    const clientIP = req.ip || req.connection.remoteAddress || req.socket.remoteAddress
+    const isLocalhost = clientIP === '127.0.0.1' || 
+                       clientIP === '::1' || 
+                       clientIP === '::ffff:127.0.0.1' ||
+                       req.hostname === 'localhost' ||
+                       req.hostname === '127.0.0.1'
+    
+    if (!isLocalhost) {
+      console.warn(`Rejected development auth from non-localhost: ${clientIP}`)
+      return res.status(401).json({ error: 'Authentication required' })
+    }
+    
+    console.log(`Development mode: localhost access from ${clientIP}`)
+  }
+  
+  // In production, proxy must inject real username
+  if (!authUser) {
+    return res.status(401).json({ error: 'X-Auth-User header missing - check proxy configuration' })
+  }
+  
+  req.authUser = authUser
+  next()
 })
 
 // Health check endpoint for Docker

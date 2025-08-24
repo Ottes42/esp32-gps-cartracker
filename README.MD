@@ -193,45 +193,24 @@ All API endpoints require HTTP Basic Authentication. The proxy must inject the `
 
 ### Direct API Testing (Development)
 
-For local development on port 8080 without Nginx proxy, use these curl examples:
+For local development on port 8080 **from localhost only**, the API automatically accepts a development header:
 
 ```bash
-# Upload GPS CSV data (simulating ESP32)
-curl -X POST \
-  -H "Content-Type: text/csv" \
-  -H "X-Auth-User: gps-cartracker-dev" \
-  --data-binary @test-gps-data.csv \
-  http://localhost:8080/upload/test-trip-20250118.csv
+# These work ONLY from localhost/127.0.0.1
+curl -H "X-Auth-User: development" http://localhost:8080/api/fuel
+curl -H "X-Auth-User: development" -F "photo=@receipt.jpg" http://localhost:8080/uploadReceipt
+```
 
-# Upload fuel receipt photo
-curl -X POST \
-  -H "X-Auth-User: testuser" \
-  -F "photo=@receipt.jpg" \
-  http://localhost:8080/uploadReceipt
+**Security Note**: The development header is rejected from non-localhost sources. Production deployments require Nginx proxy with HTTP Basic Auth.
 
-# Get fuel records with pagination
-curl -H "X-Auth-User: testuser" \
-  "http://localhost:8080/api/fuel?limit=10&offset=0"
+### Production API Access
 
-# Get monthly fuel statistics
-curl -H "X-Auth-User: testuser" \
-  http://localhost:8080/api/fuel/months
+Production requires proper authentication through the Nginx proxy:
 
-# Get recent trips
-curl -H "X-Auth-User: testuser" \
-  "http://localhost:8080/api/trips?limit=5&offset=0"
-
-# Get specific trip details
-curl -H "X-Auth-User: testuser" \
-  http://localhost:8080/api/trip/2025-01-18T08:00:00.000Z
-
-# Retry failed receipt parsing
-curl -X POST \
-  -H "X-Auth-User: testuser" \
-  http://localhost:8080/retryReceipt/123
-
-# Health check (if implemented)
-curl http://localhost:8080/health
+```bash
+# Via proxy with Basic Auth (production)
+curl -u "gps-device:password" https://gps.yourdomain.com/api/fuel
+curl -u "gps-device:password" -F "photo=@receipt.jpg" https://gps.yourdomain.com/uploadReceipt
 ```
 
 ### GPS CSV Data Format
@@ -558,6 +537,19 @@ For testing, temporarily increase limits:
 # Development: More permissive limits
 limit_req_zone $binary_remote_addr zone=dev_upload:10m rate=120r/m;
 ```
+
+## Security Model
+
+### Development (localhost only)
+- Direct API access with `X-Auth-User: development` header
+- Automatic rejection of development auth from remote sources
+- Visual "DEV MODE" indicator in web interface
+
+### Production (via proxy)
+- HTTP Basic Auth enforced by Nginx Proxy Manager
+- Proxy injects `X-Auth-User` header with authenticated username
+- Rate limiting and file size controls applied
+- SSL/TLS encryption required
 
 ## Contributing
 
