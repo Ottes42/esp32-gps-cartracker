@@ -110,7 +110,11 @@ class API {
       throw new Error(`API Error: ${response.status} ${response.statusText}`)
     }
 
-    return response.json()
+    const contentType = response.headers.get('content-type')
+    if (contentType && contentType.includes('application/json')) {
+      return response.json()
+    }
+    return response.text()
   }
 
   async get (endpoint) {
@@ -127,7 +131,6 @@ class API {
     let body
 
     if (data instanceof FormData) {
-      // Remove Content-Type for FormData - browser sets it with boundary
       delete headers['Content-Type']
       body = data
     } else {
@@ -147,12 +150,17 @@ class API {
 // Global API instance
 window.api = new API()
 
+// Global utility functions
+window.fmtDateTimeLocal = function (isoString) {
+  if (!isoString) return 'Unknown'
+  return new Date(isoString).toLocaleString('de-DE')
+}
+
 // Development mode indicator
 if (window.api.isLocalhost) {
   console.log('🔧 Development mode: X-Auth-User header automatically set to "development"')
   console.log('🚨 Production deployments require Nginx proxy with Basic Auth')
 
-  // Add visual indicator
   document.addEventListener('DOMContentLoaded', () => {
     const devIndicator = document.createElement('div')
     devIndicator.style.cssText = `
