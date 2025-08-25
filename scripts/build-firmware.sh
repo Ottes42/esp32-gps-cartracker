@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Build firmware for multiple boards locally
+# Build firmware for BerryBase NodeMCU-ESP32 board locally
 # Usage: ./scripts/build-firmware.sh [board_id]
 
 set -e

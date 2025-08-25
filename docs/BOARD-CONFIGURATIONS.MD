@@ -71,7 +71,7 @@ Other ESP32 boards have been removed due to:
 - **Pin Conflicts**: Limited GPIO availability causing conflicts between GPS, SD card, and sensors  
 - **Power Problems**: Insufficient or unstable power supplies for GPS modules
 - **Build Complexity**: Complex board-specific configurations that are hard to maintain
-- **Testing Burden**: Impossible to properly test and validate multiple board configurations
+- **Testing Burden**: Difficult to properly test and validate different board configurations
 
 The BerryBase NodeMCU-ESP32 provides the optimal balance of reliability, features, and simplicity for GPS car tracking applications.
 
