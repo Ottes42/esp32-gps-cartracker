@@ -40,11 +40,12 @@ jobs:
             pins: "Generic ESP32 pinout"
           
           # TTGO T-Call - Built-in cellular
-          - board: ttgo-t-call-v1_4
+          - board: esp32dev
             board_name: "LILYGO TTGO T-Call V1.4"
             board_id: "ttgo-t-call-v1_4"
             chip: "ESP32"
             pins: "ESP32 + SIM800L cellular, SPI SD card"
+            variant: "esp32"
           
           # WEMOS D1 Mini - Compact form factor
           - board: wemos_d1_mini32
@@ -80,7 +81,6 @@ jobs:
       - name: Install ESPHome
         run: |
           pip install esphome==2025.8.0
-
       - name: Create board-specific firmware config
         run: |
           # Copy base firmware and update board
@@ -89,16 +89,31 @@ jobs:
           # Update board in the config
           sed -i 's/board: nodemcu-32s/board: ${{ matrix.board }}/' firmware/firmware-${{ matrix.board }}.yaml
           
+          # Add variant if specified for board compatibility
+          if [ -n "${{ matrix.variant }}" ]; then
+            sed -i '/board: ${{ matrix.board }}/a\  variant: ${{ matrix.variant }}' firmware/firmware-${{ matrix.board }}.yaml
+          fi
+          
           # Update device name to include board
           sed -i 's/name: gps-cartracker/name: gps-cartracker-${{ matrix.board }}/' firmware/firmware-${{ matrix.board }}.yaml
+          sed -i 's/friendly_name: GPS Cartracker/friendly_name: GPS Cartracker (${{ matrix.board_name }})/' firmware/firmware-${{ matrix.board }}.yaml
           sed -i 's/friendly_name: GPS Cartracker/friendly_name: GPS Cartracker (${{ matrix.board_name }})/' firmware/firmware-${{ matrix.board }}.yaml
 
       - name: Create secrets file
         run: |
-          cat > firmware/secrets.yaml << EOF
-          wifi_ssid: "CONFIGURE_ME"
-          wifi_password: "CONFIGURE_ME"
+          if [ ! -f "firmware/secrets.yaml" ]; then
+            cat > firmware/secrets.yaml << EOF
+          # Default secrets for CI builds - device will use AP mode for setup
+          wifi_ssid: "gps-cartracker-setup"
+          wifi_password: "setup-setup"
+          server_url: "http://192.168.1.100:3000"
+          server_auth_user: "admin"
+          server_auth_pass: "password"
           EOF
+            echo "✓ Created firmware/secrets.yaml for CI build"
+          else
+            echo "✓ Using existing firmware/secrets.yaml"
+          fi
 
       - name: Compile firmware
         run: |
