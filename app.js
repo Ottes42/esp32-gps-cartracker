@@ -169,10 +169,6 @@ export const createApp = (config = {}) => {
 
   // Authentication middleware (applies to all routes except /health)
   app.use((req, res, next) => {
-    // Skip auth for health check
-    if (req.path === '/health') {
-      return next()
-    }
 
     let authUser = req.get('x-auth-user')
     // Only allow development header from localhost/127.0.0.1
