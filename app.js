@@ -391,12 +391,10 @@ export const createApp = (config = {}) => {
   })
 
   // Export helpers for testing
-  app.helpers = {
-    parseReceipt,
-    geocodeAddress,
-    distanceKm,
-    db
-  }
+  // Helpers are now exported directly for testing purposes.
 
   return app
 }
+
+// Export helpers and db for testing
+export { parseReceipt, geocodeAddress, distanceKm, db }
