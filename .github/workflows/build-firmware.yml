@@ -25,18 +25,40 @@ jobs:
             chip: "ESP32"
             pins: "Standard ESP32 pinout"
           
-          # Future board options
+          # ESP32-C3 - Compact, low power
           - board: esp32-c3-devkitm-1
             board_name: "ESP32-C3 DevKitM-1"
             board_id: "esp32-c3-devkitm-1"
             chip: "ESP32-C3"
-            pins: "Compact C3 pinout"
+            pins: "Compact C3 pinout, SPI SD card"
           
+          # Generic ESP32 - Universal compatibility
           - board: esp32dev
             board_name: "Generic ESP32 Development Board"
             board_id: "esp32dev"
             chip: "ESP32"
             pins: "Generic ESP32 pinout"
+          
+          # TTGO T-Call - Built-in cellular
+          - board: ttgo-t-call-v1_4
+            board_name: "LILYGO TTGO T-Call V1.4"
+            board_id: "ttgo-t-call-v1_4"
+            chip: "ESP32"
+            pins: "ESP32 + SIM800L cellular, SPI SD card"
+          
+          # WEMOS D1 Mini - Compact form factor
+          - board: wemos_d1_mini32
+            board_name: "WEMOS D1 Mini ESP32"
+            board_id: "wemos_d1_mini32"
+            chip: "ESP32"
+            pins: "Arduino D1 Mini compatible, SPI SD card"
+          
+          # ESP32-S3 - High performance
+          - board: esp32-s3-devkitc-1
+            board_name: "ESP32-S3 DevKitC-1"
+            board_id: "esp32-s3-devkitc-1"
+            chip: "ESP32-S3"
+            pins: "High performance S3, AI acceleration"
 
     steps:
       - name: Checkout repository
