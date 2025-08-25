@@ -115,7 +115,7 @@ jobs:
           fi
           
           # Create firmware info JSON for ESPHome Web Flasher
-          cat > firmware-${{ matrix.board }}.json << EOF
+          cat > firmware-${{ matrix.board }}-manifest.json << EOF
           {
             "name": "${{ matrix.board_name }} GPS Car Tracker",
             "version": "${VERSION}",
@@ -205,7 +205,7 @@ jobs:
           name: firmware-${{ matrix.board }}
           path: |
             firmware-${{ matrix.board }}.bin
-            firmware-${{ matrix.board }}.json
+            firmware-${{ matrix.board }}-manifest.json
             release-notes-${{ matrix.board }}.md
 
   create-release:
@@ -259,7 +259,7 @@ jobs:
           body_path: RELEASE_NOTES.md
           files: |
             firmware-*/firmware-*.bin
-            firmware-*/firmware-*.json
+            firmware-*/firmware-*-manifest.json
             firmware-*/release-notes-*.md
           draft: false
           prerelease: false
