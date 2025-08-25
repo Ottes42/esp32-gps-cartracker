@@ -7,26 +7,36 @@ set -e
 
 # Configuration
 ESPHOME_VERSION="2025.8.0"
-BOARDS=("nodemcu-32s" "esp32-c3-devkitm-1" "esp32dev" "ttgo-t-call-v1_4" "wemos_d1_mini32" "esp32-s3-devkitc-1")
+BOARDS=("nodemcu-32s" "esp32c3-dev" "esp32dev" "ttgo-tcall" "wemos-d1" "esp32s3-dev")
 BUILD_DIR="build"
 
 # Board information
 declare -A BOARD_NAMES=(
     ["nodemcu-32s"]="BerryBase NodeMCU-ESP32"
-    ["esp32-c3-devkitm-1"]="ESP32-C3 DevKitM-1"
+    ["esp32c3-dev"]="ESP32-C3 DevKitM-1"
     ["esp32dev"]="Generic ESP32 Development Board"
-    ["ttgo-t-call-v1_4"]="LILYGO TTGO T-Call V1.4"
-    ["wemos_d1_mini32"]="WEMOS D1 Mini ESP32"
-    ["esp32-s3-devkitc-1"]="ESP32-S3 DevKitC-1"
+    ["ttgo-tcall"]="LILYGO TTGO T-Call V1.4"
+    ["wemos-d1"]="WEMOS D1 Mini ESP32"
+    ["esp32s3-dev"]="ESP32-S3 DevKitC-1"
 )
 
 declare -A BOARD_CHIPS=(
     ["nodemcu-32s"]="ESP32"
-    ["esp32-c3-devkitm-1"]="ESP32-C3"
+    ["esp32c3-dev"]="ESP32-C3"
     ["esp32dev"]="ESP32"
-    ["ttgo-t-call-v1_4"]="ESP32"
-    ["wemos_d1_mini32"]="ESP32"
-    ["esp32-s3-devkitc-1"]="ESP32-S3"
+    ["ttgo-tcall"]="ESP32"
+    ["wemos-d1"]="ESP32"
+    ["esp32s3-dev"]="ESP32-S3"
+)
+
+# Mapping from short board names to ESPHome board types
+declare -A BOARD_TYPES=(
+    ["nodemcu-32s"]="nodemcu-32s"
+    ["esp32c3-dev"]="esp32-c3-devkitm-1"
+    ["esp32dev"]="esp32dev"
+    ["ttgo-tcall"]="esp32dev"
+    ["wemos-d1"]="wemos_d1_mini32"
+    ["esp32s3-dev"]="esp32-s3-devkitc-1"
 )
 
 # Functions
@@ -82,7 +92,7 @@ apply_board_pins() {
     local config_file=$2
     
     case $board in
-        "esp32-c3-devkitm-1")
+        "esp32c3-dev")
             # ESP32-C3 specific pins (fewer available, no SDMMC)
             sed -i.bak 's/PIN_UART_RX: "GPIO16"/PIN_UART_RX: "GPIO20"/' "$config_file"
             sed -i.bak 's/PIN_UART_TX: "GPIO17"/PIN_UART_TX: "GPIO21"/' "$config_file"
@@ -121,7 +131,7 @@ sd_card:\
             sed -i.bak 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO23"/' "$config_file"
             sed -i.bak 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO2"/' "$config_file"
             ;;
-        "ttgo-t-call-v1_4")
+        "ttgo-tcall")
             # TTGO T-Call - avoid SIM800L pins (26,27)
             sed -i.bak 's/PIN_UART_RX: "GPIO16"/PIN_UART_RX: "GPIO35"/' "$config_file"
             sed -i.bak 's/PIN_UART_TX: "GPIO17"/PIN_UART_TX: "GPIO32"/' "$config_file"
@@ -147,7 +157,7 @@ sd_card:\
   cs_pin: GPIO5' "$config_file"
             sed -i.bak 's|/sdcard/|/sd/|g' "$config_file"
             ;;
-        "wemos_d1_mini32")
+        "wemos-d1")
             # WEMOS D1 Mini - limited pins
             sed -i.bak 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO5"/' "$config_file"
             sed -i.bak 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO4"/' "$config_file"
@@ -171,7 +181,7 @@ sd_card:\
   cs_pin: GPIO21' "$config_file"
             sed -i.bak 's|/sdcard/|/sd/|g' "$config_file"
             ;;
-        "esp32-s3-devkitc-1")
+        "esp32s3-dev")
             # ESP32-S3 - more pins available
             sed -i.bak 's/PIN_UART_RX: "GPIO16"/PIN_UART_RX: "GPIO17"/' "$config_file"
             sed -i.bak 's/PIN_UART_TX: "GPIO17"/PIN_UART_TX: "GPIO18"/' "$config_file"
@@ -190,15 +200,16 @@ sd_card:\
 validate_board() {
     local board=$1
     local board_name="${BOARD_NAMES[$board]}"
+    local board_type="${BOARD_TYPES[$board]}"
     
-    echo "✅ Validating configuration for: $board_name ($board)"
+    echo "✅ Validating configuration for: $board_name ($board -> $board_type)"
     
     # Create board-specific config
     echo "📝 Creating board-specific configuration..."
     cp firmware/firmware.yaml firmware/firmware-$board.yaml
     
     # Update board in config
-    sed -i.bak "s/board: nodemcu-32s$/board: $board/" firmware/firmware-$board.yaml
+    sed -i.bak "s/board: nodemcu-32s$/board: $board_type/" firmware/firmware-$board.yaml
     sed -i.bak "s/name: gps-cartracker-nmcu$/name: gps-cartracker-$board/" firmware/firmware-$board.yaml
     sed -i.bak "s/friendly_name: GPS Cartracker NMCU$/friendly_name: GPS Cartracker ($board_name)/" firmware/firmware-$board.yaml
     sed -i.bak "s/username: gps-cartracker$/username: gps-cartracker-$board/" firmware/firmware-$board.yaml
@@ -236,16 +247,17 @@ validate_board() {
 build_board() {
     local board=$1
     local board_name="${BOARD_NAMES[$board]}"
+    local board_type="${BOARD_TYPES[$board]}"
     local chip="${BOARD_CHIPS[$board]}"
     
-    echo "🔨 Building firmware for: $board_name ($board)"
+    echo "🔨 Building firmware for: $board_name ($board -> $board_type)"
     
     # Create board-specific config
     echo "📝 Creating board-specific configuration..."
     cp firmware/firmware.yaml firmware/firmware-$board.yaml
     
     # Update board in config
-    sed -i.bak "s/board: nodemcu-32s$/board: $board/" firmware/firmware-$board.yaml
+    sed -i.bak "s/board: nodemcu-32s$/board: $board_type/" firmware/firmware-$board.yaml
     sed -i.bak "s/name: gps-cartracker-nmcu$/name: gps-cartracker-$board/" firmware/firmware-$board.yaml
     sed -i.bak "s/friendly_name: GPS Cartracker NMCU$/friendly_name: GPS Cartracker ($board_name)/" firmware/firmware-$board.yaml
     sed -i.bak "s/username: gps-cartracker$/username: gps-cartracker-$board/" firmware/firmware-$board.yaml
