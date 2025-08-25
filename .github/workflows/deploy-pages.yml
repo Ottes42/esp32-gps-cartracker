@@ -46,29 +46,32 @@ jobs:
               <meta charset="UTF-8">
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
               <title>ESP32 GPS Car Tracker - Documentation & Web Flasher</title>
-              <meta name="description" content="Dual-stack IoT GPS car tracker with ESP32-C3 firmware, Node.js backend, and web dashboard. Flash firmware directly from your browser.">
+              <meta name="description" content="GPS car tracker with ESP32 firmware, Node.js backend, and web dashboard. Flash firmware directly from your browser.">
               <link rel="stylesheet" href="style.css">
               <link rel="icon" type="image/svg+xml" href="favicon.svg">
               <link rel="alternate icon" type="image/png" sizes="32x32" href="favicon-32.png">
               <style>
                   .hero {
-                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
                       color: white;
-                      padding: 4rem 2rem;
+                      padding: 5rem 2rem;
                       text-align: center;
-                      border-radius: 12px;
-                      margin-bottom: 2rem;
+                      border-radius: 16px;
+                      margin-bottom: 3rem;
+                      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
                   }
                   .hero h1 {
-                      font-size: 3rem;
-                      margin-bottom: 1rem;
-                      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                      font-size: 3.5rem;
+                      margin-bottom: 1.5rem;
+                      text-shadow: 0 3px 6px rgba(0,0,0,0.3);
+                      font-weight: 700;
                   }
                   .hero p {
-                      font-size: 1.2rem;
-                      opacity: 0.9;
-                      max-width: 600px;
+                      font-size: 1.3rem;
+                      opacity: 0.95;
+                      max-width: 700px;
                       margin: 0 auto;
+                      font-weight: 300;
                   }
                   .feature-grid {
                       display: grid;
@@ -78,19 +81,31 @@ jobs:
                   }
                   .feature-card {
                       background: white;
-                      border-radius: 12px;
-                      padding: 2rem;
-                      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                      border: 1px solid #e1e5e9;
-                      transition: transform 0.2s ease, box-shadow 0.2s ease;
+                      border-radius: 16px;
+                      padding: 2.5rem;
+                      box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+                      border: 1px solid #f0f0f0;
+                      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                      position: relative;
+                      overflow: hidden;
                   }
                   .feature-card:hover {
-                      transform: translateY(-4px);
-                      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+                      transform: translateY(-8px);
+                      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+                      border-color: #0066cc;
+                  }
+                  .feature-card::before {
+                      content: '';
+                      position: absolute;
+                      top: 0;
+                      left: 0;
+                      right: 0;
+                      height: 4px;
+                      background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
                   }
                   .feature-icon {
-                      font-size: 3rem;
-                      margin-bottom: 1rem;
+                      font-size: 3.5rem;
+                      margin-bottom: 1.5rem;
                   }
                   .cta-section {
                       background: #f8f9fa;
@@ -101,18 +116,21 @@ jobs:
                   }
                   .cta-button {
                       display: inline-block;
-                      background: #0066cc;
+                      background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
                       color: white;
                       padding: 1rem 2rem;
-                      border-radius: 8px;
+                      border-radius: 10px;
                       text-decoration: none;
-                      font-weight: bold;
+                      font-weight: 600;
                       margin: 0.5rem;
-                      transition: background-color 0.2s ease;
+                      transition: all 0.2s ease;
+                      box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
                   }
                   .cta-button:hover {
-                      background: #0052a3;
+                      background: linear-gradient(135deg, #004499 0%, #0066cc 100%);
                       color: white;
+                      transform: translateY(-2px);
+                      box-shadow: 0 6px 20px rgba(0, 102, 204, 0.4);
                   }
                   .docs-grid {
                       display: grid;
@@ -151,7 +169,7 @@ jobs:
                   <div class="nav-links">
                       <a href="index.html" class="nav-active">Home</a>
                       <a href="flasher.html">Web Flasher</a>
-                      <a href="boards.html">Board Comparison</a>
+                      <a href="boards.html">Supported Hardware</a>
                       <a href="https://github.com/Ottes42/esp32-gps-cartracker/releases">Downloads</a>
                       <a href="https://github.com/Ottes42/esp32-gps-cartracker">GitHub</a>
                   </div>
@@ -160,7 +178,7 @@ jobs:
               <div class="container">
                   <div class="hero">
                       <h1>🚗 ESP32 GPS Car Tracker</h1>
-                      <p>Dual-stack IoT GPS car tracker with ESP32-C3 firmware, Node.js backend, and web dashboard.</p>
+                      <p>GPS car tracker with ESP32 firmware, Node.js backend, and web dashboard.</p>
                   </div>
 
                   <div class="feature-grid">
@@ -173,9 +191,9 @@ jobs:
                       
                       <div class="feature-card">
                           <div class="feature-icon">📱</div>
-                          <h3>Multiple Boards</h3>
-                          <p>Support for ESP32, ESP32-C3, ESP32-S3, and more. Pre-built binaries for all major development boards.</p>
-                          <a href="boards.html" class="cta-button">Compare Boards</a>
+                          <h3>Supported Hardware</h3>
+                          <p>Optimized for the BerryBase NodeMCU-ESP32 board with reliable SD card support and proven GPS tracking performance.</p>
+                          <a href="boards.html" class="cta-button">View Hardware</a>
                       </div>
                       
                       <div class="feature-card">

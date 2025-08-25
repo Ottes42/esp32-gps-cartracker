@@ -1,6 +1,6 @@
 # GPS Car Tracker
 
-Dual-stack IoT GPS car tracker with ESP32-C3 firmware, Node.js backend, and web dashboard.
+Dual-stack IoT GPS car tracker with ESP32 firmware, Node.js backend, and web dashboard.
 
 ## 🌐 Quick Links
 
@@ -20,19 +20,17 @@ Dual-stack IoT GPS car tracker with ESP32-C3 firmware, Node.js backend, and web 
 ## Firmware Development
 
 ### Pre-built Binaries (Easy Installation)
-Ready-to-flash firmware binaries are available for multiple ESP32 boards:
+Ready-to-flash firmware binary is available for the BerryBase NodeMCU-ESP32 board:
 
 **🚀 [Download Latest Firmware](https://github.com/Ottes42/esp32-gps-cartracker/releases)**
 
 **📱 Flash via Web Browser:**
 1. Visit [ESPHome Web Flasher](https://web.esphome.io/)
-2. Upload the board-specific `.json` manifest file
-3. Connect ESP32 via USB and click "Install"
+2. Upload the `firmware-nodemcu-32s-manifest.json` file
+3. Connect BerryBase NodeMCU-ESP32 via USB and click "Install"
 
-**Supported Boards:**
-- `nodemcu-32s` - BerryBase NodeMCU-ESP32 (current main board)
-- `esp32-c3-devkitm-1` - ESP32-C3 DevKitM-1 (compact)
-- `esp32dev` - Generic ESP32 (universal)
+**Supported Hardware:**
+- `nodemcu-32s` - BerryBase NodeMCU-ESP32 (only supported board)
 
 📖 **Full Flashing Guide**: [FIRMWARE-FLASHING.MD](docs/FIRMWARE-FLASHING.MD)
 

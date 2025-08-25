@@ -2,27 +2,32 @@
 
 ## Hardware Requirements
 
-### ESP32-C3 Setup
+### BerryBase NodeMCU-ESP32 Setup
 
-- ESP32-C3 DevKit (tested with esp32c3-dev) or any other compatible board, but you have to update the board configuration in the firmware
-- GPS module (UART, 9600 baud)
-- MicroSD card module (SPI)
-- DHT11 temperature/humidity sensor
+- BerryBase NodeMCU-ESP32 board (only supported hardware)
+- GPS module (UART, 9600 baud)  
+- MicroSD card (SDMMC interface)
+- DHT11/DHT22 temperature/humidity sensor
 - Status LED
-- ACC voltage sensor circuit
+- ACC voltage sensor circuit for car ignition detection
 
 ### Pin Configuration
 
 ```yaml
-PIN_UART_RX:   GPIO20  # GPS RX
-PIN_UART_TX:   GPIO21  # GPS TX
-PIN_SD_CS:     GPIO10  # SD Card CS
-PIN_SPI_SCLK:  GPIO6   # SPI Clock
-PIN_SPI_MOSI:  GPIO7   # SPI MOSI
-PIN_SPI_MISO:  GPIO2   # SPI MISO
-PIN_DHT:       GPIO1   # DHT11 Data
-PIN_ACC_SENSE: GPIO4   # ACC Detection
-PIN_LED:       GPIO8   # Status LED
+PIN_UART_RX:   GPIO16  # GPS RX
+PIN_UART_TX:   GPIO17  # GPS TX
+PIN_DHT:       GPIO21  # DHT11/DHT22 Data
+PIN_ACC_SENSE: GPIO18  # ACC Detection (12V->3.3V divider)
+PIN_LED:       GPIO19  # Status LED
+
+# SD card SDMMC interface (optimal for NodeMCU-ESP32)
+sd_mmc_card:
+  clk_pin:   GPIO14  # SD Clock
+  cmd_pin:   GPIO15  # SD Command
+  data0_pin: GPIO2   # SD Data 0
+  data1_pin: GPIO4   # SD Data 1
+  data2_pin: GPIO12  # SD Data 2
+  data3_pin: GPIO13  # SD Data 3
 ```
 
 ## Power Management
