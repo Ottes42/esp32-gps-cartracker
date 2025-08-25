@@ -10,6 +10,9 @@
     "dev:docker": "node --env-file=.env --watch index.js",
     "lint": "standard",
     "lint:fix": "standard --fix",
+    "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest",
+    "test:watch": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --watch",
+    "test:coverage": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --coverage",
     "testCsv": "node scripts/generateTestCSV.js",
     "testFuel": "node scripts/generateFuelData.js",
     "prepare": "command -v husky >/dev/null 2>&1 && husky install || true"
@@ -24,7 +27,37 @@
   },
   "devDependencies": {
     "husky": "^9.1.7",
-    "standard": "^17.1.2"
+    "jest": "^29.7.0",
+    "nock": "^13.5.5",
+    "standard": "^17.1.2",
+    "supertest": "^7.0.0"
+  },
+  "standard": {
+    "env": ["jest"]
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {},
+    "coverageDirectory": "coverage",
+    "collectCoverageFrom": [
+      "index.js",
+      "app.js",
+      "scripts/**/*.js",
+      "!scripts/build-firmware.sh",
+      "!**/node_modules/**"
+    ],
+    "coverageReporters": [
+      "text",
+      "html",
+      "lcov"
+    ],
+    "testMatch": [
+      "**/__tests__/**/*.test.js",
+      "**/?(*.)+(spec|test).js"
+    ],
+    "testPathIgnorePatterns": [
+      "__tests__/helpers.js"
+    ]
   },
   "engines": {
     "node": ">=20.0.0"

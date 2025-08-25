@@ -31,6 +31,9 @@
 ```bash
 npm run dev          # Development server with .env loading
 npm run dev:docker   # Docker-style development
+npm run test         # Run test suite
+npm run test:watch   # Run tests in watch mode 
+npm run test:coverage # Run tests with coverage report
 npm run testCsv      # Generate GPS test data
 npm run testFuel     # Generate fuel test data
 npm run lint         # Check code style
