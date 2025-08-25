@@ -23,6 +23,18 @@
   color: var(--text);
 }
 
+/* Override body background for GitHub Pages - detect based on presence of GitHub Pages specific elements */
+body:has(.hero) {
+  background: #ffffff !important;
+  color: #2c3e50 !important;
+}
+
+/* Fallback for browsers that don't support :has() */
+.main-nav ~ .container {
+  background: #ffffff;
+  color: #2c3e50;
+}
+
 /* Ensure text in GitHub Pages elements is readable */
 .feature-card h3, 
 .feature-card p,
@@ -30,12 +42,23 @@
 .doc-link p,
 .cta-section h2,
 .cta-section p,
+.cta-section ol,
+.cta-section ol li,
 .markdown-content h1,
 .markdown-content h2,
 .markdown-content h3,
 .markdown-content p,
 .markdown-content li {
   color: #2c3e50 !important;
+}
+
+/* Ensure GitHub Pages footer is readable */
+footer {
+  color: #666 !important;
+}
+
+footer a {
+  color: #0066cc !important;
 }
 
 /* Fix navigation for GitHub Pages */
