@@ -1,0 +1,245 @@
+name: Build Firmware Binaries
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+jobs:
+  build-firmware:
+    name: Build Firmware for Multiple Boards
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # BerryBase NodeMCU-ESP32 (current main board)
+          - board: nodemcu-32s
+            board_name: "BerryBase NodeMCU-ESP32"
+            board_id: "nodemcu-32s"
+            chip: "ESP32"
+            pins: "Standard ESP32 pinout"
+          
+          # Future board options
+          - board: esp32-c3-devkitm-1
+            board_name: "ESP32-C3 DevKitM-1"
+            board_id: "esp32-c3-devkitm-1"
+            chip: "ESP32-C3"
+            pins: "Compact C3 pinout"
+          
+          - board: esp32dev
+            board_name: "Generic ESP32 Development Board"
+            board_id: "esp32dev"
+            chip: "ESP32"
+            pins: "Generic ESP32 pinout"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-esphome-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-esphome-
+
+      - name: Install ESPHome
+        run: |
+          pip install esphome==2025.8.0
+
+      - name: Create board-specific firmware config
+        run: |
+          # Copy base firmware and update board
+          cp firmware/firmware.yaml firmware/firmware-${{ matrix.board }}.yaml
+          
+          # Update board in the config
+          sed -i 's/board: nodemcu-32s/board: ${{ matrix.board }}/' firmware/firmware-${{ matrix.board }}.yaml
+          
+          # Update device name to include board
+          sed -i 's/name: gps-cartracker/name: gps-cartracker-${{ matrix.board }}/' firmware/firmware-${{ matrix.board }}.yaml
+          sed -i 's/friendly_name: GPS Cartracker/friendly_name: GPS Cartracker (${{ matrix.board_name }})/' firmware/firmware-${{ matrix.board }}.yaml
+
+      - name: Create secrets file
+        run: |
+          cat > firmware/secrets.yaml << EOF
+          wifi_ssid: "CONFIGURE_ME"
+          wifi_password: "CONFIGURE_ME"
+          EOF
+
+      - name: Compile firmware
+        run: |
+          cd firmware
+          esphome compile firmware-${{ matrix.board }}.yaml
+
+      - name: Create firmware info
+        run: |
+          # Get version from tag or input
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          
+          # Create firmware info JSON for ESPHome Web Flasher
+          cat > firmware-${{ matrix.board }}.json << EOF
+          {
+            "name": "${{ matrix.board_name }} GPS Car Tracker",
+            "version": "${VERSION}",
+            "home_assistant_domain": "esphome",
+            "new_install_prompt_erase": true,
+            "builds": [
+              {
+                "chipFamily": "${{ matrix.chip }}",
+                "parts": [
+                  {
+                    "path": "firmware-${{ matrix.board }}.bin",
+                    "offset": 0
+                  }
+                ]
+              }
+            ]
+          }
+          EOF
+
+      - name: Copy firmware binary
+        run: |
+          # Find the compiled binary and copy it with a standardized name
+          find firmware/.esphome/build/gps-cartracker-${{ matrix.board }}/ -name "*.bin" -exec cp {} firmware-${{ matrix.board }}.bin \;
+
+      - name: Create release notes
+        run: |
+          cat > release-notes-${{ matrix.board }}.md << EOF
+          ## 🚗 GPS Car Tracker Firmware - ${{ matrix.board_name }}
+          
+          **Board**: ${{ matrix.board_name }}  
+          **Chip**: ${{ matrix.chip }}  
+          **Board ID**: \`${{ matrix.board_id }}\`  
+          **Pin Configuration**: ${{ matrix.pins }}
+          
+          ### 📱 Easy Installation
+          
+          **Option 1: ESPHome Web Flasher** *(Recommended)*
+          1. Download \`firmware-${{ matrix.board }}.bin\` and \`firmware-${{ matrix.board }}.json\`
+          2. Visit [ESPHome Web Flasher](https://web.esphome.io/)
+          3. Upload the JSON file to automatically configure the flasher
+          4. Connect your ${{ matrix.board_name }} via USB
+          5. Click "Install" and follow the prompts
+          
+          **Option 2: Manual Flash**
+          \`\`\`bash
+          # Using esptool.py
+          esptool.py --port /dev/ttyUSB0 write_flash 0x0 firmware-${{ matrix.board }}.bin
+          
+          # Using ESPHome CLI
+          esphome upload firmware-${{ matrix.board }}.yaml --device /dev/ttyUSB0
+          \`\`\`
+          
+          ### ⚙️ Initial Configuration
+          
+          1. **First Boot**: Device creates WiFi AP \`gps-cartracker-setup\` (password: \`setup-setup\`)
+          2. **Connect**: Join the AP and navigate to \`http://192.168.4.1\`
+          3. **Configure**: Set your server URL and authentication credentials
+          4. **WiFi**: Update \`secrets.yaml\` and reflash with your WiFi credentials for production use
+          
+          ### 🔧 Hardware Requirements
+          
+          - **GPS Module**: UART connection (9600 baud)
+          - **SD Card**: SPI or SDMMC interface for data logging
+          - **Sensors**: DHT11/DHT22 for temperature/humidity
+          - **Power**: ACC detection for automatic sleep/wake
+          
+          ### 📡 Features
+          
+          - ✅ GPS tracking with SD card buffering
+          - ✅ Automatic CSV upload when WiFi available
+          - ✅ Web interface for configuration
+          - ✅ Deep sleep power management
+          - ✅ Temperature and humidity monitoring
+          - ✅ Real-time GPS time synchronization
+          
+          ### 🐛 Support
+          
+          - 📖 [Full Documentation](https://github.com/Ottes42/esp32-gps-cartracker/tree/main/docs)
+          - 🌐 [Web Interface Guide](https://github.com/Ottes42/esp32-gps-cartracker/blob/main/docs/WEB-INTERFACE.MD)
+          - 🔧 [Hardware Setup](https://github.com/Ottes42/esp32-gps-cartracker/blob/main/docs/HARDWARE.MD)
+          - 🚀 [Issues & Feature Requests](https://github.com/Ottes42/esp32-gps-cartracker/issues)
+          EOF
+
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: firmware-${{ matrix.board }}
+          path: |
+            firmware-${{ matrix.board }}.bin
+            firmware-${{ matrix.board }}.json
+            release-notes-${{ matrix.board }}.md
+
+  create-release:
+    name: Create GitHub Release
+    needs: build-firmware
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all firmware artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Get version
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Create combined release notes
+        run: |
+          echo "# 🚗 GPS Car Tracker Firmware Release ${{ steps.version.outputs.VERSION }}" > RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "Multi-board firmware release for ESP32-based GPS car tracking devices." >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "## 📱 Supported Boards" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          
+          # Add board-specific info
+          for board in nodemcu-32s esp32-c3-devkitm-1 esp32dev; do
+            if [ -f "firmware-${board}/release-notes-${board}.md" ]; then
+              echo "### Board: ${board}" >> RELEASE_NOTES.md
+              tail -n +2 "firmware-${board}/release-notes-${board}.md" >> RELEASE_NOTES.md
+              echo "" >> RELEASE_NOTES.md
+            fi
+          done
+          
+          echo "## 🔄 Changelog" >> RELEASE_NOTES.md
+          echo "" >> RELEASE_NOTES.md
+          echo "- Multi-board firmware support" >> RELEASE_NOTES.md
+          echo "- ESPHome Web Flasher compatibility" >> RELEASE_NOTES.md
+          echo "- GPS time synchronization" >> RELEASE_NOTES.md
+          echo "- Web-based configuration interface" >> RELEASE_NOTES.md
+          echo "- Captive portal setup mode" >> RELEASE_NOTES.md
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          name: GPS Car Tracker Firmware ${{ steps.version.outputs.VERSION }}
+          body_path: RELEASE_NOTES.md
+          files: |
+            firmware-*/firmware-*.bin
+            firmware-*/firmware-*.json
+            firmware-*/release-notes-*.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
