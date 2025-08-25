@@ -14,6 +14,77 @@
   --shadow: rgba(0,0,0,.35);
 }
 
+/* ============= GitHub Pages Light Theme Compatibility ============= */
+/* Override dark theme for GitHub Pages landing page elements */
+.hero, .feature-card, .cta-section, .doc-link, .markdown-content {
+  --text: #2c3e50;
+  --muted: #666;
+  --border: #e1e5e9;
+  color: var(--text);
+}
+
+/* Ensure text in GitHub Pages elements is readable */
+.feature-card h3, 
+.feature-card p,
+.doc-link .doc-title,
+.doc-link p,
+.cta-section h2,
+.cta-section p,
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content p,
+.markdown-content li {
+  color: #2c3e50 !important;
+}
+
+/* Fix navigation for GitHub Pages */
+.main-nav {
+  background: #2a2f36;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #3a3f46;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.main-nav .nav-brand {
+  display: flex;
+  align-items: center;
+  color: #ff8a00;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.main-nav .nav-links {
+  display: flex;
+  gap: 2rem;
+}
+
+.main-nav .nav-links a {
+  color: #e9eef2;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.main-nav .nav-links a:hover,
+.main-nav .nav-links a.nav-active {
+  background: #ff8a00;
+  color: #1a1d21;
+}
+
+.nav-logo {
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+}
+
+.nav-title {
+  font-weight: bold;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -71,6 +142,29 @@ html,body{ height:100%; margin:0; padding:0; background:var(--bg); color:var(--t
   max-width: 1400px;
   margin: 0 auto;
   padding: 1.5rem; /* Reduced padding to give more space */
+}
+
+/* GitHub Pages specific container styling */
+.container .hero,
+.container .feature-grid,
+.container .cta-section,
+.container .docs-grid {
+  background: transparent;
+}
+
+/* Ensure readability for GitHub Pages content */
+body .container {
+  background: transparent;
+}
+
+/* Fix any potential issues with inherited dark styling */
+.container section {
+  color: inherit;
+}
+
+.container section h2,
+.container section h3 {
+  color: inherit;
 }
 
 /* Top section */
