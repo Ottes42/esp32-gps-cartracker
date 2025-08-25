@@ -67,7 +67,31 @@ apply_board_pins() {
             sed -i.bak 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO10"/' "$config_file"
             sed -i.bak 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO9"/' "$config_file"
             sed -i.bak 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO8"/' "$config_file"
-            # TODO: Replace SDMMC with SPI for ESP32-C3
+            
+            # Remove SDMMC external component (not available on ESP32-C3)
+            sed -i.bak '/^external_components:/,/^    components: \[ sd_mmc_card \]$/d' "$config_file"
+            
+            # Remove SDMMC card section
+            sed -i.bak '/^# SD card custom component configuration/,/^  data3_pin: GPIO13$/d' "$config_file"
+            
+            # Add SPI and SD card section after esp32 block
+            sed -i.bak '/^    sdkconfig_options:/a\
+\
+# SPI interface for SD card (ESP32-C3 doesn'\''t have SDMMC)\
+spi:\
+  id: sd_spi\
+  clk_pin: GPIO6\
+  mosi_pin: GPIO7\
+  miso_pin: GPIO2\
+\
+# SD card via SPI\
+sd_card:\
+  id: sd_card\
+  spi_id: sd_spi\
+  cs_pin: GPIO3' "$config_file"
+            
+            # Update SD card file operations to use /sd/ instead of /sdcard/
+            sed -i.bak 's|/sdcard/|/sd/|g' "$config_file"
             ;;
         "esp32dev")
             # Generic ESP32 - different pins to avoid conflicts
@@ -82,14 +106,48 @@ apply_board_pins() {
             sed -i.bak 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO33"/' "$config_file"
             sed -i.bak 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO36"/' "$config_file"
             sed -i.bak 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO13"/' "$config_file"
-            # TODO: Replace SDMMC with SPI for T-Call
+            
+            # Replace SDMMC with SPI for T-Call (SDMMC pins used by SIM800L)
+            sed -i.bak '/^sd_mmc_card:/,/^  data3_pin: GPIO13$/d' "$config_file"
+            sed -i.bak '/^    components: \[ sd_mmc_card \]$/a\
+\
+# SPI interface for SD card (SDMMC pins used by SIM800L)\
+spi:\
+  id: sd_spi\
+  clk_pin: GPIO18\
+  mosi_pin: GPIO23\
+  miso_pin: GPIO19\
+\
+# SD card via SPI\
+sd_card:\
+  id: sd_card\
+  spi_id: sd_spi\
+  cs_pin: GPIO5' "$config_file"
+            sed -i.bak 's|/sdcard/|/sd/|g' "$config_file"
             ;;
         "wemos_d1_mini32")
             # WEMOS D1 Mini - limited pins
             sed -i.bak 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO5"/' "$config_file"
             sed -i.bak 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO4"/' "$config_file"
             sed -i.bak 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO2"/' "$config_file"
-            # TODO: Replace SDMMC with SPI for D1 Mini
+            
+            # Replace SDMMC with SPI for D1 Mini (limited pins)
+            sed -i.bak '/^sd_mmc_card:/,/^  data3_pin: GPIO13$/d' "$config_file"
+            sed -i.bak '/^    components: \[ sd_mmc_card \]$/a\
+\
+# SPI interface for SD card (limited pins on D1 Mini)\
+spi:\
+  id: sd_spi\
+  clk_pin: GPIO18\
+  mosi_pin: GPIO23\
+  miso_pin: GPIO19\
+\
+# SD card via SPI\
+sd_card:\
+  id: sd_card\
+  spi_id: sd_spi\
+  cs_pin: GPIO21' "$config_file"
+            sed -i.bak 's|/sdcard/|/sd/|g' "$config_file"
             ;;
         "esp32-s3-devkitc-1")
             # ESP32-S3 - more pins available

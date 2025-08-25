@@ -220,7 +220,8 @@ docker run --rm -v "${PWD}":/config -v "${PWD}/firmware":/config/esphome \
 ### Configuration Validation
 
 Monitor serial logs for configuration changes:
-```
+
+```bash
 [10:30:15][I][script:025]: Server URL updated to: https://gps.example.com/upload/
 [10:30:20][I][script:031]: Auth credentials updated for user: myuser
 [10:30:25][I][sync_logs:045]: Upload von SD-Karte durchgeführt.
