@@ -7,3 +7,6 @@ npm-debug.log*
 .esphome
 .DS_Store
 Thumbs.db
+
+# Test coverage reports
+coverage/
