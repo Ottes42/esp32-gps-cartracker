@@ -258,6 +258,31 @@
             </div>
         </div>
 
+        <!-- ESP32-C3 DevKitM-1 -->
+        <div class="board-card" id="esp32c3-dev">
+            <div class="board-header">
+                <div class="board-name">ESP32-C3 DevKitM-1</div>
+                <div class="board-chip">ESP32-C3</div>
+            </div>
+            <div class="board-description">
+                Compact and low-power ESP32-C3 based board. Great for battery-powered applications
+                with reduced power consumption.
+            </div>
+            <div class="board-features">
+                <span class="feature-tag">SPI SD Card</span>
+                <span class="feature-tag">Low Power</span>
+                <span class="feature-tag">RISC-V</span>
+                <span class="feature-tag">Compact Size</span>
+            </div>
+            <div class="flash-section">
+                <div class="version-info">Latest firmware build</div>
+                <esp-web-install-button
+                    manifest="https://github.com/Ottes42/esp32-gps-cartracker/releases/latest/download/firmware-esp32c3-dev-manifest.json">
+                    <button slot="activate">Install GPS Tracker</button>
+                </esp-web-install-button>
+            </div>
+        </div>
+
         <!-- Generic ESP32 -->
         <div class="board-card" id="esp32dev">
             <div class="board-header">
@@ -278,6 +303,56 @@
                 <div class="version-info">Latest firmware build</div>
                 <esp-web-install-button
                     manifest="https://github.com/Ottes42/esp32-gps-cartracker/releases/latest/download/firmware-esp32dev-manifest.json">
+                    <button slot="activate">Install GPS Tracker</button>
+                </esp-web-install-button>
+            </div>
+        </div>
+
+        <!-- TTGO T-Call -->
+        <div class="board-card" id="ttgo-tcall">
+            <div class="board-header">
+                <div class="board-name">LILYGO TTGO T-Call V1.4</div>
+                <div class="board-chip">ESP32</div>
+            </div>
+            <div class="board-description">
+                ESP32 board with built-in SIM800L cellular module. Perfect for GPS tracking
+                in areas without WiFi coverage.
+            </div>
+            <div class="board-features">
+                <span class="feature-tag">SPI SD Card</span>
+                <span class="feature-tag">SIM800L Cellular</span>
+                <span class="feature-tag">GSM/GPRS</span>
+                <span class="feature-tag">Remote Areas</span>
+            </div>
+            <div class="flash-section">
+                <div class="version-info">Latest firmware build</div>
+                <esp-web-install-button
+                    manifest="https://github.com/Ottes42/esp32-gps-cartracker/releases/latest/download/firmware-ttgo-tcall-manifest.json">
+                    <button slot="activate">Install GPS Tracker</button>
+                </esp-web-install-button>
+            </div>
+        </div>
+
+        <!-- WEMOS D1 Mini -->
+        <div class="board-card" id="wemos-d1">
+            <div class="board-header">
+                <div class="board-name">WEMOS D1 Mini ESP32</div>
+                <div class="board-chip">ESP32</div>
+            </div>
+            <div class="board-description">
+                Compact ESP32 board in Arduino D1 Mini form factor. Great for space-constrained
+                installations and prototyping.
+            </div>
+            <div class="board-features">
+                <span class="feature-tag">SPI SD Card</span>
+                <span class="feature-tag">Compact Form</span>
+                <span class="feature-tag">Arduino Compatible</span>
+                <span class="feature-tag">Prototyping</span>
+            </div>
+            <div class="flash-section">
+                <div class="version-info">Latest firmware build</div>
+                <esp-web-install-button
+                    manifest="https://github.com/Ottes42/esp32-gps-cartracker/releases/latest/download/firmware-wemos-d1-manifest.json">
                     <button slot="activate">Install GPS Tracker</button>
                 </esp-web-install-button>
             </div>

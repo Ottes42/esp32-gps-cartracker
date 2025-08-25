@@ -35,6 +35,9 @@ jobs:
           mkdir -p _site/docs
           cp -r docs/* _site/docs/
           
+          # Remove the app dashboard files that aren't needed for GitHub Pages
+          rm -f _site/index.html _site/trips.html _site/fuel.html _site/app.js _site/index.js _site/trips.js _site/fuel.js
+          
           # Create proper index.html from README
           cat > _site/index.html << 'EOF'
           <!DOCTYPE html>
@@ -43,7 +46,10 @@ jobs:
               <meta charset="UTF-8">
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
               <title>ESP32 GPS Car Tracker - Documentation & Web Flasher</title>
+              <meta name="description" content="Dual-stack IoT GPS car tracker with ESP32-C3 firmware, Node.js backend, and web dashboard. Flash firmware directly from your browser.">
               <link rel="stylesheet" href="style.css">
+              <link rel="icon" type="image/svg+xml" href="favicon.svg">
+              <link rel="alternate icon" type="image/png" sizes="32x32" href="favicon-32.png">
               <style>
                   .hero {
                       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -145,6 +151,7 @@ jobs:
                   <div class="nav-links">
                       <a href="index.html" class="nav-active">Home</a>
                       <a href="flasher.html">Web Flasher</a>
+                      <a href="boards.html">Board Comparison</a>
                       <a href="https://github.com/Ottes42/esp32-gps-cartracker/releases">Downloads</a>
                       <a href="https://github.com/Ottes42/esp32-gps-cartracker">GitHub</a>
                   </div>
@@ -168,7 +175,7 @@ jobs:
                           <div class="feature-icon">📱</div>
                           <h3>Multiple Boards</h3>
                           <p>Support for ESP32, ESP32-C3, ESP32-S3, and more. Pre-built binaries for all major development boards.</p>
-                          <a href="https://github.com/Ottes42/esp32-gps-cartracker/releases" class="cta-button">Download</a>
+                          <a href="boards.html" class="cta-button">Compare Boards</a>
                       </div>
                       
                       <div class="feature-card">
