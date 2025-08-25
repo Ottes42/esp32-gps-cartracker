@@ -1,0 +1,17 @@
+{
+  "name": "GPS Car Tracker - BerryBase NodeMCU-ESP32",
+  "version": "1.0.0-dev",
+  "home_assistant_domain": "esphome",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        {
+          "path": "firmware-nodemcu-32s.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}

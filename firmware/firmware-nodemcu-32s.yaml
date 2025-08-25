@@ -20,8 +20,8 @@ substitutions:
   BASIC_AUTH_PASS: "CHANGEME_SECRET"
 
 esphome:
-  name: gps-cartracker-nmcu
-  friendly_name: GPS Cartracker NMCU
+  name: gps-cartracker-nodemcu-32s-nmcu
+  friendly_name: GPS Cartracker (BerryBase NodeMCU-ESP32) NMCU
   min_version: 2025.8.0
   on_shutdown:
     then:
@@ -207,7 +207,7 @@ http_request:
 web_server:
   port: 80
   auth:
-    username: gps-cartracker
+    username: gps-cartracker-nodemcu-32s
     password: admin
   include_internal: true
 
