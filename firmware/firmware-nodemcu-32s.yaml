@@ -5,7 +5,8 @@ substitutions:
   #STATIC_IP_1: "192.168.1.25" # TODO
   #STATIC_GW_1: "192.168.1.1"
   #STATIC_MASK_1: "255.255.255.0"
-  
+  #STATIC_DNS_1: "192.168.1.3"
+
   # GPIO Pin Assignments for BerryBase NodeMCU-ESP32 (standard ESP32)
   PIN_UART_RX: "GPIO16"
   PIN_UART_TX: "GPIO17" 
@@ -145,6 +146,7 @@ wifi:
 #        static_ip: ${STATIC_IP_1}
 #        gateway: ${STATIC_GW_1}
 #        subnet: ${STATIC_MASK_1}
+#        dns: ${STATIC_DNS_1}
 
   ap:
     ssid: "gps-cartracker-setup"
