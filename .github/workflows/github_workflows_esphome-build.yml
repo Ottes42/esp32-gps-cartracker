@@ -52,11 +52,26 @@ jobs:
     
     - name: Rename firmware files
       run: |
-        find . -name "*.bin" -type f | while read file; do
-          dir=$(dirname "$file")
-          basename=$(basename "$file" .bin)
-          mv "$file" "$dir/${basename}-${{ steps.version.outputs.version }}.bin"
-        done
+        # Only rename the actual firmware binary, not test files or dependencies
+        firmware_bin=$(find firmware/.esphome/build/ -name "*.bin" -path "*/firmware.ino.bin" | head -1)
+        if [ -f "$firmware_bin" ]; then
+          firmware_dir=$(dirname "$firmware_bin")
+          mv "$firmware_bin" "$firmware_dir/firmware-${{ steps.version.outputs.version }}.bin"
+          echo "Renamed firmware binary to: firmware-${{ steps.version.outputs.version }}.bin"
+        else
+          echo "Warning: No firmware.ino.bin found, looking for main firmware binary..."
+          # Fallback: look for any .bin in the main build directory, exclude test/managed_components
+          firmware_bin=$(find firmware/.esphome/build/ -name "*.bin" -not -path "*/test*" -not -path "*/managed_components*" -not -path "*/.piolibdeps*" | head -1)
+          if [ -f "$firmware_bin" ]; then
+            firmware_dir=$(dirname "$firmware_bin")
+            basename=$(basename "$firmware_bin" .bin)
+            mv "$firmware_bin" "$firmware_dir/${basename}-${{ steps.version.outputs.version }}.bin"
+            echo "Renamed firmware binary: ${basename}-${{ steps.version.outputs.version }}.bin"
+          else
+            echo "Error: No firmware binary found!"
+            exit 1
+          fi
+        fi
         
     - name: Upload firmware artifacts
       uses: actions/upload-artifact@v4

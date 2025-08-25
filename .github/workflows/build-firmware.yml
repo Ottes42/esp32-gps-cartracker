@@ -26,9 +26,10 @@ jobs:
             pins: "Standard ESP32 pinout"
           
           # ESP32-C3 - Compact, low power
-          - board: esp32-c3-devkitm-1
+          - board: esp32c3-dev
             board_name: "ESP32-C3 DevKitM-1"
-            board_id: "esp32-c3-devkitm-1"
+            board_id: "esp32c3-dev"
+            esphome_board: "esp32-c3-devkitm-1"
             chip: "ESP32-C3"
             pins: "Compact C3 pinout, SPI SD card"
           
@@ -40,24 +41,27 @@ jobs:
             pins: "Generic ESP32 pinout"
           
           # TTGO T-Call - Built-in cellular
-          - board: esp32dev
+          - board: ttgo-tcall
             board_name: "LILYGO TTGO T-Call V1.4"
-            board_id: "ttgo-t-call-v1_4"
+            board_id: "ttgo-tcall"
+            esphome_board: "esp32dev"
             chip: "ESP32"
             pins: "ESP32 + SIM800L cellular, SPI SD card"
             variant: "esp32"
           
           # WEMOS D1 Mini - Compact form factor
-          - board: wemos_d1_mini32
+          - board: wemos-d1
             board_name: "WEMOS D1 Mini ESP32"
-            board_id: "wemos_d1_mini32"
+            board_id: "wemos-d1"
+            esphome_board: "wemos_d1_mini32"
             chip: "ESP32"
             pins: "Arduino D1 Mini compatible, SPI SD card"
           
           # ESP32-S3 - High performance
-          - board: esp32-s3-devkitc-1
+          - board: esp32s3-dev
             board_name: "ESP32-S3 DevKitC-1"
-            board_id: "esp32-s3-devkitc-1"
+            board_id: "esp32s3-dev"
+            esphome_board: "esp32-s3-devkitc-1"
             chip: "ESP32-S3"
             pins: "High performance S3, AI acceleration"
 
@@ -86,17 +90,20 @@ jobs:
           # Copy base firmware and update board
           cp firmware/firmware.yaml firmware/firmware-${{ matrix.board }}.yaml
           
+          # Determine the ESPHome board type (use esphome_board if specified, otherwise use board)
+          esphome_board="${{ matrix.esphome_board || matrix.board }}"
+          
           # Update board in the config
-          sed -i 's/board: nodemcu-32s/board: ${{ matrix.board }}/' firmware/firmware-${{ matrix.board }}.yaml
+          sed -i "s/board: nodemcu-32s/board: $esphome_board/" firmware/firmware-${{ matrix.board }}.yaml
           
           # Add variant if specified for board compatibility
           if [ -n "${{ matrix.variant }}" ]; then
-            sed -i '/board: ${{ matrix.board }}/a\  variant: ${{ matrix.variant }}' firmware/firmware-${{ matrix.board }}.yaml
+            sed -i "/board: $esphome_board/a\  variant: ${{ matrix.variant }}" firmware/firmware-${{ matrix.board }}.yaml
           fi
           
           # Update device name to include board
-          sed -i 's/name: gps-cartracker/name: gps-cartracker-${{ matrix.board }}/' firmware/firmware-${{ matrix.board }}.yaml
-          sed -i 's/friendly_name: GPS Cartracker/friendly_name: GPS Cartracker (${{ matrix.board_name }})/' firmware/firmware-${{ matrix.board }}.yaml
+          sed -i 's/name: gps-cartracker-nmcu/name: gps-cartracker-${{ matrix.board }}/' firmware/firmware-${{ matrix.board }}.yaml
+          sed -i 's/friendly_name: GPS Cartracker NMCU/friendly_name: GPS Cartracker (${{ matrix.board_name }})/' firmware/firmware-${{ matrix.board }}.yaml
       - name: Create secrets file
         run: |
           if [ ! -f "firmware/secrets.yaml" ]; then
@@ -248,7 +255,7 @@ jobs:
           echo "" >> RELEASE_NOTES.md
           
           # Add board-specific info
-          for board in nodemcu-32s esp32-c3-devkitm-1 esp32dev; do
+          for board in nodemcu-32s esp32c3-dev esp32dev ttgo-tcall wemos-d1 esp32s3-dev; do
             if [ -f "firmware-${board}/release-notes-${board}.md" ]; then
               echo "### Board: ${board}" >> RELEASE_NOTES.md
               tail -n +2 "firmware-${board}/release-notes-${board}.md" >> RELEASE_NOTES.md
