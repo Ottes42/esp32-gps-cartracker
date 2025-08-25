@@ -8,8 +8,5 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-# ESPHome secrets (contains real WiFi credentials)
-firmware/secrets.yaml
-
 # Test coverage reports
 coverage/
