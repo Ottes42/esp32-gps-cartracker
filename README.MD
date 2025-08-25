@@ -2,6 +2,12 @@
 
 Dual-stack IoT GPS car tracker with ESP32-C3 firmware, Node.js backend, and web dashboard.
 
+## 🌐 Quick Links
+
+- **📖 [Complete Documentation & Web Flasher](https://ottes42.github.io/esp32-gps-cartracker/)** - GitHub Pages site with all documentation and browser-based firmware flashing
+- **🚀 [Download Latest Firmware](https://github.com/Ottes42/esp32-gps-cartracker/releases)** - Pre-built binaries for all supported boards
+- **💬 [GitHub Issues](https://github.com/Ottes42/esp32-gps-cartracker/issues)** - Report bugs or request features
+
 ## Architecture
 
 **Tech Stack**: ESPHome (firmware) → Express.js + SQLite (backend) → Vanilla HTML/JS (frontend) → Docker + Nginx Proxy Manager (deployment)
