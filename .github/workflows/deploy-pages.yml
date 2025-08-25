@@ -1,0 +1,384 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Create site structure
+        run: |
+          mkdir -p _site
+          
+          # Copy public assets (CSS, JS, images, flasher)
+          cp -r public/* _site/
+          
+          # Copy documentation as markdown files that will be converted
+          mkdir -p _site/docs
+          cp -r docs/* _site/docs/
+          
+          # Create proper index.html from README
+          cat > _site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>ESP32 GPS Car Tracker - Documentation & Web Flasher</title>
+              <link rel="stylesheet" href="style.css">
+              <style>
+                  .hero {
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      color: white;
+                      padding: 4rem 2rem;
+                      text-align: center;
+                      border-radius: 12px;
+                      margin-bottom: 2rem;
+                  }
+                  .hero h1 {
+                      font-size: 3rem;
+                      margin-bottom: 1rem;
+                      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                  }
+                  .hero p {
+                      font-size: 1.2rem;
+                      opacity: 0.9;
+                      max-width: 600px;
+                      margin: 0 auto;
+                  }
+                  .feature-grid {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                      gap: 2rem;
+                      margin: 2rem 0;
+                  }
+                  .feature-card {
+                      background: white;
+                      border-radius: 12px;
+                      padding: 2rem;
+                      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                      border: 1px solid #e1e5e9;
+                      transition: transform 0.2s ease, box-shadow 0.2s ease;
+                  }
+                  .feature-card:hover {
+                      transform: translateY(-4px);
+                      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+                  }
+                  .feature-icon {
+                      font-size: 3rem;
+                      margin-bottom: 1rem;
+                  }
+                  .cta-section {
+                      background: #f8f9fa;
+                      padding: 3rem 2rem;
+                      border-radius: 12px;
+                      text-align: center;
+                      margin: 3rem 0;
+                  }
+                  .cta-button {
+                      display: inline-block;
+                      background: #0066cc;
+                      color: white;
+                      padding: 1rem 2rem;
+                      border-radius: 8px;
+                      text-decoration: none;
+                      font-weight: bold;
+                      margin: 0.5rem;
+                      transition: background-color 0.2s ease;
+                  }
+                  .cta-button:hover {
+                      background: #0052a3;
+                      color: white;
+                  }
+                  .docs-grid {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                      gap: 1rem;
+                      margin: 2rem 0;
+                  }
+                  .doc-link {
+                      display: block;
+                      background: white;
+                      border: 1px solid #e1e5e9;
+                      border-radius: 8px;
+                      padding: 1.5rem;
+                      text-decoration: none;
+                      color: inherit;
+                      transition: all 0.2s ease;
+                  }
+                  .doc-link:hover {
+                      border-color: #0066cc;
+                      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                      transform: translateY(-2px);
+                  }
+                  .doc-title {
+                      font-weight: bold;
+                      color: #0066cc;
+                      margin-bottom: 0.5rem;
+                  }
+              </style>
+          </head>
+          <body>
+              <nav class="main-nav">
+                  <div class="nav-brand">
+                      <img src="favicon-32.png" alt="GPS Tracker" class="nav-logo">
+                      <span class="nav-title">GPS Car Tracker</span>
+                  </div>
+                  <div class="nav-links">
+                      <a href="index.html" class="nav-active">Home</a>
+                      <a href="flasher.html">Web Flasher</a>
+                      <a href="https://github.com/Ottes42/esp32-gps-cartracker/releases">Downloads</a>
+                      <a href="https://github.com/Ottes42/esp32-gps-cartracker">GitHub</a>
+                  </div>
+              </nav>
+
+              <div class="container">
+                  <div class="hero">
+                      <h1>🚗 ESP32 GPS Car Tracker</h1>
+                      <p>Dual-stack IoT GPS car tracker with ESP32-C3 firmware, Node.js backend, and web dashboard.</p>
+                  </div>
+
+                  <div class="feature-grid">
+                      <div class="feature-card">
+                          <div class="feature-icon">🌐</div>
+                          <h3>Web Flasher</h3>
+                          <p>Flash firmware directly from your browser using the ESPHome Web Flasher. No software installation required!</p>
+                          <a href="flasher.html" class="cta-button">Flash Firmware</a>
+                      </div>
+                      
+                      <div class="feature-card">
+                          <div class="feature-icon">📱</div>
+                          <h3>Multiple Boards</h3>
+                          <p>Support for ESP32, ESP32-C3, ESP32-S3, and more. Pre-built binaries for all major development boards.</p>
+                          <a href="https://github.com/Ottes42/esp32-gps-cartracker/releases" class="cta-button">Download</a>
+                      </div>
+                      
+                      <div class="feature-card">
+                          <div class="feature-icon">📖</div>
+                          <h3>Complete Documentation</h3>
+                          <p>Comprehensive guides for hardware setup, firmware flashing, deployment, and troubleshooting.</p>
+                          <a href="#documentation" class="cta-button">Read Docs</a>
+                      </div>
+                  </div>
+
+                  <section class="cta-section">
+                      <h2>🚀 Quick Start</h2>
+                      <p>Get your GPS car tracker up and running in minutes:</p>
+                      <a href="flasher.html" class="cta-button">1. Flash Firmware</a>
+                      <a href="docs/HARDWARE.MD" class="cta-button">2. Hardware Setup</a>
+                      <a href="docs/DEPLOYMENT.MD" class="cta-button">3. Deploy Backend</a>
+                  </section>
+
+                  <section id="documentation">
+                      <h2>📚 Documentation</h2>
+                      <div class="docs-grid">
+                          <a href="docs/FIRMWARE-FLASHING.MD" class="doc-link">
+                              <div class="doc-title">🔧 Firmware Flashing</div>
+                              <p>Complete guide to flashing ESP32 firmware using web flasher or CLI tools.</p>
+                          </a>
+                          
+                          <a href="docs/HARDWARE.MD" class="doc-link">
+                              <div class="doc-title">⚡ Hardware Setup</div>
+                              <p>Wiring diagrams and hardware configuration for GPS modules and sensors.</p>
+                          </a>
+                          
+                          <a href="docs/DEPLOYMENT.MD" class="doc-link">
+                              <div class="doc-title">🐳 Deployment Guide</div>
+                              <p>Deploy the backend server using Docker Compose with production configuration.</p>
+                          </a>
+                          
+                          <a href="docs/WEB-INTERFACE.MD" class="doc-link">
+                              <div class="doc-title">🌐 Web Interface</div>
+                              <p>Configure your ESP32 device through the built-in web interface.</p>
+                          </a>
+                          
+                          <a href="docs/SECURITY.MD" class="doc-link">
+                              <div class="doc-title">🔒 Security Guide</div>
+                              <p>Production security configuration with authentication and rate limiting.</p>
+                          </a>
+                          
+                          <a href="docs/API.MD" class="doc-link">
+                              <div class="doc-title">🔌 API Documentation</div>
+                              <p>REST API endpoints for GPS data upload and fuel tracking integration.</p>
+                          </a>
+                          
+                          <a href="docs/DEVELOPMENT.MD" class="doc-link">
+                              <div class="doc-title">👨‍💻 Development Guide</div>
+                              <p>Set up your development environment and contribute to the project.</p>
+                          </a>
+                          
+                          <a href="docs/NGINX.MD" class="doc-link">
+                              <div class="doc-title">🔄 Nginx Configuration</div>
+                              <p>Reverse proxy setup for production deployment with SSL termination.</p>
+                          </a>
+                      </div>
+                  </section>
+
+                  <section class="cta-section">
+                      <h2>🛠️ Technical Architecture</h2>
+                      <p><strong>Tech Stack:</strong> ESPHome (firmware) → Express.js + SQLite (backend) → Vanilla HTML/JS (frontend) → Docker + Nginx Proxy Manager (deployment)</p>
+                      
+                      <h3>Data Flow</h3>
+                      <ol style="text-align: left; max-width: 600px; margin: 1rem auto;">
+                          <li><strong>ESP32</strong> → Logs GPS to SD card → Uploads CSV via <code>/upload/:filename</code> when WiFi available</li>
+                          <li><strong>User</strong> → Uploads receipt photo via <code>/uploadReceipt</code> → Gemini OCR → Geocoded → Stored</li>
+                          <li><strong>Dashboard</strong> → Queries <code>/api/fuel</code> and <code>/api/trips</code> → Displays maps and statistics</li>
+                      </ol>
+                  </section>
+
+                  <footer style="text-align: center; margin-top: 3rem; padding: 2rem; border-top: 1px solid #e1e5e9; color: #666;">
+                      <p>&copy; 2025 ESP32 GPS Car Tracker | <a href="https://github.com/Ottes42/esp32-gps-cartracker">GitHub Repository</a> | <a href="https://github.com/Ottes42/esp32-gps-cartracker/issues">Report Issues</a></p>
+                  </footer>
+              </div>
+          </body>
+          </html>
+          EOF
+
+      - name: Create markdown documentation pages
+        run: |
+          # Create a simple script to convert markdown to HTML for GitHub Pages
+          cd _site
+          
+          # Process each markdown file in docs
+          for md_file in docs/*.MD; do
+            if [ -f "$md_file" ]; then
+              basename_file=$(basename "$md_file" .MD)
+              html_file="docs/${basename_file}.html"
+              
+              # Create HTML wrapper for markdown content
+              cat > "$html_file" << EOF
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>$basename_file - ESP32 GPS Car Tracker</title>
+              <link rel="stylesheet" href="../style.css">
+              <style>
+                  .markdown-content {
+                      max-width: 900px;
+                      margin: 0 auto;
+                      padding: 2rem;
+                      line-height: 1.6;
+                  }
+                  .markdown-content h1, .markdown-content h2 {
+                      color: #0066cc;
+                      border-bottom: 2px solid #e1e5e9;
+                      padding-bottom: 0.5rem;
+                  }
+                  .markdown-content pre {
+                      background: #f8f9fa;
+                      padding: 1rem;
+                      border-radius: 8px;
+                      overflow-x: auto;
+                      border: 1px solid #e1e5e9;
+                  }
+                  .markdown-content code {
+                      background: #f8f9fa;
+                      padding: 0.2rem 0.4rem;
+                      border-radius: 4px;
+                      font-family: 'Courier New', monospace;
+                  }
+                  .markdown-content blockquote {
+                      border-left: 4px solid #0066cc;
+                      margin: 1rem 0;
+                      padding-left: 1rem;
+                      color: #666;
+                  }
+                  .back-nav {
+                      background: #f8f9fa;
+                      padding: 1rem;
+                      margin-bottom: 2rem;
+                      border-radius: 8px;
+                      text-align: center;
+                  }
+                  .back-nav a {
+                      color: #0066cc;
+                      text-decoration: none;
+                      font-weight: bold;
+                  }
+              </style>
+          </head>
+          <body>
+              <nav class="main-nav">
+                  <div class="nav-brand">
+                      <img src="../favicon-32.png" alt="GPS Tracker" class="nav-logo">
+                      <span class="nav-title">GPS Car Tracker</span>
+                  </div>
+                  <div class="nav-links">
+                      <a href="../index.html">Home</a>
+                      <a href="../flasher.html">Web Flasher</a>
+                      <a href="https://github.com/Ottes42/esp32-gps-cartracker/releases">Downloads</a>
+                      <a href="https://github.com/Ottes42/esp32-gps-cartracker">GitHub</a>
+                  </div>
+              </nav>
+              
+              <div class="markdown-content">
+                  <div class="back-nav">
+                      <a href="../index.html">← Back to Documentation</a>
+                  </div>
+                  <div id="markdown-content"></div>
+              </div>
+              
+              <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+              <script>
+                  // Fetch and render markdown content
+                  fetch('${basename_file}.MD')
+                      .then(response => response.text())
+                      .then(markdown => {
+                          document.getElementById('markdown-content').innerHTML = marked.parse(markdown);
+                          
+                          // Fix relative links to work with GitHub Pages structure
+                          const links = document.querySelectorAll('a[href$=".MD"], a[href$=".md"]');
+                          links.forEach(link => {
+                              const href = link.getAttribute('href');
+                              if (href && !href.startsWith('http') && !href.startsWith('#')) {
+                                  const newHref = href.replace(/\.MD?$/i, '.html');
+                                  link.setAttribute('href', newHref);
+                              }
+                          });
+                      })
+                      .catch(error => {
+                          console.error('Error loading markdown:', error);
+                          document.getElementById('markdown-content').innerHTML = '<p>Error loading documentation. Please visit the <a href="https://github.com/Ottes42/esp32-gps-cartracker/tree/main/docs">GitHub repository</a> for the latest documentation.</p>';
+                      });
+              </script>
+          </body>
+          </html>
+          EOF
+            fi
+          done
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
