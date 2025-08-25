@@ -4,7 +4,7 @@
 
 ### ESP32-C3 Setup
 
-- ESP32-C3 DevKit (tested with esp32-c3-devkitm-1) or any other compatible board, but you have to update the board configuration in the firmware
+- ESP32-C3 DevKit (tested with esp32c3-dev) or any other compatible board, but you have to update the board configuration in the firmware
 - GPS module (UART, 9600 baud)
 - MicroSD card module (SPI)
 - DHT11 temperature/humidity sensor
