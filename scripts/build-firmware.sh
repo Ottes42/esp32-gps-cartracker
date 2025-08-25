@@ -7,7 +7,7 @@ set -e
 
 # Configuration
 ESPHOME_VERSION="2025.8.0"
-BOARDS=("nodemcu-32s" "esp32-c3-devkitm-1" "esp32dev")
+BOARDS=("nodemcu-32s" "esp32-c3-devkitm-1" "esp32dev" "ttgo-t-call-v1_4" "wemos_d1_mini32" "esp32-s3-devkitc-1")
 BUILD_DIR="build"
 
 # Board information
@@ -15,17 +15,23 @@ declare -A BOARD_NAMES=(
     ["nodemcu-32s"]="BerryBase NodeMCU-ESP32"
     ["esp32-c3-devkitm-1"]="ESP32-C3 DevKitM-1"
     ["esp32dev"]="Generic ESP32 Development Board"
+    ["ttgo-t-call-v1_4"]="LILYGO TTGO T-Call V1.4"
+    ["wemos_d1_mini32"]="WEMOS D1 Mini ESP32"
+    ["esp32-s3-devkitc-1"]="ESP32-S3 DevKitC-1"
 )
 
 declare -A BOARD_CHIPS=(
     ["nodemcu-32s"]="ESP32"
     ["esp32-c3-devkitm-1"]="ESP32-C3"
     ["esp32dev"]="ESP32"
+    ["ttgo-t-call-v1_4"]="ESP32"
+    ["wemos_d1_mini32"]="ESP32"
+    ["esp32-s3-devkitc-1"]="ESP32-S3"
 )
 
 # Functions
 print_usage() {
-    echo "Usage: $0 [board_id|all]"
+    echo "Usage: $0 [board_id|all|validate]"
     echo ""
     echo "Available boards:"
     for board in "${BOARDS[@]}"; do
@@ -35,6 +41,7 @@ print_usage() {
     echo "Examples:"
     echo "  $0 nodemcu-32s    # Build for specific board"
     echo "  $0 all            # Build for all boards"
+    echo "  $0 validate       # Just validate configs without compiling"
     echo "  $0                # Interactive selection"
 }
 
@@ -45,6 +52,104 @@ create_secrets() {
 wifi_ssid: "CONFIGURE_ME"
 wifi_password: "CONFIGURE_ME"
 EOF
+    fi
+}
+
+apply_board_pins() {
+    local board=$1
+    local config_file=$2
+    
+    case $board in
+        "esp32-c3-devkitm-1")
+            # ESP32-C3 specific pins (fewer available, no SDMMC)
+            sed -i.bak 's/PIN_UART_RX: "GPIO16"/PIN_UART_RX: "GPIO20"/' "$config_file"
+            sed -i.bak 's/PIN_UART_TX: "GPIO17"/PIN_UART_TX: "GPIO21"/' "$config_file"
+            sed -i.bak 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO10"/' "$config_file"
+            sed -i.bak 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO9"/' "$config_file"
+            sed -i.bak 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO8"/' "$config_file"
+            # TODO: Replace SDMMC with SPI for ESP32-C3
+            ;;
+        "esp32dev")
+            # Generic ESP32 - different pins to avoid conflicts
+            sed -i.bak 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO22"/' "$config_file"
+            sed -i.bak 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO23"/' "$config_file"
+            sed -i.bak 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO2"/' "$config_file"
+            ;;
+        "ttgo-t-call-v1_4")
+            # TTGO T-Call - avoid SIM800L pins (26,27)
+            sed -i.bak 's/PIN_UART_RX: "GPIO16"/PIN_UART_RX: "GPIO35"/' "$config_file"
+            sed -i.bak 's/PIN_UART_TX: "GPIO17"/PIN_UART_TX: "GPIO32"/' "$config_file"
+            sed -i.bak 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO33"/' "$config_file"
+            sed -i.bak 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO36"/' "$config_file"
+            sed -i.bak 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO13"/' "$config_file"
+            # TODO: Replace SDMMC with SPI for T-Call
+            ;;
+        "wemos_d1_mini32")
+            # WEMOS D1 Mini - limited pins
+            sed -i.bak 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO5"/' "$config_file"
+            sed -i.bak 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO4"/' "$config_file"
+            sed -i.bak 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO2"/' "$config_file"
+            # TODO: Replace SDMMC with SPI for D1 Mini
+            ;;
+        "esp32-s3-devkitc-1")
+            # ESP32-S3 - more pins available
+            sed -i.bak 's/PIN_UART_RX: "GPIO16"/PIN_UART_RX: "GPIO17"/' "$config_file"
+            sed -i.bak 's/PIN_UART_TX: "GPIO17"/PIN_UART_TX: "GPIO18"/' "$config_file"
+            sed -i.bak 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO47"/' "$config_file"
+            sed -i.bak 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO48"/' "$config_file"
+            ;;
+        "nodemcu-32s")
+            # Default configuration - no changes needed
+            ;;
+    esac
+    
+    # Clean up backup files
+    rm -f "$config_file".bak
+}
+
+validate_board() {
+    local board=$1
+    local board_name="${BOARD_NAMES[$board]}"
+    
+    echo "✅ Validating configuration for: $board_name ($board)"
+    
+    # Create board-specific config
+    echo "📝 Creating board-specific configuration..."
+    cp firmware/firmware.yaml firmware/firmware-$board.yaml
+    
+    # Update board in config
+    sed -i.bak "s/board: nodemcu-32s$/board: $board/" firmware/firmware-$board.yaml
+    sed -i.bak "s/name: gps-cartracker-nmcu$/name: gps-cartracker-$board/" firmware/firmware-$board.yaml
+    sed -i.bak "s/friendly_name: GPS Cartracker NMCU$/friendly_name: GPS Cartracker ($board_name)/" firmware/firmware-$board.yaml
+    sed -i.bak "s/username: gps-cartracker$/username: gps-cartracker-$board/" firmware/firmware-$board.yaml
+    rm firmware/firmware-$board.yaml.bak
+    
+    # Apply board-specific pin configurations
+    echo "🔧 Applying board-specific pin configuration..."
+    apply_board_pins "$board" "firmware/firmware-$board.yaml"
+    
+    # Validate config with ESPHome
+    echo "🔍 Validating YAML syntax..."
+    if docker run --rm \
+        -v "${PWD}:/config" \
+        "esphome/esphome:$ESPHOME_VERSION" \
+        config "firmware/firmware-$board.yaml" > /dev/null 2>&1; then
+        echo "✅ Configuration valid for $board"
+        
+        # Show key changes
+        echo "📋 Configuration summary:"
+        echo "   Device name: $(grep 'name:' firmware/firmware-$board.yaml | head -1 | cut -d':' -f2 | xargs)"
+        echo "   Board type: $(grep 'board:' firmware/firmware-$board.yaml | cut -d':' -f2 | xargs)"
+        echo "   Friendly name: $(grep 'friendly_name:' firmware/firmware-$board.yaml | cut -d':' -f2- | xargs)"
+        
+        # Keep the config file for review
+        echo "   Config saved: firmware/firmware-$board.yaml"
+        echo ""
+        return 0
+    else
+        echo "❌ Configuration validation failed for $board"
+        rm -f firmware/firmware-$board.yaml
+        return 1
     fi
 }
 
@@ -60,24 +165,47 @@ build_board() {
     cp firmware/firmware.yaml firmware/firmware-$board.yaml
     
     # Update board in config
-    sed -i.bak "s/board: nodemcu-32s/board: $board/" firmware/firmware-$board.yaml
-    sed -i.bak "s/name: gps-cartracker/name: gps-cartracker-$board/" firmware/firmware-$board.yaml
-    sed -i.bak "s/friendly_name: GPS Cartracker/friendly_name: GPS Cartracker ($board_name)/" firmware/firmware-$board.yaml
+    sed -i.bak "s/board: nodemcu-32s$/board: $board/" firmware/firmware-$board.yaml
+    sed -i.bak "s/name: gps-cartracker-nmcu$/name: gps-cartracker-$board/" firmware/firmware-$board.yaml
+    sed -i.bak "s/friendly_name: GPS Cartracker NMCU$/friendly_name: GPS Cartracker ($board_name)/" firmware/firmware-$board.yaml
+    sed -i.bak "s/username: gps-cartracker$/username: gps-cartracker-$board/" firmware/firmware-$board.yaml
     rm firmware/firmware-$board.yaml.bak
+    
+    # Apply board-specific pin configurations
+    echo "🔧 Applying board-specific pin configuration..."
+    apply_board_pins "$board" "firmware/firmware-$board.yaml"
     
     # Compile with Docker
     echo "⚙️  Compiling firmware..."
-    docker run --rm \
+    if ! docker run --rm \
         -v "${PWD}:/config" \
         "esphome/esphome:$ESPHOME_VERSION" \
-        compile "firmware/firmware-$board.yaml"
+        compile "firmware/firmware-$board.yaml"; then
+        echo "❌ Compilation failed for $board"
+        rm -f firmware/firmware-$board.yaml
+        return 1
+    fi
     
     # Create build directory
     mkdir -p "$BUILD_DIR"
     
     # Find and copy binary
     echo "📦 Copying firmware binary..."
-    find "firmware/.esphome/build/gps-cartracker-$board/" -name "*.bin" -exec cp {} "$BUILD_DIR/firmware-$board.bin" \;
+    binary_found=false
+    for binary in firmware/.esphome/build/gps-cartracker-$board/*.bin; do
+        if [ -f "$binary" ]; then
+            cp "$binary" "$BUILD_DIR/firmware-$board.bin"
+            binary_found=true
+            echo "   Binary: $(basename "$binary")"
+            break
+        fi
+    done
+    
+    if [ "$binary_found" = false ]; then
+        echo "❌ No binary found for $board"
+        rm -f firmware/firmware-$board.yaml
+        return 1
+    fi
     
     # Create manifest for ESPHome Web Flasher
     echo "📋 Creating Web Flasher manifest..."
@@ -127,11 +255,17 @@ create_secrets
 if [ $# -eq 0 ]; then
     # Interactive mode
     echo "Select board to build:"
-    select board in "${BOARDS[@]}" "all" "quit"; do
+    select board in "${BOARDS[@]}" "all" "validate" "quit"; do
         case $board in
             "all")
                 for b in "${BOARDS[@]}"; do
                     build_board "$b"
+                done
+                break
+                ;;
+            "validate")
+                for b in "${BOARDS[@]}"; do
+                    validate_board "$b"
                 done
                 break
                 ;;
@@ -152,6 +286,11 @@ elif [ "$1" = "all" ]; then
     # Build all boards
     for board in "${BOARDS[@]}"; do
         build_board "$board"
+    done
+elif [ "$1" = "validate" ]; then
+    # Validate all board configs
+    for board in "${BOARDS[@]}"; do
+        validate_board "$board"
     done
 elif [[ " ${BOARDS[@]} " =~ " $1 " ]]; then
     # Build specific board
