@@ -22,7 +22,7 @@ substitutions:
 
 esphome:
   name: gps-cartracker-nodemcu-32s-nmcu
-  friendly_name: GPS Cartracker (BerryBase NodeMCU-ESP32) NMCU
+  friendly_name: GPS Cartracker NMCU
   min_version: 2025.8.0
   on_shutdown:
     then:

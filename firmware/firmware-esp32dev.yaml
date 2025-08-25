@@ -10,10 +10,10 @@ substitutions:
   # GPIO Pin Assignments for BerryBase NodeMCU-ESP32 (standard ESP32)
   PIN_UART_RX: "GPIO16"
   PIN_UART_TX: "GPIO17" 
-  PIN_DHT: "GPIO21"     # Safe pin, away from SD card
+  PIN_DHT: "GPIO22"     # Safe pin, away from SD card
   DHT_MODEL: "DHT11"
-  PIN_ACC_SENSE: "GPIO18" # Safe pin, away from SD card
-  PIN_LED: "GPIO19"     # Safe pin, away from SD card
+  PIN_ACC_SENSE: "GPIO23" # Safe pin, away from SD card
+  PIN_LED: "GPIO2"     # Safe pin, away from SD card
   
   # Upload Configuration
   UPLOAD_TARGET: "https://gps.example.com/upload/"
@@ -21,8 +21,8 @@ substitutions:
   BASIC_AUTH_PASS: "CHANGEME_SECRET"
 
 esphome:
-  name: gps-cartracker-nodemcu-32s-nmcu
-  friendly_name: GPS Cartracker (BerryBase NodeMCU-ESP32) NMCU
+  name: gps-cartracker-esp32dev-nmcu
+  friendly_name: GPS Cartracker (Generic ESP32 Development Board) NMCU
   min_version: 2025.8.0
   on_shutdown:
     then:
@@ -30,7 +30,7 @@ esphome:
 
 esp32:
   # Board updated to BerryBase NodeMCU-ESP32 (standard ESP32, not ESP32-C3)
-  board: nodemcu-32s
+  board: esp32dev
   framework:
     type: esp-idf
     sdkconfig_options:
@@ -209,7 +209,7 @@ http_request:
 web_server:
   port: 80
   auth:
-    username: gps-cartracker-nodemcu-32s
+    username: gps-cartracker-esp32dev
     password: admin
   include_internal: true
 

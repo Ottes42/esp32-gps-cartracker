@@ -230,6 +230,7 @@
         </div>
 
         <h2>🔌 Available Boards</h2>
+        <p><strong>Note:</strong> Only ESP32 boards with SDMMC SD card support are included for reliable GPS data logging.</p>
 
         <!-- BerryBase NodeMCU-ESP32 (Recommended) -->
         <div class="board-card recommended">
@@ -256,31 +257,6 @@
             </div>
         </div>
 
-        <!-- ESP32-C3 DevKitM-1 -->
-        <div class="board-card">
-            <div class="board-header">
-                <div class="board-name">ESP32-C3 DevKitM-1</div>
-                <div class="board-chip">ESP32-C3</div>
-            </div>
-            <div class="board-description">
-                Compact and low-power ESP32-C3 based board. Great for battery-powered applications
-                with reduced power consumption.
-            </div>
-            <div class="board-features">
-                <span class="feature-tag">SPI SD Card</span>
-                <span class="feature-tag">Low Power</span>
-                <span class="feature-tag">RISC-V</span>
-                <span class="feature-tag">Compact Size</span>
-            </div>
-            <div class="flash-section">
-                <div class="version-info">Latest firmware build</div>
-                <esp-web-install-button
-                    manifest="https://github.com/Ottes42/esp32-gps-cartracker/releases/latest/download/firmware-esp32-c3-devkitm-1-manifest.json">
-                    <button slot="activate">Install GPS Tracker</button>
-                </esp-web-install-button>
-            </div>
-        </div>
-
         <!-- Generic ESP32 -->
         <div class="board-card">
             <div class="board-header">
@@ -289,7 +265,7 @@
             </div>
             <div class="board-description">
                 Universal ESP32 board configuration compatible with most ESP32 development boards
-                and breakout modules.
+                and breakout modules with SDMMC support.
             </div>
             <div class="board-features">
                 <span class="feature-tag">SDMMC SD Card</span>
@@ -306,56 +282,6 @@
             </div>
         </div>
 
-        <!-- TTGO T-Call -->
-        <div class="board-card">
-            <div class="board-header">
-                <div class="board-name">LILYGO TTGO T-Call V1.4</div>
-                <div class="board-chip">ESP32</div>
-            </div>
-            <div class="board-description">
-                ESP32 board with built-in SIM800L cellular module. Perfect for GPS tracking
-                in areas without WiFi coverage.
-            </div>
-            <div class="board-features">
-                <span class="feature-tag">SPI SD Card</span>
-                <span class="feature-tag">SIM800L Cellular</span>
-                <span class="feature-tag">GSM/GPRS</span>
-                <span class="feature-tag">Remote Areas</span>
-            </div>
-            <div class="flash-section">
-                <div class="version-info">Latest firmware build</div>
-                <esp-web-install-button
-                    manifest="https://github.com/Ottes42/esp32-gps-cartracker/releases/latest/download/firmware-ttgo-t-call-v1_4-manifest.json">
-                    <button slot="activate">Install GPS Tracker</button>
-                </esp-web-install-button>
-            </div>
-        </div>
-
-        <!-- WEMOS D1 Mini -->
-        <div class="board-card">
-            <div class="board-header">
-                <div class="board-name">WEMOS D1 Mini ESP32</div>
-                <div class="board-chip">ESP32</div>
-            </div>
-            <div class="board-description">
-                Compact ESP32 board in Arduino D1 Mini form factor. Great for space-constrained
-                installations and prototyping.
-            </div>
-            <div class="board-features">
-                <span class="feature-tag">SPI SD Card</span>
-                <span class="feature-tag">Compact Form</span>
-                <span class="feature-tag">Arduino Compatible</span>
-                <span class="feature-tag">Prototyping</span>
-            </div>
-            <div class="flash-section">
-                <div class="version-info">Latest firmware build</div>
-                <esp-web-install-button
-                    manifest="https://github.com/Ottes42/esp32-gps-cartracker/releases/latest/download/firmware-wemos_d1_mini32-manifest.json">
-                    <button slot="activate">Install GPS Tracker</button>
-                </esp-web-install-button>
-            </div>
-        </div>
-
         <!-- ESP32-S3 -->
         <div class="board-card">
             <div class="board-header">
@@ -364,7 +290,7 @@
             </div>
             <div class="board-description">
                 High-performance ESP32-S3 with AI acceleration capabilities. Ideal for advanced
-                GPS tracking with machine learning features.
+                GPS tracking with machine learning features and fast SD card access.
             </div>
             <div class="board-features">
                 <span class="feature-tag">SDMMC SD Card</span>
@@ -375,10 +301,17 @@
             <div class="flash-section">
                 <div class="version-info">Latest firmware build</div>
                 <esp-web-install-button
-                    manifest="https://github.com/Ottes42/esp32-gps-cartracker/releases/latest/download/firmware-esp32-s3-devkitc-1-manifest.json">
+                    manifest="https://github.com/Ottes42/esp32-gps-cartracker/releases/latest/download/firmware-esp32s3-dev-manifest.json">
                     <button slot="activate">Install GPS Tracker</button>
                 </esp-web-install-button>
             </div>
+        </div>
+
+        <div class="warning-box">
+            <strong>📋 Board Compatibility Note:</strong><br>
+            Only ESP32 boards with <strong>SDMMC SD card support</strong> are supported for reliable GPS data logging. 
+            Boards like ESP32-C3, TTGO T-Call, and WEMOS D1 Mini are not included as they either lack SDMMC hardware 
+            or have pin conflicts that prevent reliable SD card operation.
         </div>
 
         <div class="info-box">

@@ -1,6 +1,6 @@
 # GPS Car Tracker
 
-Dual-stack IoT GPS car tracker with ESP32-C3 firmware, Node.js backend, and web dashboard.
+Dual-stack IoT GPS car tracker with ESP32 firmware, Node.js backend, and web dashboard.
 
 ## Architecture
 
@@ -14,19 +14,19 @@ Dual-stack IoT GPS car tracker with ESP32-C3 firmware, Node.js backend, and web 
 ## Firmware Development
 
 ### Pre-built Binaries (Easy Installation)
-Ready-to-flash firmware binaries are available for multiple ESP32 boards:
+Ready-to-flash firmware binaries are available for SDMMC-compatible ESP32 boards:
 
 **🚀 [Download Latest Firmware](https://github.com/Ottes42/esp32-gps-cartracker/releases)**
 
 **📱 Flash via Web Browser:**
-1. Visit [ESPHome Web Flasher](https://web.esphome.io/)
+1. Visit [ESPHome Web Flasher](https://web.esphome.io/) or use our [built-in flasher](public/flasher.html)
 2. Upload the board-specific `.json` manifest file
 3. Connect ESP32 via USB and click "Install"
 
-**Supported Boards:**
-- `nodemcu-32s` - BerryBase NodeMCU-ESP32 (current main board)
-- `esp32-c3-devkitm-1` - ESP32-C3 DevKitM-1 (compact)
-- `esp32dev` - Generic ESP32 (universal)
+**Supported Boards (SDMMC SD Card):**
+- `nodemcu-32s` - BerryBase NodeMCU-ESP32 ✅ **Recommended**
+- `esp32dev` - Generic ESP32 Development Board
+- `esp32s3-dev` - ESP32-S3 DevKitC-1 (High Performance)
 
 📖 **Full Flashing Guide**: [FIRMWARE-FLASHING.MD](docs/FIRMWARE-FLASHING.MD)
 
@@ -46,11 +46,13 @@ docker run --rm -v "${PWD}":/config -v "${PWD}/firmware":/config/esphome --devic
 
 ### Hardware Configuration
 
-- **Board**: ESP32-C3-DevKitM-1
-- **GPS**: UART (GPIO20/21, 9600 baud) with TinyGPSPlus
-- **SD Card**: 4-pin SD-MMC interface (GPIO 6/7/2)
-- **Sensors**: DHT11 temperature/humidity (GPIO1)
-- **Power**: ACC detection (GPIO4) for deep sleep
+- **Board**: ESP32 with SDMMC SD card support (see [supported boards](docs/BOARD-CONFIGURATIONS.MD))
+- **GPS**: UART (board-specific pins, 9600 baud) with TinyGPSPlus
+- **SD Card**: SDMMC interface (GPIO14/15/2/4/12/13) for reliable GPS data logging
+- **Sensors**: DHT11/DHT22 temperature/humidity (board-specific pin)
+- **Power**: ACC detection (board-specific pin) for deep sleep
+
+⚠️ **Important**: Only ESP32 boards with SDMMC SD card support are supported. SPI-only boards are not reliable for continuous GPS logging.
 
 ## Device Configuration
 

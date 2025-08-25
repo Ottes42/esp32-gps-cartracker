@@ -130,22 +130,9 @@ build_board() {
     # Build firmware using ESPHome
     echo "⚙️  Compiling firmware..."
     if esphome compile "firmware/firmware-$board.yaml"; then
-        # Find and copy the compiled binary - try different possible paths
-        possible_paths=(
-            ".esphome/build/gps-cartracker-$board/.pioenvs/gps-cartracker-$board/firmware.bin"
-            ".esphome/build/gps-cartracker-$board/firmware.bin"  
-            ".esphome/build/gps-cartracker-$board/.pio/build/gps-cartracker-$board/firmware.bin"
-        )
-        
-        binary_path=""
-        for path in "${possible_paths[@]}"; do
-            if [ -f "$path" ]; then
-                binary_path="$path"
-                break
-            fi
-        done
-        
-        if [ -n "$binary_path" ]; then
+        # Find and copy the compiled binary
+        binary_path=".esphome/build/gps-cartracker-$board/.pioenvs/gps-cartracker-$board/firmware.bin"
+        if [ -f "$binary_path" ]; then
             cp "$binary_path" "$BUILD_DIR/firmware-$board.bin"
             echo "✅ Firmware build successful: $BUILD_DIR/firmware-$board.bin"
             
@@ -171,12 +158,7 @@ build_board() {
 EOF
             echo "✅ Web flasher manifest created: $BUILD_DIR/firmware-$board-manifest.json"
         else
-            echo "❌ Binary not found. Searched in:"
-            for path in "${possible_paths[@]}"; do
-                echo "   - $path"
-            done
-            echo "🔍 Available files in build directory:"
-            find .esphome/build -name "*.bin" -type f 2>/dev/null || echo "   No .bin files found"
+            echo "❌ Binary not found at: $binary_path"
             return 1
         fi
     else
