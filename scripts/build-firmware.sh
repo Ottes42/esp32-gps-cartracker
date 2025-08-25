@@ -7,36 +7,21 @@ set -e
 
 # Configuration
 ESPHOME_VERSION="2025.8.0"
-BOARDS=("nodemcu-32s" "esp32c3-dev" "esp32dev" "ttgo-tcall" "wemos-d1" "esp32s3-dev")
+BOARDS=("nodemcu-32s")
 BUILD_DIR="build"
 
 # Board information
 declare -A BOARD_NAMES=(
     ["nodemcu-32s"]="BerryBase NodeMCU-ESP32"
-    ["esp32c3-dev"]="ESP32-C3 DevKitM-1"
-    ["esp32dev"]="Generic ESP32 Development Board"
-    ["ttgo-tcall"]="LILYGO TTGO T-Call V1.4"
-    ["wemos-d1"]="WEMOS D1 Mini ESP32"
-    ["esp32s3-dev"]="ESP32-S3 DevKitC-1"
 )
 
 declare -A BOARD_CHIPS=(
     ["nodemcu-32s"]="ESP32"
-    ["esp32c3-dev"]="ESP32-C3"
-    ["esp32dev"]="ESP32"
-    ["ttgo-tcall"]="ESP32"
-    ["wemos-d1"]="ESP32"
-    ["esp32s3-dev"]="ESP32-S3"
 )
 
 # Mapping from short board names to ESPHome board types
 declare -A BOARD_TYPES=(
     ["nodemcu-32s"]="nodemcu-32s"
-    ["esp32c3-dev"]="esp32-c3-devkitm-1"
-    ["esp32dev"]="esp32dev"
-    ["ttgo-tcall"]="esp32dev"
-    ["wemos-d1"]="wemos_d1_mini32"
-    ["esp32s3-dev"]="esp32-s3-devkitc-1"
 )
 
 # Functions
@@ -92,127 +77,9 @@ apply_board_pins() {
     local config_file=$2
     
     case $board in
-        "esp32c3-dev")
-            # ESP32-C3 specific pins (fewer available, no SDMMC)
-            sed -i.bak 's/PIN_UART_RX: "GPIO16"/PIN_UART_RX: "GPIO20"/' "$config_file"
-            sed -i.bak 's/PIN_UART_TX: "GPIO17"/PIN_UART_TX: "GPIO21"/' "$config_file"
-            sed -i.bak 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO10"/' "$config_file"
-            sed -i.bak 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO9"/' "$config_file"
-            sed -i.bak 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO8"/' "$config_file"
-            
-            # Remove SDMMC components and configure ESP32-C3 without SD card (direct WiFi upload)
-            python3 << EOF
-import sys
-import re
-
-config_file = "$config_file"
-
-with open(config_file, 'r') as f:
-    content = f.read()
-
-# Remove external_components block completely (no SD card support)
-content = re.sub(r'^external_components:\s*\n.*?components: \[ sd_mmc_card \]\s*\n', '', content, flags=re.MULTILINE | re.DOTALL)
-
-# Remove sd_mmc_card block completely
-content = re.sub(r'^# SD card custom component configuration.*?\n  data3_pin: GPIO13\s*\n', '# ESP32-C3: No SD card support - using direct WiFi upload\\n', content, flags=re.MULTILINE | re.DOTALL)
-
-# Remove SD card references from intervals and replace with direct upload
-content = re.sub(r'sd_mmc_card\.append_file', 'logger.log', content)
-content = re.sub(r'/sdcard/[^"]*', '"Direct upload mode"', content)
-
-# Remove SD card upload logic and replace with immediate HTTP post
-upload_pattern = r'(\s+- lambda: \|[\s\S]*?gps_buffer\.clear\(\);)'
-direct_upload = '''          - lambda: |
-              // ESP32-C3: Direct upload without SD card
-              if (id(gps_buffer).size() > 0) {
-                auto http_request = id(http_request_component);
-                std::string csv_data = "timestamp,lat,lon,alt,speed_kmh,hdop,satellites,course,temp_c,hum_pct\\n";
-                for (auto& entry : id(gps_buffer)) {
-                  csv_data += entry + "\\n";
-                }
-                
-                // Upload directly
-                http_request->post(id(upload_url).state, csv_data, [](uint16_t status_code, std::string body) {
-                  if (status_code == 200) {
-                    ESP_LOGI("upload", "Direct upload successful");
-                    id(gps_buffer).clear();
-                  } else {
-                    ESP_LOGW("upload", "Direct upload failed: %d", status_code);
-                  }
-                });
-              }'''
-
-content = re.sub(upload_pattern, direct_upload, content, flags=re.MULTILINE | re.DOTALL)
-
-with open(config_file, 'w') as f:
-    f.write(content)
-EOF
-            ;;
-        "esp32dev")
-            # Generic ESP32 - different pins to avoid conflicts
-            sed -i.bak 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO22"/' "$config_file"
-            sed -i.bak 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO23"/' "$config_file"
-            sed -i.bak 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO2"/' "$config_file"
-            ;;
-        "ttgo-tcall")
-            # TTGO T-Call - avoid SIM800L pins (26,27)
-            sed -i.bak 's/PIN_UART_RX: "GPIO16"/PIN_UART_RX: "GPIO35"/' "$config_file"
-            sed -i.bak 's/PIN_UART_TX: "GPIO17"/PIN_UART_TX: "GPIO32"/' "$config_file"
-            sed -i.bak 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO33"/' "$config_file"
-            sed -i.bak 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO36"/' "$config_file"
-            sed -i.bak 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO13"/' "$config_file"
-            
-            # Replace SDMMC with SPI for T-Call (SDMMC pins used by SIM800L)
-            sed -i.bak '/^sd_mmc_card:/,/^  data3_pin: GPIO13$/d' "$config_file"
-            sed -i.bak '/^    components: \[ sd_mmc_card \]$/a\
-\
-# SPI interface for SD card (SDMMC pins used by SIM800L)\
-spi:\
-  id: sd_spi\
-  clk_pin: GPIO18\
-  mosi_pin: GPIO23\
-  miso_pin: GPIO19\
-\
-# SD card via SPI\
-sd_card:\
-  id: sd_card\
-  spi_id: sd_spi\
-  cs_pin: GPIO5' "$config_file"
-            sed -i.bak 's|/sdcard/|/sd/|g' "$config_file"
-            ;;
-        "wemos-d1")
-            # WEMOS D1 Mini - limited pins
-            sed -i.bak 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO5"/' "$config_file"
-            sed -i.bak 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO4"/' "$config_file"
-            sed -i.bak 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO2"/' "$config_file"
-            
-            # Replace SDMMC with SPI for D1 Mini (limited pins)
-            sed -i.bak '/^sd_mmc_card:/,/^  data3_pin: GPIO13$/d' "$config_file"
-            sed -i.bak '/^    components: \[ sd_mmc_card \]$/a\
-\
-# SPI interface for SD card (limited pins on D1 Mini)\
-spi:\
-  id: sd_spi\
-  clk_pin: GPIO18\
-  mosi_pin: GPIO23\
-  miso_pin: GPIO19\
-\
-# SD card via SPI\
-sd_card:\
-  id: sd_card\
-  spi_id: sd_spi\
-  cs_pin: GPIO21' "$config_file"
-            sed -i.bak 's|/sdcard/|/sd/|g' "$config_file"
-            ;;
-        "esp32s3-dev")
-            # ESP32-S3 - more pins available
-            sed -i.bak 's/PIN_UART_RX: "GPIO16"/PIN_UART_RX: "GPIO17"/' "$config_file"
-            sed -i.bak 's/PIN_UART_TX: "GPIO17"/PIN_UART_TX: "GPIO18"/' "$config_file"
-            sed -i.bak 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO47"/' "$config_file"
-            sed -i.bak 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO48"/' "$config_file"
-            ;;
         "nodemcu-32s")
-            # Default configuration - no changes needed
+            # BerryBase NodeMCU-ESP32 - default configuration, no changes needed
+            echo "📋 Using standard NodeMCU-32S pin configuration"
             ;;
     esac
     

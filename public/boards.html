@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Board Comparison - ESP32 GPS Car Tracker</title>
+    <title>Supported Hardware - ESP32 GPS Car Tracker</title>
     <link rel="stylesheet" href="style.css">
     <style>
         .comparison-table {
@@ -72,7 +72,7 @@
         <div class="nav-links">
             <a href="index.html">Home</a>
             <a href="flasher.html">Web Flasher</a>
-            <a href="boards.html" class="nav-active">Board Comparison</a>
+            <a href="boards.html" class="nav-active">Supported Hardware</a>
             <a href="https://github.com/Ottes42/esp32-gps-cartracker/releases">Downloads</a>
             <a href="https://github.com/Ottes42/esp32-gps-cartracker">GitHub</a>
         </div>
@@ -83,8 +83,8 @@
             <a href="index.html">← Back to Home</a>
         </div>
 
-        <h1>📱 Board Comparison</h1>
-        <p>Choose the right ESP32 board for your GPS car tracker project. All boards are supported with pre-built firmware.</p>
+        <h1>📱 Supported Hardware</h1>
+        <p>The GPS Car Tracker firmware is optimized for the BerryBase NodeMCU-ESP32 board, ensuring reliable SD card support and stable GPS tracking performance.</p>
 
         <table class="comparison-table">
             <thead>
@@ -100,86 +100,38 @@
             </thead>
             <tbody>
                 <tr class="recommended board-highlight">
-                    <td><strong>BerryBase NodeMCU-ESP32</strong><br><small>Recommended ⭐</small></td>
+                    <td><strong>BerryBase NodeMCU-ESP32</strong><br><small>Only Supported Board ⭐</small></td>
                     <td>ESP32</td>
                     <td><span class="feature-yes">✓ SDMMC</span></td>
                     <td>Good</td>
-                    <td>Well documented, stable</td>
-                    <td>Beginners, reliable tracking</td>
+                    <td>Well documented, stable, full SD card support</td>
+                    <td>All GPS tracking applications</td>
                     <td><a href="flasher.html#nodemcu-32s" style="color: white; text-decoration: underline;">Flash Now</a></td>
-                </tr>
-                <tr>
-                    <td><strong>ESP32-C3 DevKitM-1</strong></td>
-                    <td>ESP32-C3</td>
-                    <td><span class="feature-partial">⚡ SPI</span></td>
-                    <td><span class="feature-yes">Low Power</span></td>
-                    <td>RISC-V, compact size</td>
-                    <td>Battery powered, portable</td>
-                    <td><a href="flasher.html#esp32c3-dev">Flash Now</a></td>
-                </tr>
-                <tr>
-                    <td><strong>Generic ESP32</strong></td>
-                    <td>ESP32</td>
-                    <td><span class="feature-yes">✓ SDMMC</span></td>
-                    <td>Good</td>
-                    <td>Universal compatibility</td>
-                    <td>DIY builds, custom boards</td>
-                    <td><a href="flasher.html#esp32dev">Flash Now</a></td>
-                </tr>
-                <tr>
-                    <td><strong>LILYGO TTGO T-Call</strong></td>
-                    <td>ESP32</td>
-                    <td><span class="feature-partial">⚡ SPI</span></td>
-                    <td>Good</td>
-                    <td><span class="feature-yes">SIM800L Cellular</span></td>
-                    <td>Remote areas, no WiFi</td>
-                    <td><a href="flasher.html#ttgo-tcall">Flash Now</a></td>
-                </tr>
-                <tr>
-                    <td><strong>WEMOS D1 Mini ESP32</strong></td>
-                    <td>ESP32</td>
-                    <td><span class="feature-partial">⚡ SPI</span></td>
-                    <td>Good</td>
-                    <td>Compact, Arduino compatible</td>
-                    <td>Space-constrained installs</td>
-                    <td><a href="flasher.html#wemos-d1">Flash Now</a></td>
-                </tr>
-                <tr>
-                    <td><strong>ESP32-S3 DevKitC-1</strong></td>
-                    <td>ESP32-S3</td>
-                    <td><span class="feature-yes">✓ SDMMC</span></td>
-                    <td>High</td>
-                    <td><span class="feature-yes">AI acceleration</span></td>
-                    <td>Advanced features, ML</td>
-                    <td><a href="flasher.html#esp32s3-dev">Flash Now</a></td>
                 </tr>
             </tbody>
         </table>
 
         <div class="feature-grid" style="margin-top: 3rem;">
             <div class="feature-card">
-                <h3>🔌 SD Card Interface</h3>
-                <p><strong>SDMMC:</strong> Faster, more reliable, uses fewer pins<br>
-                   <strong>SPI:</strong> Slower but more flexible pin configuration</p>
+                <h3>🔌 SD Card Support</h3>
+                <p>The BerryBase NodeMCU-ESP32 uses <strong>SDMMC interface</strong> for reliable, fast SD card access with optimal pin usage for GPS data logging.</p>
             </div>
             
             <div class="feature-card">
-                <h3>⚡ Power Consumption</h3>
-                <p><strong>ESP32-C3:</strong> Lowest power, best for battery<br>
-                   <strong>ESP32/ESP32-S3:</strong> Higher power, more features</p>
+                <h3>⚡ Reliable Performance</h3>
+                <p>ESP32 chip provides excellent balance of <strong>performance and stability</strong> with proven compatibility for GPS car tracking applications.</p>
             </div>
             
             <div class="feature-card">
-                <h3>📡 Connectivity</h3>
-                <p><strong>All boards:</strong> WiFi + Bluetooth<br>
-                   <strong>TTGO T-Call:</strong> Additional GSM/GPRS cellular</p>
+                <h3>📡 Complete Connectivity</h3>
+                <p><strong>WiFi + Bluetooth</strong> built-in for data uploads, firmware updates, and configuration management.</p>
             </div>
         </div>
 
         <section class="cta-section">
             <h2>🚀 Ready to Flash?</h2>
-            <p>All boards use the same easy web flashing process. Just select your board and click "Install GPS Tracker".</p>
-            <a href="flasher.html" class="cta-button">Go to Web Flasher</a>
+            <p>Flash the BerryBase NodeMCU-ESP32 firmware directly from your browser - no software installation required!</p>
+            <a href="flasher.html" class="cta-button">Flash Firmware Now</a>
         </section>
 
         <footer style="text-align: center; margin-top: 3rem; padding: 2rem; border-top: 1px solid #e1e5e9; color: #666;">

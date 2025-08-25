@@ -169,8 +169,8 @@ ota:
 
 uart:
   id: gps_uart
-  rx_pin: GPIO16
-  tx_pin: GPIO17
+  rx_pin: ${PIN_UART_RX}
+  tx_pin: ${PIN_UART_TX}
   baud_rate: 9600
 
 # GPS component using ESPHome built-in support
