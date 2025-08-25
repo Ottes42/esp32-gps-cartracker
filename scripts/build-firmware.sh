@@ -100,30 +100,53 @@ apply_board_pins() {
             sed -i.bak 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO9"/' "$config_file"
             sed -i.bak 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO8"/' "$config_file"
             
-            # Remove SDMMC external component (not available on ESP32-C3)
-            sed -i.bak '/^external_components:/,/^    components: \[ sd_mmc_card \]$/d' "$config_file"
-            
-            # Remove SDMMC card section
-            sed -i.bak '/^# SD card custom component configuration/,/^  data3_pin: GPIO13$/d' "$config_file"
-            
-            # Add SPI and SD card section after esp32 block
-            sed -i.bak '/^    sdkconfig_options:/a\
-\
-# SPI interface for SD card (ESP32-C3 doesn'\''t have SDMMC)\
-spi:\
-  id: sd_spi\
-  clk_pin: GPIO6\
-  mosi_pin: GPIO7\
-  miso_pin: GPIO2\
-\
-# SD card via SPI\
-sd_card:\
-  id: sd_card\
-  spi_id: sd_spi\
-  cs_pin: GPIO3' "$config_file"
-            
-            # Update SD card file operations to use /sd/ instead of /sdcard/
-            sed -i.bak 's|/sdcard/|/sd/|g' "$config_file"
+            # Remove SDMMC components and configure ESP32-C3 without SD card (direct WiFi upload)
+            python3 << EOF
+import sys
+import re
+
+config_file = "$config_file"
+
+with open(config_file, 'r') as f:
+    content = f.read()
+
+# Remove external_components block completely (no SD card support)
+content = re.sub(r'^external_components:\s*\n.*?components: \[ sd_mmc_card \]\s*\n', '', content, flags=re.MULTILINE | re.DOTALL)
+
+# Remove sd_mmc_card block completely
+content = re.sub(r'^# SD card custom component configuration.*?\n  data3_pin: GPIO13\s*\n', '# ESP32-C3: No SD card support - using direct WiFi upload\\n', content, flags=re.MULTILINE | re.DOTALL)
+
+# Remove SD card references from intervals and replace with direct upload
+content = re.sub(r'sd_mmc_card\.append_file', 'logger.log', content)
+content = re.sub(r'/sdcard/[^"]*', '"Direct upload mode"', content)
+
+# Remove SD card upload logic and replace with immediate HTTP post
+upload_pattern = r'(\s+- lambda: \|[\s\S]*?gps_buffer\.clear\(\);)'
+direct_upload = '''          - lambda: |
+              // ESP32-C3: Direct upload without SD card
+              if (id(gps_buffer).size() > 0) {
+                auto http_request = id(http_request_component);
+                std::string csv_data = "timestamp,lat,lon,alt,speed_kmh,hdop,satellites,course,temp_c,hum_pct\\n";
+                for (auto& entry : id(gps_buffer)) {
+                  csv_data += entry + "\\n";
+                }
+                
+                // Upload directly
+                http_request->post(id(upload_url).state, csv_data, [](uint16_t status_code, std::string body) {
+                  if (status_code == 200) {
+                    ESP_LOGI("upload", "Direct upload successful");
+                    id(gps_buffer).clear();
+                  } else {
+                    ESP_LOGW("upload", "Direct upload failed: %d", status_code);
+                  }
+                });
+              }'''
+
+content = re.sub(upload_pattern, direct_upload, content, flags=re.MULTILINE | re.DOTALL)
+
+with open(config_file, 'w') as f:
+    f.write(content)
+EOF
             ;;
         "esp32dev")
             # Generic ESP32 - different pins to avoid conflicts
