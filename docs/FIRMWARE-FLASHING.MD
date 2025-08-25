@@ -1,20 +1,12 @@
 # ESPHome Web Flasher Support
 
-This repository provides pre-built firmware binaries that are compatible with the [ESPHome Web Flasher](https://web.esphome.io/).
+This repository provides pre-built firmware binaries optimized for the BerryBase NodeMCU-ESP32 board, compatible with the [ESPHome Web Flasher](https://web.esphome.io/).
 
-## 📱 Supported Boards
+## 📱 Supported Hardware
 
-### Current Boards
+### Only Supported Board
 
-- **BerryBase NodeMCU-ESP32** (`nodemcu-32s`) - *Main supported board*
-- **ESP32-C3 DevKitM-1** (`esp32c3-dev`) - *Compact option*
-- **Generic ESP32** (`esp32dev`) - *Universal compatibility*
-
-### Future Boards (Planned)
-
-- **ESP32-S3 DevKitC** (`esp32s3-dev`)
-- **LilyGO T-SIM7000G** (`ttgo-t1`) - *Built-in cellular*
-- **WEMOS D1 Mini ESP32** (`wemos-d1`)
+- **BerryBase NodeMCU-ESP32** (`nodemcu-32s`) - *Only supported board, fully tested and optimized*
 
 ## 🚀 Flash Instructions
 
@@ -22,13 +14,18 @@ This repository provides pre-built firmware binaries that are compatible with th
 
 1. **Download Firmware**:
    - Go to [Releases](https://github.com/Ottes42/esp32-gps-cartracker/releases)
-   - Download both `.bin` and `.json` files for your board
+   - Download both `firmware-nodemcu-32s.bin` and `firmware-nodemcu-32s-manifest.json` files
 
 2. **Flash via Web**:
    - Visit [ESPHome Web Flasher](https://web.esphome.io/)
-   - Click "Choose File" and select the `.json` file
-   - Connect your ESP32 via USB
+   - Click "Choose File" and select the `firmware-nodemcu-32s-manifest.json` file
+   - Connect your BerryBase NodeMCU-ESP32 via USB
    - Click "Install" and follow prompts
+
+3. **Alternative Web Flashing**:
+   - Visit the [project's web flasher](https://ottes42.github.io/esp32-gps-cartracker/flasher.html)
+   - Click "Install GPS Tracker" button
+   - Select your USB port when prompted
 
 ### Manual Flashing
 
@@ -44,13 +41,11 @@ esphome upload firmware-nodemcu-32s.yaml --device /dev/ttyUSB0
 
 ## 🔧 Board Identification
 
-Each firmware is labeled with the board ID for easy identification:
+The firmware is specifically built for the BerryBase NodeMCU-ESP32:
 
-| Board Name | ESPHome Board ID | Chip | Notes |
-|------------|------------------|------|-------|
-| BerryBase NodeMCU-ESP32 | `nodemcu-32s` | ESP32 | Main development board |
-| ESP32-C3 DevKitM-1 | `esp32c3-dev` | ESP32-C3 | Low power, smaller form factor |
-| Generic ESP32 | `esp32dev` | ESP32 | Universal compatibility |
+| Board Name | ESPHome Board ID | Chip | SD Card Interface | Status |
+|------------|------------------|------|-------------------|---------|
+| BerryBase NodeMCU-ESP32 | `nodemcu-32s` | ESP32 | SDMMC (optimal) | ✅ Fully Supported |
 
 ## ⚙️ Version Identification
 
@@ -62,7 +57,7 @@ Firmware versions follow semantic versioning:
 
 Each binary includes:
 
-- Board identifier in filename
+- Board identifier in filename: `firmware-nodemcu-32s.bin`
 - Version number in device name
 - Compilation timestamp
 
@@ -73,42 +68,56 @@ Firmware binaries are automatically built on:
 - **Tag releases**: `git tag v1.0.0 && git push --tags`
 - **Manual dispatch**: Via GitHub Actions workflow
 
-Build matrix includes all supported boards with board-specific configurations.
+Build is optimized specifically for the BerryBase NodeMCU-ESP32 board configuration.
 
 ## 📋 Firmware Features
 
-- ✅ **GPS Tracking**: Real-time location logging
-- ✅ **SD Card Storage**: Local data buffering
-- ✅ **WiFi Upload**: Automatic CSV sync
-- ✅ **Web Interface**: Configuration and monitoring
-- ✅ **Captive Portal**: Easy initial setup
-- ✅ **Power Management**: Deep sleep when ACC off
-- ✅ **Multi-sensor**: GPS, temperature, humidity
-- ✅ **Time Sync**: GPS time with SNTP fallback
+- ✅ **GPS Tracking**: Real-time location logging with NMEA parsing
+- ✅ **SD Card Storage**: Local data buffering via SDMMC interface
+- ✅ **WiFi Upload**: Automatic CSV sync to backend server
+- ✅ **Web Interface**: Configuration and monitoring via captive portal
+- ✅ **Captive Portal**: Easy initial setup with WiFi hotspot
+- ✅ **Power Management**: Deep sleep when ACC (ignition) is off
+- ✅ **Multi-sensor**: GPS, temperature (DHT11), and humidity monitoring
+- ✅ **Time Sync**: GPS time with SNTP fallback for accuracy
 
 ## 🆘 Troubleshooting
 
-### Web Flasher Issues
+### Web Flashing Issues
 
-- **Chrome/Edge required**: Safari and Firefox have limited Web Serial support
-- **USB drivers**: Install CH340/CP210x drivers if device not detected
-- **Boot mode**: Hold BOOT button while connecting for some boards
+- **Browser Compatibility**: Use Chrome 89+ or Edge 89+ (Safari/Firefox not supported)
+- **USB Driver**: Ensure CP2102 drivers are installed for NodeMCU-ESP32
+- **Port Access**: On Linux, add user to `dialout` group: `sudo usermod -a -G dialout $USER`
 
-### Board Selection
+### Common Flash Errors
 
-- **Wrong board**: Device may boot but hardware won't work correctly
-- **Pin conflicts**: Check hardware documentation for your specific board
-- **Power issues**: Some boards need external power during flashing
+- **Connection Failed**: Check USB cable, try different port
+- **Permission Denied**: Run with sudo or fix port permissions
+- **Flash Failed**: Hold BOOT button while flashing if needed
 
 ### After Flashing
 
-- **Setup AP**: Look for `gps-cartracker-setup` WiFi network
-- **Serial logs**: Use ESPHome logs to debug connection issues
-- **Factory reset**: Hold BOOT for 10s to clear configuration
+1. Device creates WiFi AP: `gps-cartracker-setup` (password: `setup-setup`)
+2. Connect to AP and navigate to `http://192.168.4.1`
+3. Configure server URL and authentication credentials
+4. Update `firmware/secrets.yaml` with your WiFi credentials
+5. Reflash with production WiFi settings
 
 ## 🔗 Links
 
-- 🌐 [ESPHome Web Flasher](https://web.esphome.io/)
-- 📖 [Hardware Documentation](docs/HARDWARE.MD)
-- 🌍 [Web Interface Guide](docs/WEB-INTERFACE.MD)
-- 🐛 [Issue Tracker](https://github.com/Ottes42/esp32-gps-cartracker/issues)
+- **Web Flasher**: [ESPHome Web Flasher](https://web.esphome.io/)
+- **Project Flasher**: [GPS Tracker Web Flasher](https://ottes42.github.io/esp32-gps-cartracker/flasher.html)
+- **Hardware Guide**: [HARDWARE.MD](HARDWARE.MD)
+- **Board Configuration**: [BOARD-CONFIGURATIONS.MD](BOARD-CONFIGURATIONS.MD)
+- **API Documentation**: [API.MD](API.MD)
+
+## Why Only One Board?
+
+The firmware has been simplified to support only the BerryBase NodeMCU-ESP32 because:
+
+- **Reliability**: This board has proven SD card support via SDMMC interface
+- **Simplicity**: No complex board-specific configurations to maintain
+- **Testing**: Thoroughly tested and validated for GPS tracking applications
+- **Support**: Better documentation and community support for a single board
+
+Other ESP32 boards had issues with SD card reliability, pin conflicts, or power supply problems that made them unsuitable for reliable GPS car tracking.

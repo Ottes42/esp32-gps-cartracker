@@ -169,7 +169,7 @@
             <div class="nav-links">
                 <a href="index.html">Home</a>
                 <a href="flasher.html" class="nav-active">Web Flasher</a>
-                <a href="boards.html">Board Comparison</a>
+                <a href="boards.html">Supported Hardware</a>
                 <a href="https://github.com/Ottes42/esp32-gps-cartracker/releases">Downloads</a>
                 <a href="https://github.com/Ottes42/esp32-gps-cartracker">GitHub</a>
             </div>
@@ -200,29 +200,21 @@
             <div class="step">
                 <div class="step-number">1</div>
                 <div class="step-content">
-                    <strong>Select your board</strong><br>
-                    Choose the ESP32 board model you want to flash below.
+                    <strong>Connect via USB</strong><br>
+                    Connect your BerryBase NodeMCU-ESP32 board to your computer using a USB cable.
                 </div>
             </div>
             
             <div class="step">
                 <div class="step-number">2</div>
                 <div class="step-content">
-                    <strong>Connect via USB</strong><br>
-                    Connect your ESP32 board to your computer using a USB cable.
+                    <strong>Click "Install GPS Tracker"</strong><br>
+                    Click the install button below and select the USB port in the popup.
                 </div>
             </div>
             
             <div class="step">
                 <div class="step-number">3</div>
-                <div class="step-content">
-                    <strong>Click "Install"</strong><br>
-                    Click the install button for your board and select the USB port in the popup.
-                </div>
-            </div>
-            
-            <div class="step">
-                <div class="step-number">4</div>
                 <div class="step-content">
                     <strong>Configure device</strong><br>
                     After flashing, the device will create a WiFi hotspot for initial configuration.
@@ -230,7 +222,7 @@
             </div>
         </div>
 
-        <h2>🔌 Available Boards</h2>
+        <h2>🔌 Supported Hardware</h2>
 
         <!-- BerryBase NodeMCU-ESP32 (Recommended) -->
         <div class="board-card recommended" id="nodemcu-32s">
@@ -257,130 +249,7 @@
             </div>
         </div>
 
-        <!-- ESP32-C3 DevKitM-1 -->
-        <div class="board-card" id="esp32c3-dev">
-            <div class="board-header">
-                <div class="board-name">ESP32-C3 DevKitM-1</div>
-                <div class="board-chip">ESP32-C3</div>
-            </div>
-            <div class="board-description">
-                Compact and low-power ESP32-C3 based board. Great for battery-powered applications
-                with reduced power consumption.
-            </div>
-            <div class="board-features">
-                <span class="feature-tag">SPI SD Card</span>
-                <span class="feature-tag">Low Power</span>
-                <span class="feature-tag">RISC-V</span>
-                <span class="feature-tag">Compact Size</span>
-            </div>
-            <div class="flash-section">
-                <div class="version-info">Latest firmware build</div>
-                <esp-web-install-button
-                    manifest="https://github.com/Ottes42/esp32-gps-cartracker/releases/latest/download/firmware-esp32c3-dev-manifest.json">
-                    <button slot="activate">Install GPS Tracker</button>
-                </esp-web-install-button>
-            </div>
-        </div>
 
-        <!-- Generic ESP32 -->
-        <div class="board-card" id="esp32dev">
-            <div class="board-header">
-                <div class="board-name">Generic ESP32 Development Board</div>
-                <div class="board-chip">ESP32</div>
-            </div>
-            <div class="board-description">
-                Universal ESP32 board configuration compatible with most ESP32 development boards
-                and breakout modules.
-            </div>
-            <div class="board-features">
-                <span class="feature-tag">SDMMC SD Card</span>
-                <span class="feature-tag">Universal</span>
-                <span class="feature-tag">Standard Pinout</span>
-                <span class="feature-tag">Wide Compatibility</span>
-            </div>
-            <div class="flash-section">
-                <div class="version-info">Latest firmware build</div>
-                <esp-web-install-button
-                    manifest="https://github.com/Ottes42/esp32-gps-cartracker/releases/latest/download/firmware-esp32dev-manifest.json">
-                    <button slot="activate">Install GPS Tracker</button>
-                </esp-web-install-button>
-            </div>
-        </div>
-
-        <!-- TTGO T-Call -->
-        <div class="board-card" id="ttgo-tcall">
-            <div class="board-header">
-                <div class="board-name">LILYGO TTGO T-Call V1.4</div>
-                <div class="board-chip">ESP32</div>
-            </div>
-            <div class="board-description">
-                ESP32 board with built-in SIM800L cellular module. Perfect for GPS tracking
-                in areas without WiFi coverage.
-            </div>
-            <div class="board-features">
-                <span class="feature-tag">SPI SD Card</span>
-                <span class="feature-tag">SIM800L Cellular</span>
-                <span class="feature-tag">GSM/GPRS</span>
-                <span class="feature-tag">Remote Areas</span>
-            </div>
-            <div class="flash-section">
-                <div class="version-info">Latest firmware build</div>
-                <esp-web-install-button
-                    manifest="https://github.com/Ottes42/esp32-gps-cartracker/releases/latest/download/firmware-ttgo-tcall-manifest.json">
-                    <button slot="activate">Install GPS Tracker</button>
-                </esp-web-install-button>
-            </div>
-        </div>
-
-        <!-- WEMOS D1 Mini -->
-        <div class="board-card" id="wemos-d1">
-            <div class="board-header">
-                <div class="board-name">WEMOS D1 Mini ESP32</div>
-                <div class="board-chip">ESP32</div>
-            </div>
-            <div class="board-description">
-                Compact ESP32 board in Arduino D1 Mini form factor. Great for space-constrained
-                installations and prototyping.
-            </div>
-            <div class="board-features">
-                <span class="feature-tag">SPI SD Card</span>
-                <span class="feature-tag">Compact Form</span>
-                <span class="feature-tag">Arduino Compatible</span>
-                <span class="feature-tag">Prototyping</span>
-            </div>
-            <div class="flash-section">
-                <div class="version-info">Latest firmware build</div>
-                <esp-web-install-button
-                    manifest="https://github.com/Ottes42/esp32-gps-cartracker/releases/latest/download/firmware-wemos-d1-manifest.json">
-                    <button slot="activate">Install GPS Tracker</button>
-                </esp-web-install-button>
-            </div>
-        </div>
-
-        <!-- ESP32-S3 -->
-        <div class="board-card" id="esp32s3-dev">
-            <div class="board-header">
-                <div class="board-name">ESP32-S3 DevKitC-1</div>
-                <div class="board-chip">ESP32-S3</div>
-            </div>
-            <div class="board-description">
-                High-performance ESP32-S3 with AI acceleration capabilities. Ideal for advanced
-                GPS tracking with machine learning features.
-            </div>
-            <div class="board-features">
-                <span class="feature-tag">SDMMC SD Card</span>
-                <span class="feature-tag">AI Acceleration</span>
-                <span class="feature-tag">High Performance</span>
-                <span class="feature-tag">Advanced Features</span>
-            </div>
-            <div class="flash-section">
-                <div class="version-info">Latest firmware build</div>
-                <esp-web-install-button
-                    manifest="https://github.com/Ottes42/esp32-gps-cartracker/releases/latest/download/firmware-esp32s3-dev-manifest.json">
-                    <button slot="activate">Install GPS Tracker</button>
-                </esp-web-install-button>
-            </div>
-        </div>
 
         <div class="info-box">
             <strong>🔗 Need help?</strong><br>
