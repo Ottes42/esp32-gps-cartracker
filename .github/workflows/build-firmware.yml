@@ -154,11 +154,32 @@ jobs:
             ]
           }
           EOF
+          
+          # Verify manifest file was created correctly
+          if [ -f "firmware-${{ matrix.board }}-manifest.json" ]; then
+            echo "✓ Manifest created: firmware-${{ matrix.board }}-manifest.json"
+            # Validate JSON syntax
+            cat firmware-${{ matrix.board }}-manifest.json | python3 -m json.tool > /dev/null
+            echo "✓ Manifest JSON syntax is valid"
+          else
+            echo "❌ ERROR: Failed to create manifest file"
+            exit 1
+          fi
 
       - name: Copy firmware binary
         run: |
           # Find the compiled binary and copy it with a standardized name
-          find firmware/.esphome/build/gps-cartracker-${{ matrix.board }}/ -name "*.bin" -exec cp {} firmware-${{ matrix.board }}.bin \;
+          binary_path=$(find firmware/.esphome/build/gps-cartracker-${{ matrix.board }}/ -name "*.bin" -type f | head -n 1)
+          
+          if [ -n "$binary_path" ] && [ -f "$binary_path" ]; then
+            cp "$binary_path" firmware-${{ matrix.board }}.bin
+            echo "✓ Firmware binary created: firmware-${{ matrix.board }}.bin ($(stat -c%s firmware-${{ matrix.board }}.bin) bytes)"
+          else
+            echo "❌ ERROR: No firmware binary found for board ${{ matrix.board }}"
+            echo "Available files:"
+            find firmware/.esphome/build/ -name "*.bin" -type f || echo "No .bin files found"
+            exit 1
+          fi
 
       - name: Create release notes
         run: |
@@ -219,6 +240,40 @@ jobs:
           - 🚀 [Issues & Feature Requests](https://github.com/Ottes42/esp32-gps-cartracker/issues)
           EOF
 
+      - name: Validate build artifacts
+        run: |
+          echo "=== Validating build artifacts for ${{ matrix.board }} ==="
+          
+          # Check binary file
+          if [ -f "firmware-${{ matrix.board }}.bin" ]; then
+            size=$(stat -c%s "firmware-${{ matrix.board }}.bin")
+            echo "✓ Binary file: firmware-${{ matrix.board }}.bin ($size bytes)"
+            if [ $size -lt 100000 ]; then
+              echo "⚠️  Warning: Binary file seems unusually small ($size bytes)"
+            fi
+          else
+            echo "❌ ERROR: Missing binary file firmware-${{ matrix.board }}.bin"
+            exit 1
+          fi
+          
+          # Check manifest file
+          if [ -f "firmware-${{ matrix.board }}-manifest.json" ]; then
+            echo "✓ Manifest file: firmware-${{ matrix.board }}-manifest.json"
+          else
+            echo "❌ ERROR: Missing manifest file firmware-${{ matrix.board }}-manifest.json"
+            exit 1
+          fi
+          
+          # Check release notes
+          if [ -f "release-notes-${{ matrix.board }}.md" ]; then
+            echo "✓ Release notes: release-notes-${{ matrix.board }}.md"
+          else
+            echo "❌ ERROR: Missing release notes release-notes-${{ matrix.board }}.md"
+            exit 1
+          fi
+          
+          echo "✅ All artifacts validated for ${{ matrix.board }}"
+
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -239,11 +294,37 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download all firmware artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
 
       - name: Get version
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Prepare release files
+        run: |
+          # Create a flat structure for release files
+          mkdir -p release-files
+          
+          # Copy all firmware files to a flat structure for easier release upload
+          find artifacts -name "*.bin" -exec cp {} release-files/ \;
+          find artifacts -name "*-manifest.json" -exec cp {} release-files/ \;
+          find artifacts -name "release-notes-*.md" -exec cp {} release-files/ \;
+          
+          # List what we're releasing
+          echo "=== Files to be released ==="
+          ls -la release-files/
+          echo "============================"
+          
+          # Verify we have at least one binary
+          binary_count=$(find release-files -name "*.bin" | wc -l)
+          if [ $binary_count -eq 0 ]; then
+            echo "❌ ERROR: No firmware binaries found for release!"
+            exit 1
+          else
+            echo "✅ Found $binary_count firmware binaries for release"
+          fi
 
       - name: Create combined release notes
         run: |
@@ -254,11 +335,11 @@ jobs:
           echo "## 📱 Supported Boards" >> RELEASE_NOTES.md
           echo "" >> RELEASE_NOTES.md
           
-          # Add board-specific info
+          # Add board-specific info from downloaded artifacts
           for board in nodemcu-32s esp32c3-dev esp32dev ttgo-tcall wemos-d1 esp32s3-dev; do
-            if [ -f "firmware-${board}/release-notes-${board}.md" ]; then
+            if [ -f "artifacts/firmware-${board}/release-notes-${board}.md" ]; then
               echo "### Board: ${board}" >> RELEASE_NOTES.md
-              tail -n +2 "firmware-${board}/release-notes-${board}.md" >> RELEASE_NOTES.md
+              tail -n +2 "artifacts/firmware-${board}/release-notes-${board}.md" >> RELEASE_NOTES.md
               echo "" >> RELEASE_NOTES.md
             fi
           done
@@ -272,15 +353,15 @@ jobs:
           echo "- Captive portal setup mode" >> RELEASE_NOTES.md
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.VERSION }}
           name: GPS Car Tracker Firmware ${{ steps.version.outputs.VERSION }}
           body_path: RELEASE_NOTES.md
           files: |
-            firmware-*/firmware-*.bin
-            firmware-*/firmware-*-manifest.json
-            firmware-*/release-notes-*.md
+            release-files/*.bin
+            release-files/*-manifest.json
+            release-files/release-notes-*.md
           draft: false
           prerelease: false
         env:
