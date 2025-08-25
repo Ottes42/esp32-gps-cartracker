@@ -167,10 +167,11 @@
                 <span class="nav-title">GPS Car Tracker</span>
             </div>
             <div class="nav-links">
-                <a href="index.html">Dashboard</a>
-                <a href="trips.html">Trips</a>
-                <a href="fuel.html">Fuel</a>
-                <a href="flasher.html" class="nav-active">Flasher</a>
+                <a href="index.html">Home</a>
+                <a href="flasher.html" class="nav-active">Web Flasher</a>
+                <a href="boards.html">Board Comparison</a>
+                <a href="https://github.com/Ottes42/esp32-gps-cartracker/releases">Downloads</a>
+                <a href="https://github.com/Ottes42/esp32-gps-cartracker">GitHub</a>
             </div>
         </nav>
     </header>
@@ -233,7 +234,7 @@
         <p><strong>Note:</strong> Only ESP32 boards with SDMMC SD card support are included for reliable GPS data logging.</p>
 
         <!-- BerryBase NodeMCU-ESP32 (Recommended) -->
-        <div class="board-card recommended">
+        <div class="board-card recommended" id="nodemcu-32s">
             <div class="board-header">
                 <div class="board-name">🌟 BerryBase NodeMCU-ESP32</div>
                 <div class="board-chip">ESP32</div>
@@ -258,7 +259,7 @@
         </div>
 
         <!-- Generic ESP32 -->
-        <div class="board-card">
+        <div class="board-card" id="esp32dev">
             <div class="board-header">
                 <div class="board-name">Generic ESP32 Development Board</div>
                 <div class="board-chip">ESP32</div>
@@ -283,7 +284,7 @@
         </div>
 
         <!-- ESP32-S3 -->
-        <div class="board-card">
+        <div class="board-card" id="esp32s3-dev">
             <div class="board-header">
                 <div class="board-name">ESP32-S3 DevKitC-1</div>
                 <div class="board-chip">ESP32-S3</div>
@@ -316,7 +317,7 @@
 
         <div class="info-box">
             <strong>🔗 Need help?</strong><br>
-            Check the <a href="https://github.com/Ottes42/esp32-gps-cartracker/blob/main/docs/FIRMWARE-FLASHING.md" target="_blank">Firmware Flashing Guide</a> 
+            Check the <a href="docs/FIRMWARE-FLASHING.html">Firmware Flashing Guide</a> 
             for detailed instructions and troubleshooting.
         </div>
 
