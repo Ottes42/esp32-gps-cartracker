@@ -97,8 +97,6 @@ jobs:
           # Update device name to include board
           sed -i 's/name: gps-cartracker/name: gps-cartracker-${{ matrix.board }}/' firmware/firmware-${{ matrix.board }}.yaml
           sed -i 's/friendly_name: GPS Cartracker/friendly_name: GPS Cartracker (${{ matrix.board_name }})/' firmware/firmware-${{ matrix.board }}.yaml
-          sed -i 's/friendly_name: GPS Cartracker/friendly_name: GPS Cartracker (${{ matrix.board_name }})/' firmware/firmware-${{ matrix.board }}.yaml
-
       - name: Create secrets file
         run: |
           if [ ! -f "firmware/secrets.yaml" ]; then
