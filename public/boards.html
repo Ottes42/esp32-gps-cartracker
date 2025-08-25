@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Board Comparison - ESP32 GPS Car Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .comparison-table th,
+        .comparison-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e1e5e9;
+        }
+        .comparison-table th {
+            background: #0066cc;
+            color: white;
+            font-weight: bold;
+        }
+        .comparison-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        .comparison-table tr:hover {
+            background: #e3f2fd;
+        }
+        .recommended {
+            background: #d4edda !important;
+            border-left: 4px solid #28a745;
+        }
+        .feature-yes {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .feature-no {
+            color: #dc3545;
+        }
+        .feature-partial {
+            color: #ffc107;
+        }
+        .board-highlight {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        .back-nav {
+            background: #f8f9fa;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .back-nav a {
+            color: #0066cc;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <nav class="main-nav">
+        <div class="nav-brand">
+            <img src="favicon-32.png" alt="GPS Tracker" class="nav-logo">
+            <span class="nav-title">GPS Car Tracker</span>
+        </div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="flasher.html">Web Flasher</a>
+            <a href="boards.html" class="nav-active">Board Comparison</a>
+            <a href="https://github.com/Ottes42/esp32-gps-cartracker/releases">Downloads</a>
+            <a href="https://github.com/Ottes42/esp32-gps-cartracker">GitHub</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="back-nav">
+            <a href="index.html">← Back to Home</a>
+        </div>
+
+        <h1>📱 Board Comparison</h1>
+        <p>Choose the right ESP32 board for your GPS car tracker project. All boards are supported with pre-built firmware.</p>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Board</th>
+                    <th>Chip</th>
+                    <th>SD Card</th>
+                    <th>Power</th>
+                    <th>Special Features</th>
+                    <th>Recommended For</th>
+                    <th>Flash</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="recommended board-highlight">
+                    <td><strong>BerryBase NodeMCU-ESP32</strong><br><small>Recommended ⭐</small></td>
+                    <td>ESP32</td>
+                    <td><span class="feature-yes">✓ SDMMC</span></td>
+                    <td>Good</td>
+                    <td>Well documented, stable</td>
+                    <td>Beginners, reliable tracking</td>
+                    <td><a href="flasher.html#nodemcu-32s" style="color: white; text-decoration: underline;">Flash Now</a></td>
+                </tr>
+                <tr>
+                    <td><strong>ESP32-C3 DevKitM-1</strong></td>
+                    <td>ESP32-C3</td>
+                    <td><span class="feature-partial">⚡ SPI</span></td>
+                    <td><span class="feature-yes">Low Power</span></td>
+                    <td>RISC-V, compact size</td>
+                    <td>Battery powered, portable</td>
+                    <td><a href="flasher.html#esp32c3-dev">Flash Now</a></td>
+                </tr>
+                <tr>
+                    <td><strong>Generic ESP32</strong></td>
+                    <td>ESP32</td>
+                    <td><span class="feature-yes">✓ SDMMC</span></td>
+                    <td>Good</td>
+                    <td>Universal compatibility</td>
+                    <td>DIY builds, custom boards</td>
+                    <td><a href="flasher.html#esp32dev">Flash Now</a></td>
+                </tr>
+                <tr>
+                    <td><strong>LILYGO TTGO T-Call</strong></td>
+                    <td>ESP32</td>
+                    <td><span class="feature-partial">⚡ SPI</span></td>
+                    <td>Good</td>
+                    <td><span class="feature-yes">SIM800L Cellular</span></td>
+                    <td>Remote areas, no WiFi</td>
+                    <td><a href="flasher.html#ttgo-tcall">Flash Now</a></td>
+                </tr>
+                <tr>
+                    <td><strong>WEMOS D1 Mini ESP32</strong></td>
+                    <td>ESP32</td>
+                    <td><span class="feature-partial">⚡ SPI</span></td>
+                    <td>Good</td>
+                    <td>Compact, Arduino compatible</td>
+                    <td>Space-constrained installs</td>
+                    <td><a href="flasher.html#wemos-d1">Flash Now</a></td>
+                </tr>
+                <tr>
+                    <td><strong>ESP32-S3 DevKitC-1</strong></td>
+                    <td>ESP32-S3</td>
+                    <td><span class="feature-yes">✓ SDMMC</span></td>
+                    <td>High</td>
+                    <td><span class="feature-yes">AI acceleration</span></td>
+                    <td>Advanced features, ML</td>
+                    <td><a href="flasher.html#esp32s3-dev">Flash Now</a></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="feature-grid" style="margin-top: 3rem;">
+            <div class="feature-card">
+                <h3>🔌 SD Card Interface</h3>
+                <p><strong>SDMMC:</strong> Faster, more reliable, uses fewer pins<br>
+                   <strong>SPI:</strong> Slower but more flexible pin configuration</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>⚡ Power Consumption</h3>
+                <p><strong>ESP32-C3:</strong> Lowest power, best for battery<br>
+                   <strong>ESP32/ESP32-S3:</strong> Higher power, more features</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>📡 Connectivity</h3>
+                <p><strong>All boards:</strong> WiFi + Bluetooth<br>
+                   <strong>TTGO T-Call:</strong> Additional GSM/GPRS cellular</p>
+            </div>
+        </div>
+
+        <section class="cta-section">
+            <h2>🚀 Ready to Flash?</h2>
+            <p>All boards use the same easy web flashing process. Just select your board and click "Install GPS Tracker".</p>
+            <a href="flasher.html" class="cta-button">Go to Web Flasher</a>
+        </section>
+
+        <footer style="text-align: center; margin-top: 3rem; padding: 2rem; border-top: 1px solid #e1e5e9; color: #666;">
+            <p>&copy; 2025 ESP32 GPS Car Tracker | <a href="https://github.com/Ottes42/esp32-gps-cartracker">GitHub Repository</a></p>
+        </footer>
+    </div>
+</body>
+</html>
