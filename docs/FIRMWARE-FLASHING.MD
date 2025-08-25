@@ -7,14 +7,14 @@ This repository provides pre-built firmware binaries that are compatible with th
 ### Current Boards
 
 - **BerryBase NodeMCU-ESP32** (`nodemcu-32s`) - *Main supported board*
-- **ESP32-C3 DevKitM-1** (`esp32-c3-devkitm-1`) - *Compact option*
+- **ESP32-C3 DevKitM-1** (`esp32c3-dev`) - *Compact option*
 - **Generic ESP32** (`esp32dev`) - *Universal compatibility*
 
 ### Future Boards (Planned)
 
-- **ESP32-S3 DevKitC** (`esp32-s3-devkitc-1`)
+- **ESP32-S3 DevKitC** (`esp32s3-dev`)
 - **LilyGO T-SIM7000G** (`ttgo-t1`) - *Built-in cellular*
-- **WEMOS D1 Mini ESP32** (`wemos_d1_mini32`)
+- **WEMOS D1 Mini ESP32** (`wemos-d1`)
 
 ## 🚀 Flash Instructions
 
@@ -49,7 +49,7 @@ Each firmware is labeled with the board ID for easy identification:
 | Board Name | ESPHome Board ID | Chip | Notes |
 |------------|------------------|------|-------|
 | BerryBase NodeMCU-ESP32 | `nodemcu-32s` | ESP32 | Main development board |
-| ESP32-C3 DevKitM-1 | `esp32-c3-devkitm-1` | ESP32-C3 | Low power, smaller form factor |
+| ESP32-C3 DevKitM-1 | `esp32c3-dev` | ESP32-C3 | Low power, smaller form factor |
 | Generic ESP32 | `esp32dev` | ESP32 | Universal compatibility |
 
 ## ⚙️ Version Identification

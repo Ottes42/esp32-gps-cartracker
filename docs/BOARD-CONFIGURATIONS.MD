@@ -47,7 +47,7 @@ sd_mmc_card:
 
 ---
 
-### 2. **ESP32-C3 DevKitM-1** (esp32-c3-devkitm-1) - *Compact Low-Power*
+### 2. **ESP32-C3 DevKitM-1** (esp32c3-dev) - *Compact Low-Power*
 
 **Board**: ESP32-C3-DevKitM-1  
 **Chip**: ESP32-C3 (160MHz single-core RISC-V)  
@@ -115,7 +115,7 @@ sd_mmc_card:
 
 ---
 
-### 4. **TTGO T-Call ESP32** (ttgo-t-call-v1_4) - *Built-in Cellular*
+### 4. **TTGO T-Call ESP32** (ttgo-tcall) - *Built-in Cellular*
 
 **Board**: LILYGO TTGO T-Call V1.4  
 **Chip**: ESP32 + SIM800L GSM/GPRS  
@@ -148,7 +148,7 @@ sd_card:
 
 ---
 
-### 5. **WEMOS D1 Mini ESP32** (wemos_d1_mini32) - *Arduino Shield Compatible*
+### 5. **WEMOS D1 Mini ESP32** (wemos-d1) - *Arduino Shield Compatible*
 
 **Board**: WEMOS D1 Mini ESP32  
 **Chip**: ESP32 (240MHz dual-core)  
@@ -181,7 +181,7 @@ sd_card:
 
 ---
 
-### 6. **ESP32-S3 DevKitC** (esp32-s3-devkitc-1) - *High Performance*
+### 6. **ESP32-S3 DevKitC** (esp32s3-dev) - *High Performance*
 
 **Board**: ESP32-S3-DevKitC-1  
 **Chip**: ESP32-S3 (240MHz dual-core + AI acceleration)  
@@ -254,8 +254,8 @@ sd_mmc_card:
 | Board | Config Status | Validation | Binary Build | Notes |
 |-------|--------------|------------|--------------|-------|
 | nodemcu-32s | ✅ Complete | ✅ Passed | ✅ Working | Main development board |
-| esp32-c3-devkitm-1 | ⚠️ Draft | ❌ Failed | ❌ Not tested | Needs SPI SD card |
+| esp32c3-dev | ⚠️ Draft | ❌ Failed | ❌ Not tested | Needs SPI SD card |
 | esp32dev | ⚠️ Draft | ❌ Not tested | ❌ Not tested | Pin conflicts |
-| ttgo-t-call-v1_4 | 📝 Planned | ❌ Not tested | ❌ Not tested | Cellular integration |
-| wemos_d1_mini32 | 📝 Planned | ❌ Not tested | ❌ Not tested | Limited pins |
-| esp32-s3-devkitc-1 | 📝 Planned | ❌ Not tested | ❌ Not tested | Advanced features |
+| ttgo-tcall | 📝 Planned | ❌ Not tested | ❌ Not tested | Cellular integration |
+| wemos-d1 | 📝 Planned | ❌ Not tested | ❌ Not tested | Limited pins |
+| esp32s3-dev | 📝 Planned | ❌ Not tested | ❌ Not tested | Advanced features |
