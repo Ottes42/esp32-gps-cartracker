@@ -46,12 +46,34 @@ print_usage() {
 }
 
 create_secrets() {
+    # Ensure we're in the correct directory and firmware dir exists
+    if [ ! -d "firmware" ]; then
+        echo "Error: firmware/ directory not found. Please run from project root."
+        exit 1
+    fi
+    
     if [ ! -f "firmware/secrets.yaml" ]; then
         echo "Creating default secrets.yaml..."
-        cat > firmware/secrets.yaml << EOF
-wifi_ssid: "CONFIGURE_ME"
-wifi_password: "CONFIGURE_ME"
+        if [ -f "firmware/secrets.yaml.template" ]; then
+            cp "firmware/secrets.yaml.template" "firmware/secrets.yaml"
+            echo "✓ Created firmware/secrets.yaml from template"
+        else
+            cat > firmware/secrets.yaml << EOF
+# Default secrets for GPS Car Tracker
+# These values will work for initial setup and testing
+# For production use, replace with your actual WiFi credentials
+
+wifi_ssid: "gps-cartracker-setup"
+wifi_password: "setup-setup"
+
+# Server configuration (will be set via web interface)
+server_url: "http://192.168.1.100:3000"
+server_auth_user: "admin"
+server_auth_pass: "password"
 EOF
+            echo "✓ Created firmware/secrets.yaml with default values"
+        fi
+        echo "  Note: Device will create WiFi hotspot for initial configuration"
     fi
 }
 
