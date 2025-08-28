@@ -1,59 +1,73 @@
-  describe('Rate Limiting', () => {
-    test('enforces GPS upload rate limit', async () => {
-      for (let i = 0; i < 30; i++) {
-        await request(app)
-          .post('/upload/test.csv')
-          .set('x-auth-user', 'test-device')
-          .set('Content-Type', 'text/csv')
-          .send('2025-08-18T08:00:00Z,50.1109,8.6821,100.0,50.5,1.2,8,90.0,22.5,65.0')
-      }
-      // 31st request should be rate limited
-      const response = await request(app)
-        .post('/upload/test.csv')
-        .set('x-auth-user', 'test-device')
-        .set('Content-Type', 'text/csv')
-        .send('2025-08-18T08:00:00Z,50.1109,8.6821,100.0,50.5,1.2,8,90.0,22.5,65.0')
-      expect(response.status).toBe(429)
-      expect(response.text).toMatch(/Too many requests/i)
-    })
-
-    test('enforces receipt upload rate limit', async () => {
-      const testFile = createMockReceiptFile()
-      for (let i = 0; i < 10; i++) {
-        await request(app)
-          .post('/uploadReceipt')
-          .set('x-auth-user', 'test-user')
-          .attach('photo', testFile)
-      }
-      const response = await request(app)
-        .post('/uploadReceipt')
-        .set('x-auth-user', 'test-user')
-        .attach('photo', testFile)
-      expect(response.status).toBe(429)
-      expect(response.text).toMatch(/Too many requests/i)
-      fs.unlinkSync(testFile)
-    })
-
-    test('enforces API rate limit', async () => {
-      for (let i = 0; i < 60; i++) {
-        await request(app)
-          .get('/api/fuel')
-          .set('x-auth-user', 'test-user')
-      }
-      const response = await request(app)
-        .get('/api/fuel')
-        .set('x-auth-user', 'test-user')
-      expect(response.status).toBe(429)
-      expect(response.text).toMatch(/Too many requests/i)
-    })
-  })
 import request from 'supertest'
 import { createTestApp, cleanupTestFiles, sampleCsvData, sampleFuelData, createMockReceiptFile } from '../helpers.js'
 import nock from 'nock'
 import fs from 'fs'
 
-describe('API Endpoints', () => {
+describe('Rate Limiting', () => {
+  let app
+  beforeEach(() => {
+    cleanupTestFiles()
+    app = createTestApp()
+  })
+  afterEach(() => {
+    if (app.helpers.db) {
+      try {
+        app.helpers.db.close()
+      } catch (e) {}
+    }
+    cleanupTestFiles()
+    nock.cleanAll()
+  })
+  test('enforces GPS upload rate limit', async () => {
+    for (let i = 0; i < 30; i++) {
+      await request(app)
+        .post('/upload/test.csv')
+        .set('x-auth-user', 'test-device')
+        .set('Content-Type', 'text/csv')
+        .send('2025-08-18T08:00:00Z,50.1109,8.6821,100.0,50.5,1.2,8,90.0,22.5,65.0')
+    }
+    // 31st request should be rate limited
+    const response = await request(app)
+      .post('/upload/test.csv')
+      .set('x-auth-user', 'test-device')
+      .set('Content-Type', 'text/csv')
+      .send('2025-08-18T08:00:00Z,50.1109,8.6821,100.0,50.5,1.2,8,90.0,22.5,65.0')
+    expect(response.status).toBe(429)
+    expect(response.text).toMatch(/Too many requests/i)
+  })
 
+  test('enforces receipt upload rate limit', async () => {
+    const testFile = createMockReceiptFile()
+    for (let i = 0; i < 10; i++) {
+      await request(app)
+        .post('/uploadReceipt')
+        .set('x-auth-user', 'test-user')
+        .attach('photo', testFile)
+    }
+    const response = await request(app)
+      .post('/uploadReceipt')
+      .set('x-auth-user', 'test-user')
+      .attach('photo', testFile)
+    expect(response.status).toBe(429)
+    expect(response.text).toMatch(/Too many requests/i)
+    fs.unlinkSync(testFile)
+  })
+
+  test('enforces API rate limit', async () => {
+    for (let i = 0; i < 60; i++) {
+      await request(app)
+        .get('/api/fuel')
+        .set('x-auth-user', 'test-user')
+    }
+    const response = await request(app)
+      .get('/api/fuel')
+      .set('x-auth-user', 'test-user')
+    expect(response.status).toBe(429)
+    expect(response.text).toMatch(/Too many requests/i)
+  })
+})
+
+describe('API Endpoints', () => {
   describe('Rate Limiting', () => {
     let app
     beforeEach(() => {

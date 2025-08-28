@@ -69,7 +69,6 @@ CREATE TABLE IF NOT EXISTS fuel (
 );
 `)
 
-
 // Rate limiters (see docs/SECURITY.MD)
 const gpsUploadLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
@@ -164,9 +163,6 @@ async function parseReceipt (filePath) {
   }
 
   const data = await response.json()
-  // Reduced logging for production - uncomment for debugging
-  // console.log('Gemini API full response:', JSON.stringify(data, null, 2))
-
   let txt = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
   // console.log('Extracted text from Gemini:', txt)
 
