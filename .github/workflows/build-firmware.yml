@@ -170,9 +170,19 @@ jobs:
           echo "Chip: ${{ matrix.chip }}"
           echo "Sensor: ${{ matrix.sensor }}"
           
-          # Validate board is supported
-          if [[ ! "${{ matrix.board }}" =~ ^(nodemcu-32s|esp32dev|esp-wrover-kit|esp32-s3-devkitc-1)$ ]]; then
+          # Read supported boards from shared configuration file
+          mapfile -t SUPPORTED_BOARDS < boards.txt
+          board_valid=false
+          for board in "${SUPPORTED_BOARDS[@]}"; do
+            if [[ "${{ matrix.board }}" == "$board" ]]; then
+              board_valid=true
+              break
+            fi
+          done
+          
+          if [[ "$board_valid" != "true" ]]; then
             echo "❌ Invalid board: ${{ matrix.board }}"
+            echo "📋 Supported boards: ${SUPPORTED_BOARDS[*]}"
             exit 1
           fi
           
