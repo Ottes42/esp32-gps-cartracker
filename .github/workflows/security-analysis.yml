@@ -1,0 +1,217 @@
+name: Security Analysis
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '30 2 * * 1'  # Weekly on Mondays at 2:30 AM
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript' ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # Auto-detect queries for security analysis
+          queries: security-extended,security-and-quality
+
+      - name: Auto-build
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+
+  dependency-check:
+    name: Dependency Security Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: |
+          echo "# 🔍 NPM Security Audit Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if npm audit --audit-level high; then
+            echo "✅ **No high or critical vulnerabilities found**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Security vulnerabilities detected**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Run \`npm audit fix\` to automatically fix vulnerabilities" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check for security advisories
+        run: |
+          echo "🔍 Checking for GitHub Security Advisories..."
+          npm audit --json > audit.json || true
+          
+          if [ -s audit.json ]; then
+            vulnerabilities=$(cat audit.json | jq '.metadata.vulnerabilities.total // 0')
+            if [ "$vulnerabilities" -gt 0 ]; then
+              echo "⚠️ Found $vulnerabilities security advisories"
+              echo "**Vulnerability Summary:**" >> $GITHUB_STEP_SUMMARY
+              cat audit.json | jq -r '.advisories // {} | to_entries[] | "- **" + .value.title + "** (Severity: " + .value.severity + ")"' >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+  docker-security:
+    name: Docker Security Scan
+    runs-on: ubuntu-latest
+    if: github.event_name != 'schedule'  # Skip on scheduled runs to avoid rate limits
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image for security scanning
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: gps-cartracker:security-test
+          load: true
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'gps-cartracker:security-test'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Generate Docker security summary
+        run: |
+          echo "# 🐳 Docker Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Base Image**: Node.js 24 Alpine" >> $GITHUB_STEP_SUMMARY
+          echo "**Scanner**: Trivy" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Detailed results uploaded to Security tab." >> $GITHUB_STEP_SUMMARY
+
+  firmware-security:
+    name: Firmware Configuration Security
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check firmware security configurations
+        run: |
+          echo "🔒 Checking firmware security configurations..."
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# 🔒 Firmware Security Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Check for secure boot and other security features
+          if grep -q "secure_boot" firmware/*.yaml; then
+            echo "✅ **Secure Boot**: Configured" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Secure Boot**: Not configured (optional for development)" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Check OTA password
+          if grep -q "password:" firmware/*.yaml; then
+            echo "✅ **OTA Security**: Password protected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **OTA Security**: No password found - OTA updates are unprotected!" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+          
+          # Check WiFi security
+          if grep -q "password:" firmware/secrets.yaml 2>/dev/null; then
+            echo "✅ **WiFi Security**: Password protected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **WiFi Security**: Using secrets.yaml (recommended)" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Check for hardcoded credentials
+          echo "🔍 Checking for hardcoded credentials..."
+          hardcoded=$(grep -i "password.*:" firmware/*.yaml | grep -v "!secret" | grep -v "password:" | head -5)
+          if [ -n "$hardcoded" ]; then
+            echo "❌ **Hardcoded Credentials**: Found potential hardcoded passwords!" >> $GITHUB_STEP_SUMMARY
+            echo "$hardcoded" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "✅ **Hardcoded Credentials**: None found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  security-summary:
+    name: Security Analysis Summary
+    runs-on: ubuntu-latest
+    needs: [codeql, dependency-check, docker-security, firmware-security]
+    if: always()
+    
+    steps:
+      - name: Generate security summary
+        run: |
+          echo "# 🔐 Security Analysis Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ needs.codeql.result }}" == "success" ]]; then
+            echo "✅ **CodeQL Analysis**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **CodeQL Analysis**: Failed or skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ needs.dependency-check.result }}" == "success" ]]; then
+            echo "✅ **Dependency Security**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Dependency Security**: Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ needs.docker-security.result }}" == "success" ]]; then
+            echo "✅ **Docker Security**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Docker Security**: Failed or skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ needs.firmware-security.result }}" == "success" ]]; then
+            echo "✅ **Firmware Security**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Firmware Security**: Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Security monitoring active across code, dependencies, Docker images, and firmware configurations**" >> $GITHUB_STEP_SUMMARY

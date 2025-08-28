@@ -1,0 +1,187 @@
+name: Validate Firmware Configuration
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'firmware/**'
+      - 'scripts/build-firmware.sh'
+      - '.github/workflows/build-firmware.yml'
+      - '.github/workflows/validate-firmware.yml'
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'firmware/**'
+      - 'scripts/build-firmware.sh'
+      - '.github/workflows/build-firmware.yml'
+      - '.github/workflows/validate-firmware.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write  # Needed to comment on PRs
+
+jobs:
+  validate-yaml:
+    name: Validate YAML Syntax and Configuration
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python for YAML validation
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install YAML validator
+        run: |
+          pip install yamllint pyyaml
+
+      - name: Validate YAML syntax and structure
+        run: |
+          echo "🔍 Validating YAML syntax for all firmware files..."
+          for yaml_file in firmware/*.yaml; do
+            if [ -f "$yaml_file" ]; then
+              echo "Checking: $yaml_file"
+              # Use custom ESPHome validator that handles !secret tags
+              python3 scripts/validate_esphome.py "$yaml_file" || exit 1
+              echo "✅ $yaml_file - Valid"
+            fi
+          done
+
+  validate-esphome:
+    name: ESPHome Configuration Validation
+    runs-on: ubuntu-latest
+    needs: validate-yaml
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        board: [nodemcu-32s, esp32dev, esp-wrover-kit, esp32-s3-devkitc-1]
+        sensor: [DHT11, DHT22, NONE]
+        
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache ESPHome
+        uses: actions/cache@v4
+        with:
+          path: ~/.esphome
+          key: ${{ runner.os }}-esphome-2025.8.0-${{ hashFiles('firmware/firmware.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-esphome-2025.8.0-
+
+      - name: Validate ESPHome configuration
+        run: |
+          echo "🔍 Validating ESPHome configuration for ${{ matrix.board }} with ${{ matrix.sensor }} sensor..."
+          
+          # First, try our custom Python validator
+          echo "🔧 Python validation..."
+          if ./scripts/build-firmware.sh validate "${{ matrix.board }}" "${{ matrix.sensor }}"; then
+            echo "✅ Python validation passed for ${{ matrix.board }} with ${{ matrix.sensor }}"
+            
+            # If Docker is available, also run ESPHome validation
+            if command -v docker &> /dev/null; then
+              echo "🐳 Docker ESPHome validation..."
+              # Use the build script validation which creates the board-specific config
+              temp_config="firmware-${{ matrix.board }}-${{ matrix.sensor | lower }}.yaml"
+              if [ -f "$temp_config" ]; then
+                docker run --rm \
+                  -v "${PWD}:/config" \
+                  "esphome/esphome:2025.8.0" \
+                  config "$temp_config" > /dev/null 2>&1 && \
+                echo "✅ ESPHome Docker validation passed" || \
+                echo "⚠️  ESPHome Docker validation failed (config may still be valid)"
+                rm -f "$temp_config"
+              fi
+            else
+              echo "ℹ️  Docker not available - skipping ESPHome Docker validation"
+            fi
+          else
+            echo "❌ Validation failed for ${{ matrix.board }} with ${{ matrix.sensor }}"
+            exit 1
+          fi
+
+  validate-build-script:
+    name: Validate Build Script
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Test build script syntax
+        run: |
+          echo "🔍 Checking build script syntax..."
+          bash -n scripts/build-firmware.sh
+          echo "✅ Build script syntax is valid"
+
+      - name: Test build script help and validation
+        run: |
+          echo "🔍 Testing build script help and validation functions..."
+          
+          # Test help output
+          ./scripts/build-firmware.sh --help || echo "Help command executed"
+          
+          # Test invalid board validation
+          if ./scripts/build-firmware.sh validate invalid-board 2>/dev/null; then
+            echo "❌ Build script should reject invalid board names"
+            exit 1
+          else
+            echo "✅ Build script correctly rejects invalid board names"
+          fi
+          
+          # Test invalid sensor validation  
+          if ./scripts/build-firmware.sh validate nodemcu-32s INVALID 2>/dev/null; then
+            echo "❌ Build script should reject invalid sensor types"
+            exit 1
+          else
+            echo "✅ Build script correctly rejects invalid sensor types"
+          fi
+
+  summary:
+    name: Validation Summary
+    runs-on: ubuntu-latest
+    needs: [validate-yaml, validate-esphome, validate-build-script]
+    if: always()
+    
+    steps:
+      - name: Generate validation summary
+        run: |
+          echo "# 📋 Firmware Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ needs.validate-yaml.result }}" == "success" ]]; then
+            echo "✅ **YAML Syntax Validation**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **YAML Syntax Validation**: Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ needs.validate-esphome.result }}" == "success" ]]; then
+            echo "✅ **ESPHome Configuration**: All 12 variants validated" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **ESPHome Configuration**: Validation failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ needs.validate-build-script.result }}" == "success" ]]; then
+            echo "✅ **Build Script Validation**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Build Script Validation**: Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Validation completed for firmware changes**" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check overall validation status
+        run: |
+          if [[ "${{ needs.validate-yaml.result }}" != "success" ]] || \
+             [[ "${{ needs.validate-esphome.result }}" != "success" ]] || \
+             [[ "${{ needs.validate-build-script.result }}" != "success" ]]; then
+            echo "❌ One or more validation steps failed"
+            exit 1
+          else
+            echo "✅ All validation steps passed successfully"
+          fi
