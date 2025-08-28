@@ -174,7 +174,6 @@ export const createApp = (config = {}) => {
     // Only allow development header from localhost/127.0.0.1
     if (authUser === 'development') {
       if (req.hostname !== 'localhost' && req.hostname !== '127.0.0.1') {
-        console.warn(`Rejected development auth from non-localhost hostname: ${req.hostname}`)
         return res.status(401).json({ error: 'Authentication required' })
       }
     } else if (authUser === undefined && req.hostname === 'localhost') {
@@ -268,12 +267,14 @@ export const createApp = (config = {}) => {
     const user = req.authUser
     const path = req.file.path
 
-    console.log(`Processing receipt upload for user: ${user}, file: ${path}`)
-
     let parsed = null; let error = null; let lat = null; let lon = null
 
     try {
-      parsed = await parseReceipt(path)
+      // Sanitize path to prevent directory traversal
+      const filename = path.split('/').pop()
+      if (!/^[\w.-]+$/.test(filename)) throw new Error('Invalid file name')
+      const safePath = `${UPLOAD_DIR}${filename}`
+      parsed = await parseReceipt(safePath)
       console.log('OCR parsing successful:', parsed)
       const addr = [parsed.station_address, parsed.station_zip, parsed.station_city].filter(Boolean).join(' ')
       const geo = await geocodeAddress(addr)
