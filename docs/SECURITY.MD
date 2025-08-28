@@ -44,11 +44,12 @@ The backend enforces rate limits using `express-rate-limit`:
 | /upload/:filename       | 30 req/min (device)  |
 | /uploadReceipt          | 10 req/min (user)    |
 | /retryReceipt/:id       | 10 req/min (user)    |
-| /api/fuel, /api/trips   | 60 req/min (user)    |
+| /api/fuel               | 60 req/min (user)    |
 | /api/fuel/months        | 60 req/min (user)    |
+| /api/trips              | 60 req/min (user)    |
 | /api/trip/:start        | 60 req/min (user)    |
 
-If a client exceeds the limit, a `429 Too Many Requests` error is returned. Limits are per IP/user.
+Rate limiters are now defined in a reusable `limiters` map in the code, ensuring consistency and maintainability. If a client exceeds the limit, a `429 Too Many Requests` error is returned. Limits are per IP/user.
 
 See also: [README.MD](../README.MD)
 

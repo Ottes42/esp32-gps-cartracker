@@ -69,25 +69,28 @@ CREATE TABLE IF NOT EXISTS fuel (
 );
 `)
 
-// Rate limiters (see docs/SECURITY.MD)
-const gpsUploadLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 30, // 30 requests/minute
-  standardHeaders: true,
-  legacyHeaders: false
-})
-const receiptUploadLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 10, // 10 requests/minute
-  standardHeaders: true,
-  legacyHeaders: false
-})
-const apiLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 60, // 60 requests/minute
-  standardHeaders: true,
-  legacyHeaders: false
-})
+// Define reusable rate limiters
+const limiters = {
+  gpsUpload: rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 30, // 30 requests/minute
+    standardHeaders: true,
+    legacyHeaders: false
+  }),
+  receiptUpload: rateLimit({
+    windowMs: 60 * 1000,
+    max: 10, // 10 requests/minute
+    standardHeaders: true,
+    legacyHeaders: false
+  }),
+  api: rateLimit({
+    windowMs: 60 * 1000,
+    max: 60, // 60 requests/minute
+    standardHeaders: true,
+    legacyHeaders: false
+  })
+}
+
 const app = express()
 app.use(cors())
 app.use(express.json())
@@ -201,7 +204,7 @@ function distanceKm (lat1, lon1, lat2, lon2) {
 
 /* ---------------- CSV Upload ---------------- */
 
-app.post('/upload/:filename', gpsUploadLimiter, express.text({ type: 'text/csv', limit: '10mb' }), (req, res) => {
+app.post('/upload/:filename', limiters.gpsUpload, express.text({ type: 'text/csv', limit: '10mb' }), (req, res) => {
   const device = req.authUser // from proxy
   const fname = req.params.filename
   const lines = req.body.split(/\r?\n/).filter(l => l.trim().length > 0)
@@ -251,7 +254,7 @@ app.post('/upload/:filename', gpsUploadLimiter, express.text({ type: 'text/csv',
 
 const up = multer({ dest: UPLOAD_DIR })
 
-app.post('/uploadReceipt', receiptUploadLimiter, up.single('photo'), async (req, res) => {
+app.post('/uploadReceipt', limiters.receiptUpload, up.single('photo'), async (req, res) => {
   if (!req.file?.path) return res.status(400).json({ ok: false, error: 'no file' })
   const user = req.authUser
   const path = req.file.path
@@ -294,7 +297,7 @@ app.post('/uploadReceipt', receiptUploadLimiter, up.single('photo'), async (req,
   res.json({ ok: !!parsed, parsed, error, consumption })
 })
 
-app.post('/retryReceipt/:id', receiptUploadLimiter, async (req, res) => {
+app.post('/retryReceipt/:id', limiters.receiptUpload, async (req, res) => {
   const user = req.authUser
   const fuel = db.prepare('SELECT * FROM fuel WHERE id=? AND user=?').get(req.params.id, user)
   if (!fuel) return res.status(404).json({ ok: false, error: 'not found for user' })
@@ -318,14 +321,14 @@ app.post('/retryReceipt/:id', receiptUploadLimiter, async (req, res) => {
 
 /* ---------------- Read APIs ---------------- */
 
-app.get('/api/fuel', apiLimiter, (req, res) => {
+app.get('/api/fuel', limiters.api, (req, res) => {
   const limit = Math.min(Number(req.query.limit || 50), 200)
   const offset = Math.max(Number(req.query.offset || 0), 0)
   const rows = db.prepare('SELECT * FROM fuel ORDER BY ts DESC LIMIT ? OFFSET ?').all(limit, offset)
   res.json(rows)
 })
 
-app.get('/api/fuel/months', apiLimiter, (req, res) => {
+app.get('/api/fuel/months', limiters.api, (req, res) => {
   const rows = db.prepare(`
     WITH months AS (
       SELECT substr(ts,1,7) as month,
@@ -345,7 +348,7 @@ app.get('/api/fuel/months', apiLimiter, (req, res) => {
   res.json(rows)
 })
 
-app.get('/api/trips', apiLimiter, (req, res) => {
+app.get('/api/trips', limiters.api, (req, res) => {
   const limit = Math.min(Number(req.query.limit || 20), 200)
   const offset = Math.max(Number(req.query.offset || 0), 0)
   const rows = db.prepare(`
@@ -365,7 +368,7 @@ app.get('/api/trips', apiLimiter, (req, res) => {
   res.json(rows)
 })
 
-app.get('/api/trip/:start', apiLimiter, (req, res) => {
+app.get('/api/trip/:start', limiters.api, (req, res) => {
   const start = req.params.start
   const row = db.prepare(`
     WITH diffs AS (
