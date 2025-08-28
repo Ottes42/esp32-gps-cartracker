@@ -4,12 +4,32 @@ on:
   push:
     tags:
       - 'v*'
+    branches:
+      - main
+    paths:
+      - 'firmware/**'
+      - 'scripts/build-firmware.sh'
+      - '.github/workflows/build-firmware.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'firmware/**'
+      - 'scripts/build-firmware.sh'
+      - '.github/workflows/build-firmware.yml'
   workflow_dispatch:
     inputs:
       version:
         description: 'Release version (e.g., v1.0.0)'
         required: true
         default: 'v1.0.0'
+      build_mode:
+        description: 'Build mode: all variants or quick validation'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - quick        
       esphome_version:
         description: 'ESPHome version (e.g., 2025.8.0)'
         required: false
@@ -18,14 +38,68 @@ on:
 env:
   ESPHOME_VERSION: ${{ github.event.inputs.esphome_version || '2025.8.0' }}
 
+
+
+
 permissions:
   contents: write  # Needed to create releases and push tags
   actions: read    # Needed to download workflow artifacts
 
 jobs:
+  # Quick validation build (PR and non-release pushes)
+  quick-build:
+    name: Quick Validation Build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')) || (github.event_name == 'workflow_dispatch' && inputs.build_mode == 'quick')
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Test primary board with different sensors for validation
+          - board: nodemcu-32s
+            board_name: "BerryBase NodeMCU-ESP32"
+            chip: "ESP32"
+            sensor: DHT11
+          - board: esp32dev
+            board_name: "Generic ESP32 DevKit" 
+            chip: "ESP32"
+            sensor: DHT22
+          - board: esp32-s3-devkitc-1
+            board_name: "ESP32-S3-DevKitC-1"
+            chip: "ESP32-S3"
+            sensor: NONE
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache ESPHome
+        uses: actions/cache@v4
+        with:
+          path: ~/.esphome
+          key: ${{ runner.os }}-esphome-2025.8.0-${{ hashFiles('firmware/firmware.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-esphome-2025.8.0-
+
+      - name: Build firmware variant
+        run: |
+          echo "🔨 Quick validation build for ${{ matrix.board_name }} with ${{ matrix.sensor }} sensor"
+          if ! docker run --rm \
+              -v "${PWD}:/config" \
+              -v ~/.esphome:/config/.esphome \
+              "esphome/esphome:2025.8.0" \
+              compile /config/firmware/firmware.yaml; then
+            echo "❌ Quick build failed for ${{ matrix.board }} with ${{ matrix.sensor }}"
+            exit 1
+          fi
+          echo "✅ Quick build passed for ${{ matrix.board }} with ${{ matrix.sensor }}"
+
+  # Full build matrix (releases and manual full builds)
   build-firmware:
     name: Build All Firmware Variants
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.build_mode == 'all')
     strategy:
       fail-fast: false
       matrix:
@@ -106,9 +180,19 @@ jobs:
           echo "Chip: ${{ matrix.chip }}"
           echo "Sensor: ${{ matrix.sensor }}"
           
-          # Validate board is supported
-          if [[ ! "${{ matrix.board }}" =~ ^(nodemcu-32s|esp32dev|esp-wrover-kit|esp32-s3-devkitc-1)$ ]]; then
+          # Read supported boards from shared configuration file
+          mapfile -t SUPPORTED_BOARDS < boards.txt
+          board_valid=false
+          for board in "${SUPPORTED_BOARDS[@]}"; do
+            if [[ "${{ matrix.board }}" == "$board" ]]; then
+              board_valid=true
+              break
+            fi
+          done
+          
+          if [[ "$board_valid" != "true" ]]; then
             echo "❌ Invalid board: ${{ matrix.board }}"
+            echo "📋 Supported boards: ${SUPPORTED_BOARDS[*]}"
             exit 1
           fi
           

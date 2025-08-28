@@ -22,7 +22,7 @@ updates:
       - "@ottes"
     commit-message:
       prefix: "ci"
-  # Docker
+  # Docker (includes ESPHome Docker images)
   - package-ecosystem: "docker"
     directory: "/"
     schedule:

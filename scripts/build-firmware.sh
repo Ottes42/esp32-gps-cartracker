@@ -7,7 +7,8 @@ set -e
 
 # Configuration
 ESPHOME_VERSION="${2:-${ESPHOME_VERSION:-2025.8.0}}"
-BOARDS=("nodemcu-32s" "esp32dev" "esp-wrover-kit" "esp32-s3-devkitc-1")
+# Read supported boards from shared configuration file
+mapfile -t BOARDS < "${BASH_SOURCE[0]%/*}/../boards.txt"
 TEMP_SENSORS=("DHT11" "DHT22" "NONE")
 BUILD_DIR="build"
 
@@ -206,13 +207,10 @@ validate_board_variant() {
     # Apply temperature sensor configuration
     apply_temp_sensor "$config_name" "$temp_sensor"
     
-    # Validate config with ESPHome
-    echo "🔍 Validating YAML syntax..."
-    if docker run --rm \
-        -v "${PWD}:/config" \
-        "esphome/esphome:$ESPHOME_VERSION" \
-        config "$config_name" > /dev/null 2>&1; then
-        echo "✅ Configuration valid for $board with $temp_sensor"
+    # Validate config with Python validator (faster, works without Docker)
+    echo "🔍 Validating YAML syntax with Python..."
+    if python3 scripts/validate_esphome.py "$config_name"; then
+        echo "✅ Python validation passed for $board with $temp_sensor"
         
         # Show key changes
         echo "📋 Configuration summary:"
@@ -221,8 +219,12 @@ validate_board_variant() {
         echo "   Friendly name: $(grep 'friendly_name:' "$config_name" | cut -d':' -f2- | xargs)"
         echo "   Temperature sensor: $temp_sensor"
         
-        # Keep the config file for review
-        echo "   Config saved: $config_name"
+        # Keep the config file for review if requested, otherwise clean up
+        if [ "${KEEP_CONFIG:-}" != "1" ]; then
+            rm -f "$config_name"
+        else
+            echo "   Config saved: $config_name"
+        fi
         echo ""
         return 0
     else
@@ -394,13 +396,27 @@ elif [ "$1" = "all" ]; then
         done
     done
 elif [ "$1" = "validate" ]; then
-    # Validate all board configs with all temperature sensors
-    echo "Validating all board configurations..."
-    for board in "${BOARDS[@]}"; do
-        for temp_sensor in "${TEMP_SENSORS[@]}"; do
-            validate_board_variant "$board" "$temp_sensor"
+    # Validate specific board and sensor, or all if no specific args
+    if [ -n "$2" ] && [ -n "$3" ]; then
+        # Validate specific board and sensor combination
+        if [[ " ${BOARDS[@]} " =~ " $2 " ]] && [[ " ${TEMP_SENSORS[@]} " =~ " $3 " ]]; then
+            echo "Validating specific configuration: $2 with $3 sensor..."
+            validate_board_variant "$2" "$3"
+        else
+            echo "❌ Invalid board '$2' or sensor '$3'"
+            echo "Available boards: ${BOARDS[*]}"
+            echo "Available sensors: ${TEMP_SENSORS[*]}"
+            exit 1
+        fi
+    else
+        # Validate all board configs with all temperature sensors
+        echo "Validating all board configurations..."
+        for board in "${BOARDS[@]}"; do
+            for temp_sensor in "${TEMP_SENSORS[@]}"; do
+                validate_board_variant "$board" "$temp_sensor"
+            done
         done
-    done
+    fi
 elif [[ " ${BOARDS[@]} " =~ " $1 " ]]; then
     # Build specific board
     build_board "$1"
