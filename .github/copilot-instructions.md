@@ -41,10 +41,10 @@ cp .env.example .env.local
 # 3. Start development server (instant)
 npm run dev
 
-# 4. Run tests (1 second - NEVER CANCEL)
+# 4. Run tests (~2 seconds - NEVER CANCEL)
 npm test
 
-# 5. Check code style (instant)
+# 5. Check code style (~2 seconds)
 npm run lint
 ```
 
@@ -52,10 +52,10 @@ npm run lint
 ```bash
 # Development & Testing
 npm run dev              # Dev server with hot reload & env loading (instant start)
-npm run test             # Run full test suite (53 tests in ~1 second - NEVER CANCEL)
+npm run test             # Run full test suite (53 tests in ~2 seconds - NEVER CANCEL)
 npm run test:watch       # Test in watch mode
 npm run test:coverage    # Generate coverage report
-npm run lint            # Check StandardJS compliance (instant)
+npm run lint            # Check StandardJS compliance (~2 seconds)
 npm run lint:fix        # Auto-fix linting issues
 
 # Test Data Generation
@@ -65,21 +65,21 @@ npm run testFuel        # Generate fuel receipt test data (0.2 seconds)
 # Firmware Development (ESPHome 2025.8.0)
 ./scripts/build-firmware.sh all        # Build all board variants (5-15 minutes per board - NEVER CANCEL)
 ./scripts/build-firmware.sh nodemcu-32s # Build specific board (5-15 minutes - NEVER CANCEL)
-./scripts/build-firmware.sh validate   # Validate configs only (15 seconds)
+./scripts/build-firmware.sh validate   # Validate configs only (~1 second)
 ```
 
 ## CRITICAL BUILD & TEST TIMING
 
 ### NEVER CANCEL Commands - Exact Timeouts Required
-- **`npm test`**: ~1 second (timeout: 30 seconds)
-- **Firmware validation**: ~15 seconds (timeout: 60 seconds)
+- **`npm test`**: ~2 seconds (timeout: 30 seconds)
+- **Firmware validation**: ~1 second (timeout: 30 seconds)
 - **Single firmware build**: 5-15 minutes (timeout: 20 minutes minimum)
 - **All firmware builds**: 60-180 minutes (timeout: 240 minutes minimum)
 - **`npm install`**: ~21 seconds (timeout: 120 seconds)
 
 ### Instant Commands
 - **`npm run dev`**: <1 second startup
-- **`npm run lint`**: Instant
+- **`npm run lint`**: ~2 seconds
 - **`node index.js`**: <1 second startup
 - **Test data generation**: ~0.2 seconds each
 
@@ -107,7 +107,7 @@ npm run testFuel        # Generate fuel receipt test data (0.2 seconds)
 ```bash
 # ALWAYS run these validation steps after making changes:
 npm install                    # 21 seconds
-npm test                      # 1 second - expect 51/53 tests to pass
+npm test                      # 2 seconds - expect 53/53 tests to pass
 npm run lint                  # Instant - must pass with zero errors
 node index.js                 # Start server - should see "cartracker api on 8080"
 ```
@@ -169,7 +169,7 @@ npm run test:coverage      # With coverage report
 npm run test:watch         # Continuous testing during development
 ```
 
-**Expected Results**: 51/53 tests pass (2 failures are expected and documented)
+**Expected Results**: 53/53 tests pass (all tests pass with current implementation)
 
 ## Release Process
 
@@ -380,10 +380,10 @@ docker-compose up -d
 Before submitting any changes, ALWAYS run this complete validation:
 
 ```bash
-# 1. Clean install and basic functionality (22 seconds total)
+# 1. Clean install and basic functionality (25 seconds total)
 npm install                        # 21 seconds
-npm test                          # 1 second - 51/53 tests pass
-npm run lint                      # Instant - zero errors
+npm test                          # 2 seconds - 53/53 tests pass
+npm run lint                      # 2 seconds - zero errors
 
 # 2. Server functionality (5 seconds total)
 node index.js &                   # Start server
@@ -395,7 +395,7 @@ pkill -f "node index.js"         # Stop server
 npm run testCsv                   # 0.2 seconds
 npm run testFuel                  # 0.2 seconds
 
-# 4. Firmware validation (15 seconds)
+# 4. Firmware validation (1 second)
 ./scripts/build-firmware.sh validate  # All 12 variants must pass
 
 # 5. Manual web interface test
@@ -405,6 +405,6 @@ node index.js &
 pkill -f "node index.js"
 ```
 
-**Total validation time**: ~43 seconds (excluding manual browser test)
+**Total validation time**: ~32 seconds (excluding manual browser test)
 
 REMEMBER: NEVER CANCEL firmware builds - they take 5-15+ minutes per board and 60-180+ minutes for all boards.
