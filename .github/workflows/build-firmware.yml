@@ -118,7 +118,23 @@ jobs:
       - name: Copy firmware binary
         run: |
           # Find the compiled binary and copy it with a standardized name
-          find firmware/.esphome/build/gps-cartracker-${{ matrix.board }}/ -name "*.bin" -exec cp {} firmware-${{ matrix.board }}.bin \;
+          # Use 2>/dev/null to suppress permission denied errors and target main firmware binary
+          firmware_bin=$(find firmware/.esphome/build/gps-cartracker-${{ matrix.board }}/ -type f -name "*.bin" \
+            -not -path "*/CMakeFiles/*" \
+            -not -path "*/.piolibdeps/*" \
+            -not -name "*ABI*" \
+            -not -name "*Determine*" \
+            2>/dev/null | head -1)
+          
+          if [ -f "$firmware_bin" ]; then
+            cp "$firmware_bin" firmware-${{ matrix.board }}.bin
+            echo "Copied firmware binary: $firmware_bin -> firmware-${{ matrix.board }}.bin"
+          else
+            echo "Error: No suitable firmware binary found!"
+            echo "Available .bin files:"
+            find firmware/.esphome/build/gps-cartracker-${{ matrix.board }}/ -type f -name "*.bin" 2>/dev/null | head -5 || echo "None found or permission denied"
+            exit 1
+          fi
 
       - name: Create release notes
         run: |
