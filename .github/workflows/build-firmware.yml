@@ -91,6 +91,28 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-esphome-2025.8.0-
 
+      - name: Validate inputs
+        run: |
+          echo "🔍 Validating build inputs..."
+          echo "Board: ${{ matrix.board }}"
+          echo "Board Name: ${{ matrix.board_name }}"
+          echo "Chip: ${{ matrix.chip }}"
+          echo "Sensor: ${{ matrix.sensor }}"
+          
+          # Validate board is supported
+          if [[ ! "${{ matrix.board }}" =~ ^(nodemcu-32s|esp32dev|esp-wrover-kit|esp32-s3-devkitc-1)$ ]]; then
+            echo "❌ Invalid board: ${{ matrix.board }}"
+            exit 1
+          fi
+          
+          # Validate sensor is supported
+          if [[ ! "${{ matrix.sensor }}" =~ ^(DHT11|DHT22|NONE)$ ]]; then
+            echo "❌ Invalid sensor: ${{ matrix.sensor }}"
+            exit 1
+          fi
+          
+          echo "✅ Input validation passed"
+
       - name: Create board-specific firmware config
         run: |
           echo "🔧 Creating firmware config for ${{ matrix.board_name }} with ${{ matrix.sensor }} sensor..."
@@ -201,6 +223,8 @@ jobs:
             echo "✅ Configuration is valid"
           else
             echo "❌ Configuration validation failed"
+            echo "📋 Dumping config for debugging:"
+            head -50 "$config_name" || true
             exit 1
           fi
           
@@ -213,6 +237,8 @@ jobs:
             echo "✅ Compilation successful"
           else
             echo "❌ Compilation failed"
+            echo "📋 Build directory contents:"
+            ls -la .esphome/build/ 2>/dev/null || echo "Build directory not found"
             exit 1
           fi
 
@@ -234,6 +260,14 @@ jobs:
               cp "$binary" "firmware_output/${output_name}.bin"
               binary_found=true
               echo "✅ Copied firmware binary: $binary -> firmware_output/${output_name}.bin"
+              
+              # Verify binary size (should be reasonable for ESP32 firmware)
+              size=$(stat -c%s "firmware_output/${output_name}.bin")
+              if [ $size -lt 100000 ] || [ $size -gt 10000000 ]; then
+                echo "⚠️  Warning: Firmware size ${size} bytes seems unusual"
+              else
+                echo "✅ Firmware size: ${size} bytes (reasonable)"
+              fi
               break
             fi
           done
@@ -242,6 +276,8 @@ jobs:
             echo "❌ No binary found for ${{ matrix.board }} with ${{ matrix.sensor }}"
             echo "Available .bin files:"
             find ".esphome/build/$device_name" -name "*.bin" 2>/dev/null | head -10 || echo "None found"
+            echo "Available directories:"
+            ls -la ".esphome/build/" 2>/dev/null || echo "Build directory not accessible"
             exit 1
           fi
           
