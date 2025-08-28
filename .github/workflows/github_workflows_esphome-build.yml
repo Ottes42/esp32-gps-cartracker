@@ -5,6 +5,10 @@ on:
     branches: ["main"]
     tags: ["v*.*.*"]
 
+permissions:
+  contents: write  # Needed to create releases and push tags
+  actions: read    # Needed to upload artifacts
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -50,29 +54,37 @@ jobs:
           echo "version=main-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_OUTPUT
         fi
     
-    - name: Rename firmware files
+    - name: Copy firmware files with version
       run: |
-        # Only rename the actual firmware binary, not test files or dependencies
-        # Use 2>/dev/null to suppress permission denied errors from inaccessible directories
+        # Copy firmware binaries with versioned names to avoid permission issues
+        # Create a working directory for output files
+        mkdir -p firmware_output
+        
+        echo "Looking for compiled firmware binary..."
+        firmware_found=false
+        
+        # First attempt: Look for firmware.ino.bin (ESPHome Arduino builds)
         firmware_bin=$(find firmware/.esphome/build/ -type f -name "*.bin" -path "*/firmware.ino.bin" 2>/dev/null | head -1)
         if [ -f "$firmware_bin" ]; then
-          firmware_dir=$(dirname "$firmware_bin")
-          mv "$firmware_bin" "$firmware_dir/firmware-${{ steps.version.outputs.version }}.bin"
-          echo "Renamed firmware binary to: firmware-${{ steps.version.outputs.version }}.bin"
+          cp "$firmware_bin" "firmware_output/firmware-${{ steps.version.outputs.version }}.bin"
+          echo "✅ Copied firmware.ino.bin to: firmware-${{ steps.version.outputs.version }}.bin"
+          firmware_found=true
         else
-          echo "Warning: No firmware.ino.bin found, looking for main firmware binary..."
-          # Fallback: look for firmware binary in .pioenvs subdirectory, exclude CMake artifacts and dependencies
+          echo "No firmware.ino.bin found, looking for main firmware binary..."
+          
+          # Second attempt: Look for firmware.bin in .pioenvs subdirectory
           firmware_bin=$(find firmware/.esphome/build/ -type f -name "*.bin" \
             -path "*/.pioenvs/*/firmware.bin" \
             2>/dev/null | head -1)
           
           if [ -f "$firmware_bin" ]; then
-            firmware_dir=$(dirname "$firmware_bin")
-            mv "$firmware_bin" "$firmware_dir/firmware-${{ steps.version.outputs.version }}.bin"
-            echo "Renamed firmware binary to: firmware-${{ steps.version.outputs.version }}.bin"
+            cp "$firmware_bin" "firmware_output/firmware-${{ steps.version.outputs.version }}.bin"
+            echo "✅ Copied PlatformIO firmware.bin to: firmware-${{ steps.version.outputs.version }}.bin"
+            firmware_found=true
           else
-            echo "Warning: No firmware.bin found in .pioenvs, trying broader search..."
-            # Last resort: look for any .bin but exclude known build artifacts and dependencies
+            echo "No PlatformIO firmware.bin found, trying broader search..."
+            
+            # Final attempt: Look for any suitable .bin file, exclude build artifacts
             firmware_bin=$(find firmware/.esphome/build/ -type f -name "*.bin" \
               -not -path "*/CMakeFiles/*" \
               -not -path "*/.piolibdeps/*" \
@@ -83,29 +95,37 @@ jobs:
               2>/dev/null | head -1)
             
             if [ -f "$firmware_bin" ]; then
-              firmware_dir=$(dirname "$firmware_bin")
               basename=$(basename "$firmware_bin" .bin)
-              mv "$firmware_bin" "$firmware_dir/${basename}-${{ steps.version.outputs.version }}.bin"
-              echo "Renamed firmware binary: ${basename}-${{ steps.version.outputs.version }}.bin"
-            else
-              echo "Error: No suitable firmware binary found!"
-              echo "Available .bin files:"
-              find firmware/.esphome/build/ -type f -name "*.bin" 2>/dev/null | head -10 || echo "None found or permission denied"
-              exit 1
+              cp "$firmware_bin" "firmware_output/${basename}-${{ steps.version.outputs.version }}.bin"
+              echo "✅ Copied firmware binary to: ${basename}-${{ steps.version.outputs.version }}.bin"
+              firmware_found=true
             fi
           fi
         fi
+        
+        if [ "$firmware_found" = false ]; then
+          echo "❌ Error: No suitable firmware binary found!"
+          echo "Available .bin files:"
+          find firmware/.esphome/build/ -type f -name "*.bin" 2>/dev/null | head -10 || echo "None found or permission denied"
+          echo "Build directory structure:"
+          ls -la firmware/.esphome/build/ 2>/dev/null || echo "Build directory not accessible"
+          exit 1
+        fi
+        
+        # List created files for verification
+        echo "Created firmware files:"
+        ls -la firmware_output/
         
     - name: Upload firmware artifacts
       uses: actions/upload-artifact@v4
       with:
         name: firmware-${{ steps.version.outputs.version }}
         path: |
-          **/*-${{ steps.version.outputs.version }}.bin
+          firmware_output/*-${{ steps.version.outputs.version }}.bin
           
     - name: Create Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/v')
       with:
         files: |
-          **/*-${{ steps.version.outputs.version }}.bin
+          firmware_output/*-${{ steps.version.outputs.version }}.bin
