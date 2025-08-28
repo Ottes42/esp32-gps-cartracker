@@ -5,6 +5,7 @@ import multer from 'multer'
 import fs from 'fs'
 import fetch from 'node-fetch'
 import rateLimit from 'express-rate-limit'
+import path from 'path'
 
 // Configuration with defaults for testing
 export const createApp = (config = {}) => {
@@ -80,10 +81,14 @@ export const createApp = (config = {}) => {
   // Helper functions
   const parseReceipt = async (filePath) => {
     if (!GEMINI_KEY) throw new Error('GEMINI_API_KEY missing')
-
-    const imageBuffer = fs.readFileSync(filePath)
+    // Sanitize filePath to prevent directory traversal
+    const resolvedPath = fs.realpathSync(path.resolve(UPLOAD_DIR, path.basename(filePath)))
+    if (!resolvedPath.startsWith(UPLOAD_DIR)) {
+      throw new Error('Invalid file path')
+    }
+    const imageBuffer = fs.readFileSync(resolvedPath)
     const base64Image = imageBuffer.toString('base64')
-    const mimeType = filePath.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg'
+    const mimeType = resolvedPath.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg'
     console.log('Sending image to Gemini API for OCR processing...')
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`, {
@@ -274,11 +279,7 @@ export const createApp = (config = {}) => {
     let parsed = null; let error = null; let lat = null; let lon = null
 
     try {
-      // Sanitize path to prevent directory traversal
-      const filename = path.split('/').pop()
-      if (!/^[\w.-]+$/.test(filename)) throw new Error('Invalid file name')
-      const safePath = `${UPLOAD_DIR}${filename}`
-      parsed = await parseReceipt(safePath)
+            parsed = await parseReceipt(path)
       console.log('OCR parsing successful:', parsed)
       const addr = [parsed.station_address, parsed.station_zip, parsed.station_city].filter(Boolean).join(' ')
       const geo = await geocodeAddress(addr)
