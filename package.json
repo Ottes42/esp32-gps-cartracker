@@ -22,8 +22,7 @@
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "multer": "^2.0.2",
-    "node-fetch": "^3.3.2",
-    "openai": "^5.15.0"
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "husky": "^9.1.7",
@@ -33,7 +32,9 @@
     "supertest": "^7.0.0"
   },
   "standard": {
-    "env": ["jest"]
+    "env": [
+      "jest"
+    ]
   },
   "jest": {
     "testEnvironment": "node",
