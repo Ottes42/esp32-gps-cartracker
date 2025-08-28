@@ -172,7 +172,40 @@ jobs:
             echo "❌ **Hardcoded Credentials**: Found potential hardcoded passwords!" >> $GITHUB_STEP_SUMMARY
             exit 1
           else
-            echo "✅ **Hardcoded Credentials**: None found" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **Hardcoded Credentials**: None found in firmware configs" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Check for default credentials in secrets.yaml
+          echo "🔍 Checking for default credentials in secrets.yaml..."
+          if [ -f "firmware/secrets.yaml" ]; then
+            default_issues=""
+            
+            if grep -q "YourWiFiPassword" firmware/secrets.yaml; then
+              default_issues="${default_issues}- WiFi password is set to default placeholder\n"
+            fi
+            
+            if grep -q 'server_auth_pass: "password"' firmware/secrets.yaml; then
+              default_issues="${default_issues}- Server auth password is set to default 'password'\n"
+            fi
+            
+            if grep -q "YourWiFiNetwork" firmware/secrets.yaml; then
+              default_issues="${default_issues}- WiFi SSID is set to default placeholder\n"
+            fi
+            
+            if [ -n "$default_issues" ]; then
+              echo "⚠️ **Default Credentials Detected**:" >> $GITHUB_STEP_SUMMARY
+              echo "$default_issues" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**Action Required**: Update \`firmware/secrets.yaml\` with actual credentials before production deployment." >> $GITHUB_STEP_SUMMARY
+              echo "**Note**: These are template values for development - change them for security." >> $GITHUB_STEP_SUMMARY
+              
+              # Don't fail CI for default credentials, just warn
+              echo "::warning::Default credentials detected in firmware/secrets.yaml - update before production"
+            else
+              echo "✅ **Default Credentials**: All credentials appear to be customized" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "ℹ️ **secrets.yaml**: File not found (will be created during setup)" >> $GITHUB_STEP_SUMMARY
           fi
 
   security-summary:

@@ -299,19 +299,49 @@ jobs:
             exit 1
           fi
           
-          echo "⚙️ Compiling firmware..."
-          if docker run --rm \
-              -v "${PWD}:/config" \
-              -v ~/.esphome:/config/.esphome \
-              "esphome/esphome:2025.8.0" \
-              compile "/config/$config_name"; then
-            echo "✅ Compilation successful"
-          else
-            echo "❌ Compilation failed"
-            echo "📋 Build directory contents:"
-            ls -la .esphome/build/ 2>/dev/null || echo "Build directory not found"
-            exit 1
-          fi
+          echo "⚙️ Compiling firmware with retry logic..."
+          max_retries=3
+          retry_count=0
+          
+          while [ $retry_count -lt $max_retries ]; do
+            echo "📦 Build attempt $((retry_count + 1))/$max_retries"
+            
+            if docker run --rm \
+                -v "${PWD}:/config" \
+                -v ~/.esphome:/config/.esphome \
+                --memory="4g" \
+                --ulimit nofile=65536:65536 \
+                "esphome/esphome:2025.8.0" \
+                compile "/config/$config_name"; then
+              echo "✅ Compilation successful on attempt $((retry_count + 1))"
+              break
+            else
+              retry_count=$((retry_count + 1))
+              if [ $retry_count -lt $max_retries ]; then
+                echo "⚠️ Build failed on attempt $retry_count, retrying in 15 seconds..."
+                sleep 15
+                # Clear build cache on retry to avoid corrupted state
+                rm -rf .esphome/build/ 2>/dev/null || true
+                docker system prune -f --volumes 2>/dev/null || true
+              else
+                echo "❌ Build failed after $max_retries attempts"
+                
+                # Collect debugging information
+                echo "📋 System resources:"
+                df -h || true
+                free -h || true
+                docker system df 2>/dev/null || true
+                
+                echo "📋 Build directory contents:"
+                ls -la .esphome/build/ 2>/dev/null || echo "Build directory not found"
+                
+                echo "📋 ESPHome logs:"
+                find .esphome -name "*.log" -exec tail -50 {} \; 2>/dev/null || true
+                
+                exit 1
+              fi
+            fi
+          done
 
       - name: Copy firmware binary and create manifest
         run: |
