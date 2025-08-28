@@ -23,7 +23,7 @@
     "express": "^5.1.0",
     "multer": "^2.0.2",
     "node-fetch": "^3.3.2",
-    "openai": "^5.15.0"
+    "openai": "^5.16.0"
   },
   "devDependencies": {
     "husky": "^9.1.7",
