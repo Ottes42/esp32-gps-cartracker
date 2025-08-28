@@ -65,6 +65,65 @@ describe('Rate Limiting', () => {
     expect(response.status).toBe(429)
     expect(response.text).toMatch(/Too many requests/i)
   })
+
+  test('enforces retry receipt rate limit', async () => {
+    const testFile = createMockReceiptFile()
+    const stmt = app.helpers.db.prepare('INSERT INTO fuel (ts, photo_path, user) VALUES (?, ?, ?)')
+    const result = stmt.run('2025-08-18T08:00:00Z', testFile, 'test-user')
+    const fuelId = result.lastInsertRowid
+
+    for (let i = 0; i < 10; i++) {
+      await request(app)
+        .post(`/retryReceipt/${fuelId}`)
+        .set('x-auth-user', 'test-user')
+    }
+    const response = await request(app)
+      .post(`/retryReceipt/${fuelId}`)
+      .set('x-auth-user', 'test-user')
+    expect(response.status).toBe(429)
+    expect(response.text).toMatch(/Too many requests/i)
+    fs.unlinkSync(testFile)
+  })
+
+  test('enforces fuel months rate limit', async () => {
+    for (let i = 0; i < 60; i++) {
+      await request(app)
+        .get('/api/fuel/months')
+        .set('x-auth-user', 'test-user')
+    }
+    const response = await request(app)
+      .get('/api/fuel/months')
+      .set('x-auth-user', 'test-user')
+    expect(response.status).toBe(429)
+    expect(response.text).toMatch(/Too many requests/i)
+  })
+
+  test('enforces trips rate limit', async () => {
+    for (let i = 0; i < 60; i++) {
+      await request(app)
+        .get('/api/trips')
+        .set('x-auth-user', 'test-user')
+    }
+    const response = await request(app)
+      .get('/api/trips')
+      .set('x-auth-user', 'test-user')
+    expect(response.status).toBe(429)
+    expect(response.text).toMatch(/Too many requests/i)
+  })
+
+  test('enforces trip details rate limit', async () => {
+    const startTs = '2025-08-18T08:00:00Z'
+    for (let i = 0; i < 60; i++) {
+      await request(app)
+        .get(`/api/trip/${startTs}`)
+        .set('x-auth-user', 'test-user')
+    }
+    const response = await request(app)
+      .get(`/api/trip/${startTs}`)
+      .set('x-auth-user', 'test-user')
+    expect(response.status).toBe(429)
+    expect(response.text).toMatch(/Too many requests/i)
+  })
 })
 
 describe('API Endpoints', () => {
@@ -124,6 +183,61 @@ describe('API Endpoints', () => {
       }
       const response = await request(app)
         .get('/api/fuel')
+        .set('x-auth-user', 'test-user')
+      expect(response.status).toBe(429)
+      expect(response.text).toMatch(/Too many requests/i)
+    })
+    test('enforces retry receipt rate limit', async () => {
+      const testFile = createMockReceiptFile()
+      const stmt = app.helpers.db.prepare('INSERT INTO fuel (ts, photo_path, user) VALUES (?, ?, ?)')
+      const result = stmt.run('2025-08-18T08:00:00Z', testFile, 'test-user')
+      const fuelId = result.lastInsertRowid
+
+      for (let i = 0; i < 10; i++) {
+        await request(app)
+          .post(`/retryReceipt/${fuelId}`)
+          .set('x-auth-user', 'test-user')
+      }
+      const response = await request(app)
+        .post(`/retryReceipt/${fuelId}`)
+        .set('x-auth-user', 'test-user')
+      expect(response.status).toBe(429)
+      expect(response.text).toMatch(/Too many requests/i)
+      fs.unlinkSync(testFile)
+    })
+    test('enforces fuel months rate limit', async () => {
+      for (let i = 0; i < 60; i++) {
+        await request(app)
+          .get('/api/fuel/months')
+          .set('x-auth-user', 'test-user')
+      }
+      const response = await request(app)
+        .get('/api/fuel/months')
+        .set('x-auth-user', 'test-user')
+      expect(response.status).toBe(429)
+      expect(response.text).toMatch(/Too many requests/i)
+    })
+    test('enforces trips rate limit', async () => {
+      for (let i = 0; i < 60; i++) {
+        await request(app)
+          .get('/api/trips')
+          .set('x-auth-user', 'test-user')
+      }
+      const response = await request(app)
+        .get('/api/trips')
+        .set('x-auth-user', 'test-user')
+      expect(response.status).toBe(429)
+      expect(response.text).toMatch(/Too many requests/i)
+    })
+    test('enforces trip details rate limit', async () => {
+      const startTs = '2025-08-18T08:00:00Z'
+      for (let i = 0; i < 60; i++) {
+        await request(app)
+          .get(`/api/trip/${startTs}`)
+          .set('x-auth-user', 'test-user')
+      }
+      const response = await request(app)
+        .get(`/api/trip/${startTs}`)
         .set('x-auth-user', 'test-user')
       expect(response.status).toBe(429)
       expect(response.text).toMatch(/Too many requests/i)
@@ -567,9 +681,7 @@ describe('API Endpoints', () => {
     test('retries OCR processing successfully', async () => {
       // First, insert a fuel record with OCR error
       const testFile = createMockReceiptFile()
-      const stmt = app.helpers.db.prepare(`INSERT INTO fuel 
-        (ts, photo_path, ocr_error, user) 
-        VALUES (?, ?, ?, ?)`)
+      const stmt = app.helpers.db.prepare('INSERT INTO fuel (ts, photo_path, ocr_error, user) VALUES (?, ?, ?, ?)')
       const result = stmt.run('2025-08-18T08:00:00Z', testFile, 'Previous OCR failed', 'test-user')
       const fuelId = result.lastInsertRowid
 

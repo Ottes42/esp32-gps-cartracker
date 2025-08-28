@@ -4,6 +4,7 @@ import Database from 'better-sqlite3'
 import multer from 'multer'
 import fs from 'fs'
 import fetch from 'node-fetch'
+import rateLimit from 'express-rate-limit'
 
 // Configuration with defaults for testing
 export const createApp = (config = {}) => {
@@ -189,8 +190,30 @@ export const createApp = (config = {}) => {
     next()
   })
 
+  // Define reusable rate limiters
+  const limiters = {
+    gpsUpload: rateLimit({
+      windowMs: 60 * 1000, // 1 minute
+      max: 30, // 30 requests/minute
+      standardHeaders: true,
+      legacyHeaders: false
+    }),
+    receiptUpload: rateLimit({
+      windowMs: 60 * 1000,
+      max: 10, // 10 requests/minute
+      standardHeaders: true,
+      legacyHeaders: false
+    }),
+    api: rateLimit({
+      windowMs: 60 * 1000,
+      max: 60, // 60 requests/minute
+      standardHeaders: true,
+      legacyHeaders: false
+    })
+  }
+
   // CSV Upload endpoint
-  app.post('/upload/:filename', express.text({ type: 'text/csv', limit: '10mb' }), (req, res) => {
+  app.post('/upload/:filename', limiters.gpsUpload, express.text({ type: 'text/csv', limit: '10mb' }), (req, res) => {
     const device = req.authUser
     const fname = req.params.filename
     const lines = req.body.split(/\r?\n/).filter(l => l.trim().length > 0)
@@ -240,7 +263,7 @@ export const createApp = (config = {}) => {
   const up = multer({ dest: UPLOAD_DIR })
 
   // Fuel receipt upload
-  app.post('/uploadReceipt', up.single('photo'), async (req, res) => {
+  app.post('/uploadReceipt', limiters.receiptUpload, up.single('photo'), async (req, res) => {
     if (!req.file?.path) return res.status(400).json({ ok: false, error: 'no file' })
     const user = req.authUser
     const path = req.file.path
@@ -286,7 +309,7 @@ export const createApp = (config = {}) => {
   })
 
   // Retry OCR processing
-  app.post('/retryReceipt/:id', async (req, res) => {
+  app.post('/retryReceipt/:id', limiters.receiptUpload, async (req, res) => {
     const id = req.params.id
     const user = req.authUser
     const fuel = db.prepare('SELECT * FROM fuel WHERE id=? AND user=?').get(id, user)
@@ -314,14 +337,14 @@ export const createApp = (config = {}) => {
   })
 
   // API Endpoints
-  app.get('/api/fuel', (req, res) => {
+  app.get('/api/fuel', limiters.api, (req, res) => {
     const limit = Math.min(Number(req.query.limit || 50), 200)
     const offset = Math.max(Number(req.query.offset || 0), 0)
     const rows = db.prepare('SELECT * FROM fuel ORDER BY ts DESC LIMIT ? OFFSET ?').all(limit, offset)
     res.json(rows)
   })
 
-  app.get('/api/fuel/months', (req, res) => {
+  app.get('/api/fuel/months', limiters.api, (req, res) => {
     const rows = db.prepare(`
       WITH months AS (
         SELECT substr(ts,1,7) as month,
@@ -341,7 +364,7 @@ export const createApp = (config = {}) => {
     res.json(rows)
   })
 
-  app.get('/api/trips', (req, res) => {
+  app.get('/api/trips', limiters.api, (req, res) => {
     const limit = Math.min(Number(req.query.limit || 20), 200)
     const offset = Math.max(Number(req.query.offset || 0), 0)
     const rows = db.prepare(`
@@ -363,7 +386,7 @@ export const createApp = (config = {}) => {
     res.json(rows)
   })
 
-  app.get('/api/trip/:start', (req, res) => {
+  app.get('/api/trip/:start', limiters.api, (req, res) => {
     const start = req.params.start
     const row = db.prepare(`
       WITH diffs AS (
