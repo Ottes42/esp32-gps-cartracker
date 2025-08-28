@@ -34,14 +34,23 @@ For production deployment, you'll need a reverse proxy with HTTP Basic Authentic
 4. **File Size Limits**: Prevents storage abuse
 5. **IP-based Restrictions**: Optional, can restrict to known networks
 
+
 ### Rate Limiting Configuration
 
-Different endpoints have different rate limits:
+The backend enforces rate limits using `express-rate-limit`:
 
-- **GPS Upload**: 30 requests/minute (ESP32 uploads every 1-2 minutes)
-- **Receipt Upload**: 10 requests/minute (manual user uploads)
-- **API Calls**: 60 requests/minute (dashboard queries)
-- **Burst**: Allows temporary spikes above the rate limit
+| Endpoint                | Limit                |
+|-------------------------|----------------------|
+| /upload/:filename       | 30 req/min (device)  |
+| /uploadReceipt          | 10 req/min (user)    |
+| /retryReceipt/:id       | 10 req/min (user)    |
+| /api/fuel, /api/trips   | 60 req/min (user)    |
+| /api/fuel/months        | 60 req/min (user)    |
+| /api/trip/:start        | 60 req/min (user)    |
+
+If a client exceeds the limit, a `429 Too Many Requests` error is returned. Limits are per IP/user.
+
+See also: [README.MD](../README.MD)
 
 ### File Size Limits
 

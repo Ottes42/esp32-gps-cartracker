@@ -8,16 +8,37 @@ Dual-stack IoT GPS car tracker with ESP32 firmware, Node.js backend, and web das
 - **🚀 [Download Latest Firmware](https://github.com/Ottes42/esp32-gps-cartracker/releases)** - Pre-built binaries for all supported boards
 - **💬 [GitHub Issues](https://github.com/Ottes42/esp32-gps-cartracker/issues)** - Report bugs or request features
 
+
+## Security & Rate Limiting
+
+**Rate limits are enforced on all critical endpoints to prevent abuse and denial-of-service attacks.**
+
+| Endpoint                | Limit                |
+|-------------------------|----------------------|
+| /upload/:filename       | 30 req/min (device)  |
+| /uploadReceipt          | 10 req/min (user)    |
+| /retryReceipt/:id       | 10 req/min (user)    |
+| /api/fuel, /api/trips   | 60 req/min (user)    |
+| /api/fuel/months        | 60 req/min (user)    |
+| /api/trip/:start        | 60 req/min (user)    |
+
+If you exceed these limits, you will receive HTTP 429 Too Many Requests.
+
+See [docs/SECURITY.MD](docs/SECURITY.MD) for details.
+
 ## Architecture
 
 **Tech Stack**: ESPHome (firmware) → Express.js + SQLite (backend) → Vanilla HTML/JS (frontend) → Docker + Nginx Proxy Manager (deployment)
 
+
 ### Data Flow
+
 1. **ESP32** → Logs GPS to SD card → Uploads CSV via `/upload/:filename` when WiFi available
 2. **User** → Uploads receipt photo via `/uploadReceipt` → Gemini OCR → Geocoded → Stored  
 3. **Dashboard** → Queries `/api/fuel` and `/api/trips` → Displays maps and statistics
 
 ## Firmware Development
+
 
 ### Pre-built Binaries (Easy Installation)
 Ready-to-flash firmware binary is available for the BerryBase NodeMCU-ESP32 board:
@@ -25,14 +46,17 @@ Ready-to-flash firmware binary is available for the BerryBase NodeMCU-ESP32 boar
 **🚀 [Download Latest Firmware](https://github.com/Ottes42/esp32-gps-cartracker/releases)**
 
 **📱 Flash via Web Browser:**
+
 1. Visit [ESPHome Web Flasher](https://web.esphome.io/)
 2. Upload the `firmware-nodemcu-32s-manifest.json` file
 3. Connect BerryBase NodeMCU-ESP32 via USB and click "Install"
 
 **Supported Hardware:**
+
 - `nodemcu-32s` - BerryBase NodeMCU-ESP32 (only supported board)
 
 📖 **Full Flashing Guide**: [FIRMWARE-FLASHING.MD](docs/FIRMWARE-FLASHING.MD)
+
 
 ### ESPHome Version
 This project uses **ESPHome 2025.8.0** (default version, configurable in GitHub Actions). For local development, use the build script:
