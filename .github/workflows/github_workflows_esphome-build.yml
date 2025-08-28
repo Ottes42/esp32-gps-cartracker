@@ -53,23 +53,46 @@ jobs:
     - name: Rename firmware files
       run: |
         # Only rename the actual firmware binary, not test files or dependencies
-        firmware_bin=$(find firmware/.esphome/build/ -name "*.bin" -path "*/firmware.ino.bin" | head -1)
+        # Use 2>/dev/null to suppress permission denied errors from inaccessible directories
+        firmware_bin=$(find firmware/.esphome/build/ -type f -name "*.bin" -path "*/firmware.ino.bin" 2>/dev/null | head -1)
         if [ -f "$firmware_bin" ]; then
           firmware_dir=$(dirname "$firmware_bin")
           mv "$firmware_bin" "$firmware_dir/firmware-${{ steps.version.outputs.version }}.bin"
           echo "Renamed firmware binary to: firmware-${{ steps.version.outputs.version }}.bin"
         else
           echo "Warning: No firmware.ino.bin found, looking for main firmware binary..."
-          # Fallback: look for any .bin in the main build directory, exclude test/managed_components
-          firmware_bin=$(find firmware/.esphome/build/ -name "*.bin" -not -path "*/test*" -not -path "*/managed_components*" -not -path "*/.piolibdeps*" | head -1)
+          # Fallback: look for firmware binary in .pioenvs subdirectory, exclude CMake artifacts and dependencies
+          firmware_bin=$(find firmware/.esphome/build/ -type f -name "*.bin" \
+            -path "*/.pioenvs/*/firmware.bin" \
+            2>/dev/null | head -1)
+          
           if [ -f "$firmware_bin" ]; then
             firmware_dir=$(dirname "$firmware_bin")
-            basename=$(basename "$firmware_bin" .bin)
-            mv "$firmware_bin" "$firmware_dir/${basename}-${{ steps.version.outputs.version }}.bin"
-            echo "Renamed firmware binary: ${basename}-${{ steps.version.outputs.version }}.bin"
+            mv "$firmware_bin" "$firmware_dir/firmware-${{ steps.version.outputs.version }}.bin"
+            echo "Renamed firmware binary to: firmware-${{ steps.version.outputs.version }}.bin"
           else
-            echo "Error: No firmware binary found!"
-            exit 1
+            echo "Warning: No firmware.bin found in .pioenvs, trying broader search..."
+            # Last resort: look for any .bin but exclude known build artifacts and dependencies
+            firmware_bin=$(find firmware/.esphome/build/ -type f -name "*.bin" \
+              -not -path "*/CMakeFiles/*" \
+              -not -path "*/.piolibdeps/*" \
+              -not -path "*/managed_components/*" \
+              -not -path "*/test*" \
+              -not -name "*ABI*" \
+              -not -name "*Determine*" \
+              2>/dev/null | head -1)
+            
+            if [ -f "$firmware_bin" ]; then
+              firmware_dir=$(dirname "$firmware_bin")
+              basename=$(basename "$firmware_bin" .bin)
+              mv "$firmware_bin" "$firmware_dir/${basename}-${{ steps.version.outputs.version }}.bin"
+              echo "Renamed firmware binary: ${basename}-${{ steps.version.outputs.version }}.bin"
+            else
+              echo "Error: No suitable firmware binary found!"
+              echo "Available .bin files:"
+              find firmware/.esphome/build/ -type f -name "*.bin" 2>/dev/null | head -10 || echo "None found or permission denied"
+              exit 1
+            fi
           fi
         fi
         
