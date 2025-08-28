@@ -17,57 +17,162 @@ permissions:
 
 jobs:
   build-firmware:
-    name: Build Firmware for BerryBase NodeMCU-ESP32
+    name: Build All Firmware Variants
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
-          # BerryBase NodeMCU-ESP32 (only supported board)
+          # NodeMCU-ESP32 (Primary/Recommended)
           - board: nodemcu-32s
             board_name: "BerryBase NodeMCU-ESP32"
-            board_id: "nodemcu-32s"
             chip: "ESP32"
-            pins: "Standard ESP32 pinout with SDMMC SD card support"
+            sensor: DHT11
+          - board: nodemcu-32s
+            board_name: "BerryBase NodeMCU-ESP32"
+            chip: "ESP32"
+            sensor: DHT22
+          - board: nodemcu-32s
+            board_name: "BerryBase NodeMCU-ESP32"
+            chip: "ESP32"
+            sensor: NONE
+            
+          # ESP32 DevKit (Generic)
+          - board: esp32dev
+            board_name: "Generic ESP32 DevKit"
+            chip: "ESP32"
+            sensor: DHT11
+          - board: esp32dev
+            board_name: "Generic ESP32 DevKit"
+            chip: "ESP32"
+            sensor: DHT22
+          - board: esp32dev
+            board_name: "Generic ESP32 DevKit"
+            chip: "ESP32"
+            sensor: NONE
+            
+          # ESP32-WROVER-KIT (With PSRAM)
+          - board: esp-wrover-kit
+            board_name: "ESP32-WROVER-KIT"
+            chip: "ESP32"
+            sensor: DHT11
+          - board: esp-wrover-kit
+            board_name: "ESP32-WROVER-KIT"
+            chip: "ESP32"
+            sensor: DHT22
+          - board: esp-wrover-kit
+            board_name: "ESP32-WROVER-KIT"
+            chip: "ESP32"
+            sensor: NONE
+            
+          # ESP32-S3-DevKitC-1 (Latest)
+          - board: esp32-s3-devkitc-1
+            board_name: "ESP32-S3-DevKitC-1"
+            chip: "ESP32-S3"
+            sensor: DHT11
+          - board: esp32-s3-devkitc-1
+            board_name: "ESP32-S3-DevKitC-1"
+            chip: "ESP32-S3"
+            sensor: DHT22
+          - board: esp32-s3-devkitc-1
+            board_name: "ESP32-S3-DevKitC-1"
+            chip: "ESP32-S3"
+            sensor: NONE
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Cache pip dependencies
+      - name: Cache ESPHome
         uses: actions/cache@v3
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-esphome-${{ hashFiles('**/requirements.txt') }}
+          path: ~/.esphome
+          key: ${{ runner.os }}-esphome-2025.8.0-${{ hashFiles('firmware/firmware.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pip-esphome-
+            ${{ runner.os }}-esphome-2025.8.0-
 
-      - name: Install ESPHome
-        run: |
-          pip install esphome==2025.8.0
       - name: Create board-specific firmware config
         run: |
-          # Copy base firmware and update board
-          cp firmware/firmware.yaml firmware/firmware-${{ matrix.board }}.yaml
+          echo "🔧 Creating firmware config for ${{ matrix.board_name }} with ${{ matrix.sensor }} sensor..."
           
-          # Determine the ESPHome board type (use esphome_board if specified, otherwise use board)
-          esphome_board="${{ matrix.esphome_board || matrix.board }}"
+          # Create board-specific config with temperature sensor variant  
+          config_name="firmware-${{ matrix.board }}-$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]').yaml"
+          cp firmware/firmware.yaml "$config_name"
           
-          # Update board in the config
-          sed -i "s/board: nodemcu-32s/board: $esphome_board/" firmware/firmware-${{ matrix.board }}.yaml
+          # Update board and device naming
+          sed -i "s/board: nodemcu-32s$/board: ${{ matrix.board }}/" "$config_name"
+          sed -i "s/name: gps-cartracker-nmcu$/name: gps-cartracker-${{ matrix.board }}-$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]')/" "$config_name"
+          sed -i "s/friendly_name: GPS Cartracker NMCU$/friendly_name: GPS Cartracker (${{ matrix.board_name }} + ${{ matrix.sensor }})/" "$config_name"
+          sed -i "s/username: gps-cartracker$/username: gps-cartracker-${{ matrix.board }}-$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]')/" "$config_name"
           
-          # Add variant if specified for board compatibility
-          if [ -n "${{ matrix.variant }}" ]; then
-            sed -i "/board: $esphome_board/a\  variant: ${{ matrix.variant }}" firmware/firmware-${{ matrix.board }}.yaml
-          fi
+          # Apply board-specific pin configurations
+          case "${{ matrix.board }}" in
+            "esp32dev")
+              echo "📋 Applying ESP32 DevKit pin configuration"
+              sed -i 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO22"/' "$config_name"
+              sed -i 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO35"/' "$config_name"
+              sed -i 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO23"/' "$config_name"
+              ;;
+            "esp-wrover-kit")
+              echo "📋 Applying ESP32-WROVER-KIT pin configuration"
+              sed -i 's/PIN_UART_RX: "GPIO16"/PIN_UART_RX: "GPIO25"/' "$config_name"
+              sed -i 's/PIN_UART_TX: "GPIO17"/PIN_UART_TX: "GPIO26"/' "$config_name"
+              sed -i 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO27"/' "$config_name"
+              sed -i 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO39"/' "$config_name"
+              sed -i 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO5"/' "$config_name"
+              ;;
+            "esp32-s3-devkitc-1")
+              echo "📋 Applying ESP32-S3-DevKitC-1 pin configuration"
+              sed -i 's/PIN_UART_RX: "GPIO16"/PIN_UART_RX: "GPIO44"/' "$config_name"
+              sed -i 's/PIN_UART_TX: "GPIO17"/PIN_UART_TX: "GPIO43"/' "$config_name"
+              sed -i 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO4"/' "$config_name"
+              sed -i 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO48"/' "$config_name"
+              # ESP32-S3 has different SD card pins
+              sed -i 's/clk_pin: GPIO14/clk_pin: GPIO39/' "$config_name"
+              sed -i 's/cmd_pin: GPIO15/cmd_pin: GPIO38/' "$config_name"
+              sed -i 's/data0_pin: GPIO2/data0_pin: GPIO40/' "$config_name"
+              sed -i 's/data1_pin: GPIO4/data1_pin: GPIO41/' "$config_name"
+              sed -i 's/data2_pin: GPIO12/data2_pin: GPIO42/' "$config_name"
+              sed -i 's/data3_pin: GPIO13/data3_pin: GPIO1/' "$config_name"
+              # Add ESP32-S3 variant
+              sed -i '/^esp32:/a\  variant: esp32s3' "$config_name"
+              ;;
+          esac
           
-          # Update device name to include board
-          sed -i 's/name: gps-cartracker-nmcu/name: gps-cartracker-${{ matrix.board }}/' firmware/firmware-${{ matrix.board }}.yaml
-          sed -i 's/friendly_name: GPS Cartracker NMCU/friendly_name: GPS Cartracker (${{ matrix.board_name }})/' firmware/firmware-${{ matrix.board }}.yaml
+          # Apply temperature sensor configuration
+          case "${{ matrix.sensor }}" in
+            "DHT11")
+              echo "🌡️ Configuring DHT11 sensor"
+              sed -i '/- platform: dht/,/update_interval: 15s/{s/type: DHT22/type: DHT11/}' "$config_name"
+              ;;
+            "DHT22")
+              echo "🌡️ Using DHT22 sensor (default)"
+              # DHT22 is the default in firmware.yaml
+              ;;
+            "NONE")
+              echo "🌡️ Disabling temperature sensor, using dummy values"
+              # Remove DHT sensor and replace with template sensors
+              sed -i '/- platform: dht/,/update_interval: 15s/d' "$config_name"
+              # Insert template sensors after sensor: line
+              sed -i '/^sensor:/a\
+            # Temperature sensor disabled - using dummy values\
+            - platform: template\
+              id: car_temp_c\
+              name: "Temperature"\
+              unit_of_measurement: "°C"\
+              lambda: "return 22.0;"\
+              update_interval: 15s\
+            - platform: template\
+              id: car_hum_pct\
+              name: "Humidity"\
+              unit_of_measurement: "%"\
+              lambda: "return 60.0;"\
+              update_interval: 15s' "$config_name"
+              ;;
+          esac
+          
+          echo "✅ Created config: $config_name"
+
       - name: Create secrets file
         run: |
           if [ ! -f "firmware/secrets.yaml" ]; then
@@ -79,18 +184,67 @@ jobs:
           server_auth_user: "admin"
           server_auth_pass: "password"
           EOF
-            echo "✓ Created firmware/secrets.yaml for CI build"
+            echo "✅ Created firmware/secrets.yaml for CI build"
           else
-            echo "✓ Using existing firmware/secrets.yaml"
+            echo "✅ Using existing firmware/secrets.yaml"
           fi
 
-      - name: Compile firmware
+      - name: Validate and compile firmware
         run: |
-          cd firmware
-          esphome compile firmware-${{ matrix.board }}.yaml
+          config_name="firmware-${{ matrix.board }}-$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]').yaml"
+          
+          echo "🔍 Validating YAML syntax..."
+          if docker run --rm \
+              -v "${PWD}:/config" \
+              "esphome/esphome:2025.8.0" \
+              config "/config/$config_name"; then
+            echo "✅ Configuration is valid"
+          else
+            echo "❌ Configuration validation failed"
+            exit 1
+          fi
+          
+          echo "⚙️ Compiling firmware..."
+          if docker run --rm \
+              -v "${PWD}:/config" \
+              -v ~/.esphome:/config/.esphome \
+              "esphome/esphome:2025.8.0" \
+              compile "/config/$config_name"; then
+            echo "✅ Compilation successful"
+          else
+            echo "❌ Compilation failed"
+            exit 1
+          fi
 
-      - name: Create firmware info
+      - name: Copy firmware binary and create manifest
         run: |
+          config_name="firmware-${{ matrix.board }}-$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]').yaml"
+          device_name="gps-cartracker-${{ matrix.board }}-$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]')"
+          output_name="gps-cartracker-${{ matrix.board }}-$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]')"
+          
+          # Create build directory
+          mkdir -p firmware_output
+          
+          echo "📦 Looking for firmware binary..."
+          binary_found=false
+          
+          # Search for the compiled binary
+          for binary in .esphome/build/$device_name/*.bin; do
+            if [ -f "$binary" ]; then
+              cp "$binary" "firmware_output/${output_name}.bin"
+              binary_found=true
+              echo "✅ Copied firmware binary: $binary -> firmware_output/${output_name}.bin"
+              break
+            fi
+          done
+          
+          if [ "$binary_found" = false ]; then
+            echo "❌ No binary found for ${{ matrix.board }} with ${{ matrix.sensor }}"
+            echo "Available .bin files:"
+            find ".esphome/build/$device_name" -name "*.bin" 2>/dev/null | head -10 || echo "None found"
+            exit 1
+          fi
+          
           # Get version from tag or input
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION="${{ github.event.inputs.version }}"
@@ -98,10 +252,11 @@ jobs:
             VERSION="${GITHUB_REF#refs/tags/}"
           fi
           
-          # Create firmware info JSON for ESPHome Web Flasher
-          cat > firmware-${{ matrix.board }}-manifest.json << EOF
+          # Create manifest for ESPHome Web Flasher
+          echo "📋 Creating Web Flasher manifest..."
+          cat > "firmware_output/${output_name}.json" << EOF
           {
-            "name": "${{ matrix.board_name }} GPS Car Tracker",
+            "name": "${{ matrix.board_name }} GPS Car Tracker (${{ matrix.sensor }})",
             "version": "${VERSION}",
             "home_assistant_domain": "esphome",
             "new_install_prompt_erase": true,
@@ -110,7 +265,7 @@ jobs:
                 "chipFamily": "${{ matrix.chip }}",
                 "parts": [
                   {
-                    "path": "firmware-${{ matrix.board }}.bin",
+                    "path": "${output_name}.bin",
                     "offset": 0
                   }
                 ]
@@ -118,121 +273,19 @@ jobs:
             ]
           }
           EOF
-
-      - name: Copy firmware binary
-        run: |
-          # Find the compiled binary and copy it with a standardized name
-          # Look for the main firmware binary, avoiding build artifacts and test files
-          echo "Looking for compiled firmware binary..."
           
-          # First try: Look for the main firmware.bin in the PlatformIO build directory
-          firmware_bin=""
-          build_dir="firmware/.esphome/build/gps-cartracker-${{ matrix.board }}"
+          echo "✅ Created Web Flasher manifest: firmware_output/${output_name}.json"
           
-          # Try common PlatformIO paths first
-          if [ -f "$build_dir/.pioenvs/gps-cartracker-${{ matrix.board }}/firmware.bin" ]; then
-            firmware_bin="$build_dir/.pioenvs/gps-cartracker-${{ matrix.board }}/firmware.bin"
-            echo "Found PlatformIO firmware binary: $firmware_bin"
-          elif [ -f "$build_dir/.pioenvs/*/firmware.bin" ]; then
-            firmware_bin=$(find "$build_dir/.pioenvs/" -name "firmware.bin" -type f | head -1)
-            echo "Found PlatformIO firmware binary (wildcard): $firmware_bin"
-          else
-            # Fallback: Search for any .bin file that looks like firmware
-            echo "PlatformIO firmware.bin not found, searching for main firmware binary..."
-            firmware_bin=$(find "$build_dir" -type f -name "*.bin" \
-              -not -path "*/CMakeFiles/*" \
-              -not -path "*/.piolibdeps/*" \
-              -not -name "*ABI*" \
-              -not -name "*Determine*" \
-              -not -name "*test*" \
-              -not -name "*debug*" \
-              2>/dev/null | head -1)
-          fi
-          
-          if [ -n "$firmware_bin" ] && [ -f "$firmware_bin" ]; then
-            # Create a working directory to avoid permission issues
-            mkdir -p firmware_output
-            cp "$firmware_bin" "firmware_output/firmware-${{ matrix.board }}.bin"
-            # Also create a copy in the root for artifact upload
-            cp "$firmware_bin" "firmware-${{ matrix.board }}.bin"
-            echo "✅ Copied firmware binary: $firmware_bin -> firmware-${{ matrix.board }}.bin"
-            ls -la firmware-${{ matrix.board }}.bin
-          else
-            echo "❌ Error: No suitable firmware binary found!"
-            echo "Available .bin files in build directory:"
-            find "$build_dir" -type f -name "*.bin" 2>/dev/null | head -10 || echo "  None found or permission denied"
-            echo "Full directory structure:"
-            ls -la "$build_dir" 2>/dev/null || echo "  Build directory not accessible"
-            exit 1
-          fi
-
-      - name: Create release notes
-        run: |
-          cat > release-notes-${{ matrix.board }}.md << EOF
-          ## 🚗 GPS Car Tracker Firmware - ${{ matrix.board_name }}
-          
-          **Board**: ${{ matrix.board_name }}  
-          **Chip**: ${{ matrix.chip }}  
-          **Board ID**: \`${{ matrix.board_id }}\`  
-          **Pin Configuration**: ${{ matrix.pins }}
-          
-          ### 📱 Easy Installation
-          
-          **Option 1: ESPHome Web Flasher** *(Recommended)*
-          1. Download \`firmware-${{ matrix.board }}.bin\` and \`firmware-${{ matrix.board }}.json\`
-          2. Visit [ESPHome Web Flasher](https://web.esphome.io/)
-          3. Upload the JSON file to automatically configure the flasher
-          4. Connect your ${{ matrix.board_name }} via USB
-          5. Click "Install" and follow the prompts
-          
-          **Option 2: Manual Flash**
-          \`\`\`bash
-          # Using esptool.py
-          esptool.py --port /dev/ttyUSB0 write_flash 0x0 firmware-${{ matrix.board }}.bin
-          
-          # Using ESPHome CLI
-          esphome upload firmware-${{ matrix.board }}.yaml --device /dev/ttyUSB0
-          \`\`\`
-          
-          ### ⚙️ Initial Configuration
-          
-          1. **First Boot**: Device creates WiFi AP \`gps-cartracker-setup\` (password: \`setup-setup\`)
-          2. **Connect**: Join the AP and navigate to \`http://192.168.4.1\`
-          3. **Configure**: Set your server URL and authentication credentials
-          4. **WiFi**: Update \`secrets.yaml\` and reflash with your WiFi credentials for production use
-          
-          ### 🔧 Hardware Requirements
-          
-          - **GPS Module**: UART connection (9600 baud)
-          - **SD Card**: SPI or SDMMC interface for data logging
-          - **Sensors**: DHT11/DHT22 for temperature/humidity
-          - **Power**: ACC detection for automatic sleep/wake
-          
-          ### 📡 Features
-          
-          - ✅ GPS tracking with SD card buffering
-          - ✅ Automatic CSV upload when WiFi available
-          - ✅ Web interface for configuration
-          - ✅ Deep sleep power management
-          - ✅ Temperature and humidity monitoring
-          - ✅ Real-time GPS time synchronization
-          
-          ### 🐛 Support
-          
-          - 📖 [Full Documentation](https://github.com/Ottes42/esp32-gps-cartracker/tree/main/docs)
-          - 🌐 [Web Interface Guide](https://github.com/Ottes42/esp32-gps-cartracker/blob/main/docs/WEB-INTERFACE.MD)
-          - 🔧 [Hardware Setup](https://github.com/Ottes42/esp32-gps-cartracker/blob/main/docs/HARDWARE.MD)
-          - 🚀 [Issues & Feature Requests](https://github.com/Ottes42/esp32-gps-cartracker/issues)
-          EOF
+          # Clean up temp config
+          rm -f "$config_name"
 
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: firmware-${{ matrix.board }}
+          name: firmware-${{ matrix.board }}-${{ matrix.sensor }}
           path: |
-            firmware-${{ matrix.board }}.bin
-            firmware-${{ matrix.board }}-manifest.json
-            release-notes-${{ matrix.board }}.md
+            firmware_output/gps-cartracker-${{ matrix.board }}-*.bin
+            firmware_output/gps-cartracker-${{ matrix.board }}-*.json
 
   create-release:
     name: Create GitHub Release
@@ -246,36 +299,119 @@ jobs:
 
       - name: Download all firmware artifacts
         uses: actions/download-artifact@v4
+        with:
+          path: firmware_artifacts
 
       - name: Get version
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-      - name: Create combined release notes
+      - name: Organize firmware files
         run: |
-          echo "# 🚗 GPS Car Tracker Firmware Release ${{ steps.version.outputs.VERSION }}" > RELEASE_NOTES.md
-          echo "" >> RELEASE_NOTES.md
-          echo "Single-board optimized firmware for the BerryBase NodeMCU-ESP32 GPS car tracking device." >> RELEASE_NOTES.md
-          echo "" >> RELEASE_NOTES.md
-          echo "## 📱 Supported Hardware" >> RELEASE_NOTES.md
-          echo "" >> RELEASE_NOTES.md
+          mkdir -p release_assets
           
-          # Add board-specific info (only nodemcu-32s supported)
-          for board in nodemcu-32s; do
-            if [ -f "firmware-${board}/release-notes-${board}.md" ]; then
-              echo "### Supported Board: ${board}" >> RELEASE_NOTES.md
-              tail -n +2 "firmware-${board}/release-notes-${board}.md" >> RELEASE_NOTES.md
-              echo "" >> RELEASE_NOTES.md
-            fi
-          done
+          echo "📦 Organizing firmware files..."
+          # Copy all firmware binaries and manifests to release assets
+          find firmware_artifacts -name "*.bin" -exec cp {} release_assets/ \;
+          find firmware_artifacts -name "*.json" -exec cp {} release_assets/ \;
           
-          echo "## 🔄 Changelog" >> RELEASE_NOTES.md
-          echo "" >> RELEASE_NOTES.md
-          echo "- Optimized for BerryBase NodeMCU-ESP32 hardware" >> RELEASE_NOTES.md
-          echo "- ESPHome Web Flasher compatibility" >> RELEASE_NOTES.md
-          echo "- GPS time synchronization" >> RELEASE_NOTES.md
-          echo "- Web-based configuration interface" >> RELEASE_NOTES.md
-          echo "- Captive portal setup mode" >> RELEASE_NOTES.md
+          echo "📋 Available firmware files:"
+          ls -la release_assets/
+          
+          echo "🔢 Expected files: 24 (12 .bin + 12 .json)"
+          echo "🔢 Actual files: $(ls release_assets/ | wc -l)"
+
+      - name: Create comprehensive release notes
+        run: |
+          cat > RELEASE_NOTES.md << 'EOF'
+          # 🚗 GPS Car Tracker Firmware Release ${{ steps.version.outputs.VERSION }}
+          
+          Multi-board ESP32 firmware with comprehensive hardware support and temperature sensor options.
+          
+          ## 📦 Firmware Builds
+          
+          Each supported board now has 3 firmware variants:
+          
+          ### NodeMCU-ESP32 (Primary Recommended)
+          - `gps-cartracker-nodemcu-32s-dht11.bin` - With DHT11 sensor
+          - `gps-cartracker-nodemcu-32s-dht22.bin` - With DHT22 sensor  
+          - `gps-cartracker-nodemcu-32s-none.bin` - No temperature sensor
+          
+          ### ESP32 DevKit (Generic)
+          - `gps-cartracker-esp32dev-dht11.bin` - With DHT11 sensor
+          - `gps-cartracker-esp32dev-dht22.bin` - With DHT22 sensor
+          - `gps-cartracker-esp32dev-none.bin` - No temperature sensor
+          
+          ### ESP32-WROVER-KIT (With PSRAM)
+          - `gps-cartracker-esp-wrover-kit-dht11.bin` - With DHT11 sensor
+          - `gps-cartracker-esp-wrover-kit-dht22.bin` - With DHT22 sensor
+          - `gps-cartracker-esp-wrover-kit-none.bin` - No temperature sensor
+          
+          ### ESP32-S3-DevKitC-1 (Latest)
+          - `gps-cartracker-esp32-s3-devkitc-1-dht11.bin` - With DHT11 sensor
+          - `gps-cartracker-esp32-s3-devkitc-1-dht22.bin` - With DHT22 sensor
+          - `gps-cartracker-esp32-s3-devkitc-1-none.bin` - No temperature sensor
+          
+          ## 🌐 Web Flasher Support
+          
+          Each firmware binary includes a corresponding `.json` manifest file for easy web-based flashing:
+          
+          1. **Visit**: [ESPHome Web Flasher](https://web.esphome.io/)
+          2. **Upload**: Select the `.json` file for your board and sensor combination
+          3. **Connect**: USB cable to your ESP32 board
+          4. **Flash**: Click "Install" and follow the prompts
+          
+          ## 🎯 Board Selection Guide
+          
+          - **Beginners**: `nodemcu-32s` (most tested, reliable SDMMC SD card support)
+          - **Budget**: `esp32dev` (widely available, affordable, SPI SD card)
+          - **Advanced**: `esp-wrover-kit` (PSRAM for complex applications)
+          - **Latest**: `esp32-s3-devkitc-1` (newest ESP32-S3 with AI acceleration)
+          
+          ## 🌡️ Sensor Selection Guide
+          
+          - **DHT11**: Basic temperature/humidity (±2°C, ±5% RH)
+          - **DHT22**: Precise temperature/humidity (±0.5°C, ±2% RH)
+          - **NONE**: No sensor, dummy values for GPS-only tracking
+          
+          ## ⚙️ Quick Start
+          
+          1. **Flash firmware** using web flasher or esptool.py
+          2. **First boot**: Connect to `gps-cartracker-setup` WiFi (password: `setup-setup`)
+          3. **Configure**: Navigate to `http://192.168.4.1` and set your server details
+          4. **Hardware setup**: Connect GPS module, SD card, and optional sensors
+          5. **Deploy backend**: Use Docker Compose for the complete tracking system
+          
+          ## 📊 Features
+          
+          ✅ **GPS Tracking**: Real-time location logging with NMEA parsing  
+          ✅ **SD Card Storage**: Local CSV buffering with automatic upload  
+          ✅ **WiFi Upload**: Reliable data sync to backend server  
+          ✅ **Web Interface**: Configuration and monitoring via captive portal  
+          ✅ **Power Management**: Deep sleep when ACC (ignition) is off  
+          ✅ **Multi-sensor**: GPS, temperature, humidity, and acceleration detection  
+          ✅ **Time Sync**: GPS time with SNTP fallback for accuracy  
+          ✅ **OTA Updates**: Over-the-air firmware updates support  
+          
+          ## 📖 Documentation
+          
+          - **Hardware Setup**: [HARDWARE.MD](https://github.com/Ottes42/esp32-gps-cartracker/blob/main/docs/HARDWARE.MD)
+          - **Firmware Flashing**: [FIRMWARE-FLASHING.MD](https://github.com/Ottes42/esp32-gps-cartracker/blob/main/docs/FIRMWARE-FLASHING.MD)
+          - **Backend Deployment**: [DEPLOYMENT.MD](https://github.com/Ottes42/esp32-gps-cartracker/blob/main/docs/DEPLOYMENT.MD)
+          - **Web Interface**: [WEB-INTERFACE.MD](https://github.com/Ottes42/esp32-gps-cartracker/blob/main/docs/WEB-INTERFACE.MD)
+          - **API Documentation**: [API.MD](https://github.com/Ottes42/esp32-gps-cartracker/blob/main/docs/API.MD)
+          
+          ## 🚨 Important Notes
+          
+          - **SD Card**: Use Class 10 or better for reliable logging
+          - **Power Supply**: Stable 5V/2A recommended for GPS and cellular modules
+          - **Antenna**: External GPS antenna recommended for vehicle use
+          - **Temperature**: Verify sensor wiring before flashing sensor variants
+          
+          ---
+          
+          **Full Changelog**: https://github.com/Ottes42/esp32-gps-cartracker/compare/v0.6.0...v0.7.0
+          EOF
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -284,9 +420,7 @@ jobs:
           name: GPS Car Tracker Firmware ${{ steps.version.outputs.VERSION }}
           body_path: RELEASE_NOTES.md
           files: |
-            firmware-*/firmware-*.bin
-            firmware-*/firmware-*-manifest.json
-            firmware-*/release-notes-*.md
+            release_assets/*
           draft: false
           prerelease: false
         env:
