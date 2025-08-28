@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # Build firmware for BerryBase NodeMCU-ESP32 board locally
-# Usage: ./scripts/build-firmware.sh [board_id]
+# Usage: ./scripts/build-firmware.sh [board_id] [esphome_version]
 
 set -e
 
 # Configuration
-ESPHOME_VERSION="2025.8.0"
+ESPHOME_VERSION="${2:-${ESPHOME_VERSION:-2025.8.0}}"
 BOARDS=("nodemcu-32s" "esp32dev" "esp-wrover-kit" "esp32-s3-devkitc-1")
 TEMP_SENSORS=("DHT11" "DHT22" "NONE")
 BUILD_DIR="build"
@@ -36,18 +36,26 @@ declare -A BOARD_TYPES=(
 
 # Functions
 print_usage() {
-    echo "Usage: $0 [board_id|all|validate]"
+    echo "Usage: $0 [board_id|all|validate] [esphome_version]"
     echo ""
     echo "Available boards:"
     for board in "${BOARDS[@]}"; do
         echo "  $board - ${BOARD_NAMES[$board]}"
     done
     echo ""
+    echo "Parameters:"
+    echo "  board_id        - Board to build for, 'all', 'validate', or empty for interactive"
+    echo "  esphome_version - ESPHome version to use (default: ${ESPHOME_VERSION})"
+    echo ""
     echo "Examples:"
-    echo "  $0 nodemcu-32s    # Build for specific board"
-    echo "  $0 all            # Build for all boards"
-    echo "  $0 validate       # Just validate configs without compiling"
-    echo "  $0                # Interactive selection"
+    echo "  $0 nodemcu-32s           # Build for specific board with default ESPHome version"
+    echo "  $0 nodemcu-32s 2025.9.0  # Build for specific board with specific ESPHome version"
+    echo "  $0 all                   # Build for all boards"
+    echo "  $0 validate              # Just validate configs without compiling"
+    echo "  $0                       # Interactive selection"
+    echo ""
+    echo "Environment variables:"
+    echo "  ESPHOME_VERSION - Default ESPHome version (current: ${ESPHOME_VERSION})"
 }
 
 create_secrets() {

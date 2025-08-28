@@ -62,7 +62,7 @@ npm run lint:fix        # Auto-fix linting issues
 npm run testCsv         # Generate GPS tracking test data
 npm run testFuel        # Generate fuel receipt test data
 
-# Firmware Development (ESPHome 2025.8.0)
+# Firmware Development (ESPHome 2025.8.0 default, configurable in GitHub Actions)
 ./scripts/build-firmware.sh all        # Build all board variants
 ./scripts/build-firmware.sh nodemcu-32s # Build specific board
 ./scripts/build-firmware.sh validate   # Validate configs only
@@ -187,14 +187,17 @@ try {
 
 ### Firmware Development
 ```bash
-# Local ESPHome development
-docker run --rm -v "${PWD}":/config esphome/esphome:2025.8 compile firmware/firmware.yaml
+# Local ESPHome development (version configurable)
+docker run --rm -v "${PWD}":/config esphome/esphome:2025.8.0 compile firmware/firmware.yaml
 
 # Upload to device
-docker run --rm -v "${PWD}":/config --device=/dev/ttyUSB0 esphome/esphome:2025.8 upload firmware/firmware.yaml
+docker run --rm -v "${PWD}":/config --device=/dev/ttyUSB0 esphome/esphome:2025.8.0 upload firmware/firmware.yaml
 
 # Monitor logs
-docker run --rm -v "${PWD}":/config --device=/dev/ttyUSB0 esphome/esphome:2025.8 logs firmware/firmware.yaml
+docker run --rm -v "${PWD}":/config --device=/dev/ttyUSB0 esphome/esphome:2025.8.0 logs firmware/firmware.yaml
+
+# Or use the build script for easier management
+./scripts/build-firmware.sh nodemcu-32s 2025.8.0
 ```
 
 ### Database Schema Updates
