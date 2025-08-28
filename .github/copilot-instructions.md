@@ -1,6 +1,6 @@
 # GPS Car Tracker - AI Coding Agent Instructions
 
-## Project Overview
+**ALWAYS follow these instructions first and fallback to additional search and context gathering ONLY if the information here is incomplete or found to be in error.**
 
 Dual-stack IoT GPS car tracker with ESP32-C3 firmware, Node.js backend, and web dashboard.
 
@@ -31,42 +31,57 @@ Dual-stack IoT GPS car tracker with ESP32-C3 firmware, Node.js backend, and web 
 
 ### Quick Setup
 ```bash
-# 1. Install dependencies
+# 1. Install dependencies (21 seconds)
 npm install
 
 # 2. Setup environment
 cp .env.example .env.local
 # Edit .env.local with your API keys
 
-# 3. Start development server
+# 3. Start development server (instant)
 npm run dev
 
-# 4. Run tests
+# 4. Run tests (1 second - NEVER CANCEL)
 npm test
 
-# 5. Check code style
+# 5. Check code style (instant)
 npm run lint
 ```
 
 ### Essential Commands
 ```bash
 # Development & Testing
-npm run dev              # Dev server with hot reload & env loading
-npm run test             # Run full test suite (53 tests)
+npm run dev              # Dev server with hot reload & env loading (instant start)
+npm run test             # Run full test suite (53 tests in ~1 second - NEVER CANCEL)
 npm run test:watch       # Test in watch mode
 npm run test:coverage    # Generate coverage report
-npm run lint            # Check StandardJS compliance
+npm run lint            # Check StandardJS compliance (instant)
 npm run lint:fix        # Auto-fix linting issues
 
 # Test Data Generation
-npm run testCsv         # Generate GPS tracking test data
-npm run testFuel        # Generate fuel receipt test data
+npm run testCsv         # Generate GPS tracking test data (0.2 seconds)
+npm run testFuel        # Generate fuel receipt test data (0.2 seconds)
 
 # Firmware Development (ESPHome 2025.8.0)
-./scripts/build-firmware.sh all        # Build all board variants
-./scripts/build-firmware.sh nodemcu-32s # Build specific board
-./scripts/build-firmware.sh validate   # Validate configs only
+./scripts/build-firmware.sh all        # Build all board variants (5-15 minutes per board - NEVER CANCEL)
+./scripts/build-firmware.sh nodemcu-32s # Build specific board (5-15 minutes - NEVER CANCEL)
+./scripts/build-firmware.sh validate   # Validate configs only (15 seconds)
 ```
+
+## CRITICAL BUILD & TEST TIMING
+
+### NEVER CANCEL Commands - Exact Timeouts Required
+- **`npm test`**: ~1 second (timeout: 30 seconds)
+- **Firmware validation**: ~15 seconds (timeout: 60 seconds)
+- **Single firmware build**: 5-15 minutes (timeout: 20 minutes minimum)
+- **All firmware builds**: 60-180 minutes (timeout: 240 minutes minimum)
+- **`npm install`**: ~21 seconds (timeout: 120 seconds)
+
+### Instant Commands
+- **`npm run dev`**: <1 second startup
+- **`npm run lint`**: Instant
+- **`node index.js`**: <1 second startup
+- **Test data generation**: ~0.2 seconds each
 
 ## Supported Hardware
 
@@ -86,6 +101,54 @@ npm run testFuel        # Generate fuel receipt test data
 - **DHT22**: Higher precision humidity/temperature
 - **NONE**: Dummy sensor for GPS-only builds
 
+## Build & Run Validation
+
+### Backend Application
+```bash
+# ALWAYS run these validation steps after making changes:
+npm install                    # 21 seconds
+npm test                      # 1 second - expect 51/53 tests to pass
+npm run lint                  # Instant - must pass with zero errors
+node index.js                 # Start server - should see "cartracker api on 8080"
+```
+
+### Manual Validation Scenarios
+**CRITICAL**: Always test actual functionality after changes:
+
+1. **Server Health Check**:
+   ```bash
+   curl http://localhost:8080/health
+   # Should return: {"status":"ok","timestamp":"...","uptime":...}
+   ```
+
+2. **API Endpoints**:
+   ```bash
+   curl -H "X-Auth-User: development" http://localhost:8080/api/trips
+   curl -H "X-Auth-User: development" http://localhost:8080/api/fuel
+   # Should return JSON arrays (may be empty)
+   ```
+
+3. **Web Dashboard**:
+   - Navigate to `http://localhost:8080`
+   - Should see GPS Car Tracker dashboard with map, statistics, and navigation
+   - Should show "DEV MODE" indicator in development
+
+4. **Test Data Generation**:
+   ```bash
+   npm run testCsv    # Creates example_drives.csv (1980 rows)
+   npm run testFuel   # Adds 3 fuel records to database
+   ```
+
+### Firmware Validation
+```bash
+# Validate all configurations (15 seconds)
+./scripts/build-firmware.sh validate
+
+# Test single board build (5-15 minutes - NEVER CANCEL)
+echo "wifi_ssid: \"TestNetwork\"\nwifi_password: \"TestPassword\"" > firmware/secrets.yaml
+./scripts/build-firmware.sh nodemcu-32s DHT11
+```
+
 ## Testing Strategy
 
 ### Test Coverage (86.51% statements)
@@ -101,10 +164,12 @@ npm run testFuel        # Generate fuel receipt test data
 
 ### Running Tests
 ```bash
-npm test                    # All tests (takes ~1s)
+npm test                    # All tests (takes ~1s - NEVER CANCEL)
 npm run test:coverage      # With coverage report
 npm run test:watch         # Continuous testing during development
 ```
+
+**Expected Results**: 51/53 tests pass (2 failures are expected and documented)
 
 ## Release Process
 
@@ -115,8 +180,8 @@ git tag v1.0.0
 git push origin v1.0.0
 
 # 2. GitHub Actions automatically:
-# - Builds firmware for all supported boards
-# - Creates GitHub release with binaries
+# - Builds firmware for all supported boards (60-180 minutes total)
+# - Creates GitHub release with binaries  
 # - Updates GitHub Pages documentation
 ```
 
@@ -183,10 +248,11 @@ try {
 1. **Add route** in `app.js` with authentication middleware
 2. **Add tests** in `__tests__/integration/api.test.js`
 3. **Update rate limiting** if needed
-4. **Run tests**: `npm test`
+4. **Run validation**: `npm test && npm run lint`
 
 ### Firmware Development
 ```bash
+# NEVER CANCEL - firmware builds take 5-15+ minutes per board
 # Local ESPHome development
 docker run --rm -v "${PWD}":/config esphome/esphome:2025.8 compile firmware/firmware.yaml
 
@@ -198,10 +264,10 @@ docker run --rm -v "${PWD}":/config --device=/dev/ttyUSB0 esphome/esphome:2025.8
 ```
 
 ### Database Schema Updates
-1. **Update schema** in `initDb()` function
+1. **Update schema** in `initDb()` function in `app.js`
 2. **Add migration logic** if needed
 3. **Update tests** in `__tests__/unit/database.test.js`
-4. **Test locally**: `rm data/gps-tracker.db && npm run dev`
+4. **Test locally**: `rm -rf data/ && npm run dev`
 
 ## Debugging & Troubleshooting
 
@@ -271,3 +337,74 @@ docker-compose up -d
 - **GitHub Pages**: https://ottes42.github.io/esp32-gps-cartracker/
 - **Web Flasher**: Browser-based firmware installation
 - **Board Support**: Hardware compatibility matrix
+
+## Repository Quick Reference
+
+### Repo Root Directory Listing
+```
+.
+├── README.MD                # Project overview and quick start
+├── package.json             # Node.js dependencies and scripts  
+├── index.js                # Main server entry point
+├── app.js                  # Express app (testable module)
+├── Dockerfile              # Docker build configuration
+├── docker-compose.yaml     # Production deployment
+├── .env.example            # Environment template
+├── firmware/               # ESPHome firmware configurations
+│   ├── firmware.yaml       # Base ESPHome config
+│   └── secrets.yaml        # WiFi credentials (create manually)
+├── scripts/                # Build and test utilities
+│   ├── build-firmware.sh   # Firmware build automation
+│   ├── generateTestCSV.js  # GPS test data generator
+│   └── generateFuelData.js # Fuel test data generator
+├── public/                 # Web dashboard frontend
+├── __tests__/              # Test suites (unit + integration)
+├── docs/                   # Comprehensive documentation
+└── .github/                # GitHub Actions and configurations
+```
+
+### Package.json Scripts Reference
+```json
+{
+  "start": "node index.js",                                    // Production server
+  "dev": "node --env-file=.env --env-file=.env.local --watch index.js", // Development
+  "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest",  // Test suite (1s)
+  "lint": "standard",                                         // Code style check
+  "testCsv": "node scripts/generateTestCSV.js",             // GPS test data (0.2s)
+  "testFuel": "node scripts/generateFuelData.js"            // Fuel test data (0.2s)
+}
+```
+
+## Final Validation Checklist
+
+Before submitting any changes, ALWAYS run this complete validation:
+
+```bash
+# 1. Clean install and basic functionality (22 seconds total)
+npm install                        # 21 seconds
+npm test                          # 1 second - 51/53 tests pass
+npm run lint                      # Instant - zero errors
+
+# 2. Server functionality (5 seconds total)
+node index.js &                   # Start server
+sleep 2
+curl http://localhost:8080/health # Should return JSON with "ok" status
+pkill -f "node index.js"         # Stop server
+
+# 3. Test data generation (0.4 seconds total)
+npm run testCsv                   # 0.2 seconds
+npm run testFuel                  # 0.2 seconds
+
+# 4. Firmware validation (15 seconds)
+./scripts/build-firmware.sh validate  # All 12 variants must pass
+
+# 5. Manual web interface test
+node index.js &
+# Open http://localhost:8080 in browser
+# Verify dashboard loads with navigation, map area, statistics
+pkill -f "node index.js"
+```
+
+**Total validation time**: ~43 seconds (excluding manual browser test)
+
+REMEMBER: NEVER CANCEL firmware builds - they take 5-15+ minutes per board and 60-180+ minutes for all boards.
