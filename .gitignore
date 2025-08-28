@@ -10,3 +10,4 @@ Thumbs.db
 
 # Test coverage reports
 coverage/
+scripts/build-firmware.sh.backup
