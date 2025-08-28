@@ -62,10 +62,10 @@ npm run lint:fix        # Auto-fix linting issues
 npm run testCsv         # Generate GPS tracking test data (0.2 seconds)
 npm run testFuel        # Generate fuel receipt test data (0.2 seconds)
 
-# Firmware Development (ESPHome 2025.8.0)
-./scripts/build-firmware.sh all        # Build all board variants (5-15 minutes per board - NEVER CANCEL)
-./scripts/build-firmware.sh nodemcu-32s # Build specific board (5-15 minutes - NEVER CANCEL)
-./scripts/build-firmware.sh validate   # Validate configs only (~1 second)
+# Firmware Development (ESPHome 2025.8.0 default, configurable in GitHub Actions)
+./scripts/build-firmware.sh all        # Build all board variants
+./scripts/build-firmware.sh nodemcu-32s # Build specific board
+./scripts/build-firmware.sh validate   # Validate configs only
 ```
 
 ## CRITICAL BUILD & TEST TIMING
@@ -253,14 +253,17 @@ try {
 ### Firmware Development
 ```bash
 # NEVER CANCEL - firmware builds take 5-15+ minutes per board
-# Local ESPHome development
-docker run --rm -v "${PWD}":/config esphome/esphome:2025.8 compile firmware/firmware.yaml
+# Local ESPHome development (version configurable)
+docker run --rm -v "${PWD}":/config esphome/esphome:2025.8.0 compile firmware/firmware.yaml
 
 # Upload to device
-docker run --rm -v "${PWD}":/config --device=/dev/ttyUSB0 esphome/esphome:2025.8 upload firmware/firmware.yaml
+docker run --rm -v "${PWD}":/config --device=/dev/ttyUSB0 esphome/esphome:2025.8.0 upload firmware/firmware.yaml
 
 # Monitor logs
-docker run --rm -v "${PWD}":/config --device=/dev/ttyUSB0 esphome/esphome:2025.8 logs firmware/firmware.yaml
+docker run --rm -v "${PWD}":/config --device=/dev/ttyUSB0 esphome/esphome:2025.8.0 logs firmware/firmware.yaml
+
+# Or use the build script for easier management
+./scripts/build-firmware.sh nodemcu-32s 2025.8.0
 ```
 
 ### Database Schema Updates

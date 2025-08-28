@@ -35,17 +35,23 @@ Ready-to-flash firmware binary is available for the BerryBase NodeMCU-ESP32 boar
 📖 **Full Flashing Guide**: [FIRMWARE-FLASHING.MD](docs/FIRMWARE-FLASHING.MD)
 
 ### ESPHome Version
-This project uses **ESPHome 2025.8.0** (Docker server version). For local development, compile with Docker:
+This project uses **ESPHome 2025.8.0** (default version, configurable in GitHub Actions). For local development, use the build script:
 
 ```bash
-# Compile firmware
-docker run --rm -v "${PWD}":/config -v "${PWD}/firmware":/config/esphome esphome/esphome:2025.8 compile firmware/firmware.yaml
+# Build firmware for specific board (uses default ESPHome version)
+./scripts/build-firmware.sh nodemcu-32s
+
+# Build with specific ESPHome version
+./scripts/build-firmware.sh nodemcu-32s 2025.8.0
+
+# Or compile directly with Docker
+docker run --rm -v "${PWD}":/config -v "${PWD}/firmware":/config/esphome esphome/esphome:2025.8.0 compile firmware/firmware.yaml
 
 # Upload to device  
-docker run --rm -v "${PWD}":/config -v "${PWD}/firmware":/config/esphome --device=/dev/ttyUSB0 esphome/esphome:2025.8 upload firmware/firmware.yaml
+docker run --rm -v "${PWD}":/config -v "${PWD}/firmware":/config/esphome --device=/dev/ttyUSB0 esphome/esphome:2025.8.0 upload firmware/firmware.yaml
 
 # View logs
-docker run --rm -v "${PWD}":/config -v "${PWD}/firmware":/config/esphome --device=/dev/ttyUSB0 esphome/esphome:2025.8 logs firmware/firmware.yaml
+docker run --rm -v "${PWD}":/config -v "${PWD}/firmware":/config/esphome --device=/dev/ttyUSB0 esphome/esphome:2025.8.0 logs firmware/firmware.yaml
 ```
 
 ### Hardware Configuration
