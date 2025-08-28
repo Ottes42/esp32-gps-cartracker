@@ -17,14 +17,18 @@ export const createApp = (config = {}) => {
 
   // Create directories if they don't exist
   if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true })
-  if (!fs.existsSync(GEOCACHE)) fs.writeFileSync(GEOCACHE, JSON.stringify({}), 'utf8')
 
   // Load geocache
   let geocache = {}
-  try {
-    geocache = JSON.parse(fs.readFileSync(GEOCACHE, 'utf8'))
-  } catch (e) {
-    console.warn('Failed to load geocache at startup:', e.message)
+  if (!fs.existsSync(GEOCACHE)) {
+    try {
+      const fd = fs.openSync(GEOCACHE, fs.O_CREAT | fs.O_EXCL | fs.O_RDWR, 0o600)
+      fs.writeFileSync(fd, '{}', 'utf8')
+      fs.closeSync(fd)
+      geocache = JSON.parse(fs.readFileSync(GEOCACHE, 'utf8'))
+    } catch (e) {
+      // file existed
+    }
   }
 
   // Initialize database
