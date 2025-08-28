@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Dual-stack IoT GPS car tracker with ESP32 firmware, Node.js backend, and web dashboard.
+Dual-stack IoT GPS car tracker with ESP32-C3 firmware, Node.js backend, and web dashboard.
 
 **Tech Stack**: ESPHome (firmware) → Express.js + SQLite (backend) → Vanilla HTML/JS (frontend) → Docker + Nginx Proxy Manager (deployment)
 
