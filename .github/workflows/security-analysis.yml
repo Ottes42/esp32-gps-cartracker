@@ -168,8 +168,10 @@ jobs:
           
           # Check for hardcoded credentials
           echo "🔍 Checking for hardcoded credentials..."
-          if grep -i "password.*:" firmware/*.yaml | grep -v "!secret" | grep -v "password:" | head -5; then
+          hardcoded=$(grep -i "password.*:" firmware/*.yaml | grep -v "!secret" | grep -v "password:" | head -5)
+          if [ -n "$hardcoded" ]; then
             echo "❌ **Hardcoded Credentials**: Found potential hardcoded passwords!" >> $GITHUB_STEP_SUMMARY
+            echo "$hardcoded" >> $GITHUB_STEP_SUMMARY
             exit 1
           else
             echo "✅ **Hardcoded Credentials**: None found" >> $GITHUB_STEP_SUMMARY
