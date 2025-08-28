@@ -7,7 +7,8 @@ set -e
 
 # Configuration
 ESPHOME_VERSION="2025.8.0"
-BOARDS=("nodemcu-32s" "esp32dev" "esp-wrover-kit" "esp32-s3-devkitc-1")
+# Read supported boards from shared configuration file
+mapfile -t BOARDS < "${BASH_SOURCE[0]%/*}/../boards.txt"
 TEMP_SENSORS=("DHT11" "DHT22" "NONE")
 BUILD_DIR="build"
 
