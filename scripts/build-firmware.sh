@@ -49,6 +49,10 @@ print_usage() {
     echo "  $0 all            # Build for all boards"
     echo "  $0 validate       # Just validate configs without compiling"
     echo "  $0                # Interactive selection"
+    echo ""
+    echo "Environment variables:"
+    echo "  KEEP_CONFIG=1     # Keep temporary configuration files for debugging"
+    echo "                    # Generated configs saved as firmware-BOARD-SENSOR.yaml"
 }
 
 create_secrets() {
@@ -320,8 +324,12 @@ build_board_variant() {
 }
 EOF
     
-    # Cleanup temp config
-    rm -f "$config_name"
+    # Cleanup temp config or keep for debugging
+    if [ "${KEEP_CONFIG}" = "1" ]; then
+        echo "   Config kept for debugging: $config_name (KEEP_CONFIG=1)"
+    else
+        rm -f "$config_name"
+    fi
     
     echo "✅ Build complete: $BUILD_DIR/firmware-$board-${temp_sensor,,}.bin"
     echo "   Web Flasher: $BUILD_DIR/firmware-$board-${temp_sensor,,}.json"
