@@ -155,7 +155,7 @@ jobs:
               sed -i 's/data0_pin: GPIO2/data0_pin: GPIO40/' "$config_name"
               sed -i 's/data1_pin: GPIO4/data1_pin: GPIO41/' "$config_name"
               sed -i 's/data2_pin: GPIO12/data2_pin: GPIO42/' "$config_name"
-              sed -i 's/data3_pin: GPIO13/data3_pin: GPIO1/' "$config_name"
+              sed -i 's/data3_pin: GPIO13/data3_pin: GPIO47/' "$config_name"
               # Add ESP32-S3 variant
               sed -i '/^esp32:/a\  variant: esp32s3' "$config_name"
               ;;
