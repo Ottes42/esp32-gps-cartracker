@@ -169,7 +169,6 @@ export const createApp = (config = {}) => {
 
   // Authentication middleware (applies to all routes except /health)
   app.use((req, res, next) => {
-
     let authUser = req.get('x-auth-user')
     // Only allow development header from localhost/127.0.0.1
     if (authUser === 'development') {
@@ -386,11 +385,13 @@ export const createApp = (config = {}) => {
     res.json(out)
   })
 
-  // Export helpers for testing
-  // Helpers are now exported directly for testing purposes.
+  // Attach helpers to app for testing
+  app.helpers = {
+    db,
+    parseReceipt,
+    geocodeAddress,
+    distanceKm
+  }
 
   return app
 }
-
-// Export helpers and db for testing
-export { parseReceipt, geocodeAddress, distanceKm, db }

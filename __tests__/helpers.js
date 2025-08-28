@@ -17,6 +17,9 @@ export const cleanupTestFiles = () => {
     if (fs.existsSync('/tmp/test-gps')) {
       fs.rmSync('/tmp/test-gps', { recursive: true, force: true })
     }
+    // Ensure directory is recreated for next test
+    fs.mkdirSync('/tmp/test-gps', { recursive: true })
+    fs.mkdirSync('/tmp/test-gps/uploads', { recursive: true })
   } catch (e) {
     // Silently ignore cleanup errors in tests
   }
