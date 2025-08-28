@@ -11,6 +11,10 @@ on:
         required: true
         default: 'v1.0.0'
 
+permissions:
+  contents: write  # Needed to create releases and push tags
+  actions: read    # Needed to download workflow artifacts
+
 jobs:
   build-firmware:
     name: Build Firmware for BerryBase NodeMCU-ESP32
@@ -118,21 +122,47 @@ jobs:
       - name: Copy firmware binary
         run: |
           # Find the compiled binary and copy it with a standardized name
-          # Use 2>/dev/null to suppress permission denied errors and target main firmware binary
-          firmware_bin=$(find firmware/.esphome/build/gps-cartracker-${{ matrix.board }}/ -type f -name "*.bin" \
-            -not -path "*/CMakeFiles/*" \
-            -not -path "*/.piolibdeps/*" \
-            -not -name "*ABI*" \
-            -not -name "*Determine*" \
-            2>/dev/null | head -1)
+          # Look for the main firmware binary, avoiding build artifacts and test files
+          echo "Looking for compiled firmware binary..."
           
-          if [ -f "$firmware_bin" ]; then
-            cp "$firmware_bin" firmware-${{ matrix.board }}.bin
-            echo "Copied firmware binary: $firmware_bin -> firmware-${{ matrix.board }}.bin"
+          # First try: Look for the main firmware.bin in the PlatformIO build directory
+          firmware_bin=""
+          build_dir="firmware/.esphome/build/gps-cartracker-${{ matrix.board }}"
+          
+          # Try common PlatformIO paths first
+          if [ -f "$build_dir/.pioenvs/gps-cartracker-${{ matrix.board }}/firmware.bin" ]; then
+            firmware_bin="$build_dir/.pioenvs/gps-cartracker-${{ matrix.board }}/firmware.bin"
+            echo "Found PlatformIO firmware binary: $firmware_bin"
+          elif [ -f "$build_dir/.pioenvs/*/firmware.bin" ]; then
+            firmware_bin=$(find "$build_dir/.pioenvs/" -name "firmware.bin" -type f | head -1)
+            echo "Found PlatformIO firmware binary (wildcard): $firmware_bin"
           else
-            echo "Error: No suitable firmware binary found!"
-            echo "Available .bin files:"
-            find firmware/.esphome/build/gps-cartracker-${{ matrix.board }}/ -type f -name "*.bin" 2>/dev/null | head -5 || echo "None found or permission denied"
+            # Fallback: Search for any .bin file that looks like firmware
+            echo "PlatformIO firmware.bin not found, searching for main firmware binary..."
+            firmware_bin=$(find "$build_dir" -type f -name "*.bin" \
+              -not -path "*/CMakeFiles/*" \
+              -not -path "*/.piolibdeps/*" \
+              -not -name "*ABI*" \
+              -not -name "*Determine*" \
+              -not -name "*test*" \
+              -not -name "*debug*" \
+              2>/dev/null | head -1)
+          fi
+          
+          if [ -n "$firmware_bin" ] && [ -f "$firmware_bin" ]; then
+            # Create a working directory to avoid permission issues
+            mkdir -p firmware_output
+            cp "$firmware_bin" "firmware_output/firmware-${{ matrix.board }}.bin"
+            # Also create a copy in the root for artifact upload
+            cp "$firmware_bin" "firmware-${{ matrix.board }}.bin"
+            echo "✅ Copied firmware binary: $firmware_bin -> firmware-${{ matrix.board }}.bin"
+            ls -la firmware-${{ matrix.board }}.bin
+          else
+            echo "❌ Error: No suitable firmware binary found!"
+            echo "Available .bin files in build directory:"
+            find "$build_dir" -type f -name "*.bin" 2>/dev/null | head -10 || echo "  None found or permission denied"
+            echo "Full directory structure:"
+            ls -la "$build_dir" 2>/dev/null || echo "  Build directory not accessible"
             exit 1
           fi
 
