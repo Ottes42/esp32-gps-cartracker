@@ -29,7 +29,17 @@ on:
         type: choice
         options:
           - all
-          - quick
+          - quick        
+      esphome_version:
+        description: 'ESPHome version (e.g., 2025.8.0)'
+        required: false
+        default: '2025.8.0'
+
+env:
+  ESPHOME_VERSION: ${{ github.event.inputs.esphome_version || '2025.8.0' }}
+
+
+
 
 permissions:
   contents: write  # Needed to create releases and push tags
@@ -158,9 +168,9 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.esphome
-          key: ${{ runner.os }}-esphome-2025.8.0-${{ hashFiles('firmware/firmware.yaml') }}
+          key: ${{ runner.os }}-esphome-${{ env.ESPHOME_VERSION }}-${{ hashFiles('firmware/firmware.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-esphome-2025.8.0-
+            ${{ runner.os }}-esphome-${{ env.ESPHOME_VERSION }}-
 
       - name: Validate inputs
         run: |
@@ -299,7 +309,7 @@ jobs:
           echo "🔍 Validating YAML syntax..."
           if docker run --rm \
               -v "${PWD}:/config" \
-              "esphome/esphome:2025.8.0" \
+              "esphome/esphome:${{ env.ESPHOME_VERSION }}" \
               config "/config/$config_name"; then
             echo "✅ Configuration is valid"
           else
@@ -313,7 +323,7 @@ jobs:
           if docker run --rm \
               -v "${PWD}:/config" \
               -v ~/.esphome:/config/.esphome \
-              "esphome/esphome:2025.8.0" \
+              "esphome/esphome:${{ env.ESPHOME_VERSION }}" \
               compile "/config/$config_name"; then
             echo "✅ Compilation successful"
           else
