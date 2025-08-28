@@ -7,21 +7,31 @@ set -e
 
 # Configuration
 ESPHOME_VERSION="2025.8.0"
-BOARDS=("nodemcu-32s")
+BOARDS=("nodemcu-32s" "esp32dev" "esp-wrover-kit" "esp32-s3-devkitc-1")
+TEMP_SENSORS=("DHT11" "DHT22" "NONE")
 BUILD_DIR="build"
 
 # Board information
 declare -A BOARD_NAMES=(
     ["nodemcu-32s"]="BerryBase NodeMCU-ESP32"
+    ["esp32dev"]="Generic ESP32 DevKit"
+    ["esp-wrover-kit"]="ESP32-WROVER-KIT"
+    ["esp32-s3-devkitc-1"]="ESP32-S3-DevKitC-1"
 )
 
 declare -A BOARD_CHIPS=(
     ["nodemcu-32s"]="ESP32"
+    ["esp32dev"]="ESP32"
+    ["esp-wrover-kit"]="ESP32"
+    ["esp32-s3-devkitc-1"]="ESP32-S3"
 )
 
 # Mapping from short board names to ESPHome board types
 declare -A BOARD_TYPES=(
     ["nodemcu-32s"]="nodemcu-32s"
+    ["esp32dev"]="esp32dev"
+    ["esp-wrover-kit"]="esp-wrover-kit"
+    ["esp32-s3-devkitc-1"]="esp32-s3-devkitc-1"
 )
 
 # Functions
@@ -72,6 +82,45 @@ EOF
     fi
 }
 
+apply_temp_sensor() {
+    local config_file=$1
+    local temp_sensor=$2
+    
+    case $temp_sensor in
+        "DHT11")
+            echo "🌡️ Using DHT11 temperature sensor"
+            sed -i.bak 's/DHT_MODEL: "DHT11"/DHT_MODEL: "DHT11"/' "$config_file"
+            ;;
+        "DHT22")
+            echo "🌡️ Using DHT22 temperature sensor"
+            sed -i.bak 's/DHT_MODEL: "DHT11"/DHT_MODEL: "DHT22"/' "$config_file"
+            ;;
+        "NONE")
+            echo "🌡️ Disabling temperature sensor - using dummy values"
+            # Comment out the DHT sensor and replace with template sensors
+            sed -i.bak '/- platform: dht/,/update_interval: 15s/d' "$config_file"
+            # Insert template sensors at the end of the sensor section
+            sed -i.bak '/^sensor:/a\
+  # Temperature sensor disabled - using dummy values\
+  - platform: template\
+    id: car_temp_c\
+    name: "Temperature"\
+    unit_of_measurement: "°C"\
+    lambda: "return 22.0;"\
+    update_interval: 15s\
+  - platform: template\
+    id: car_hum_pct\
+    name: "Humidity"\
+    unit_of_measurement: "%"\
+    lambda: "return 60.0;"\
+    update_interval: 15s' "$config_file"
+            ;;
+    esac
+    
+    # Clean up backup files
+    rm -f "$config_file".bak
+}
+
 apply_board_pins() {
     local board=$1
     local config_file=$2
@@ -81,90 +130,147 @@ apply_board_pins() {
             # BerryBase NodeMCU-ESP32 - default configuration, no changes needed
             echo "📋 Using standard NodeMCU-32S pin configuration"
             ;;
+        "esp32dev")
+            # Generic ESP32 DevKit - adjust pins to avoid conflicts
+            echo "📋 Applying ESP32 DevKit pin configuration"
+            sed -i.bak 's/PIN_UART_RX: "GPIO16"/PIN_UART_RX: "GPIO16"/' "$config_file"
+            sed -i.bak 's/PIN_UART_TX: "GPIO17"/PIN_UART_TX: "GPIO17"/' "$config_file"
+            sed -i.bak 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO22"/' "$config_file"
+            sed -i.bak 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO35"/' "$config_file"
+            sed -i.bak 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO23"/' "$config_file"
+            ;;
+        "esp-wrover-kit")
+            # ESP32-WROVER-KIT - use different pins due to built-in peripherals
+            echo "📋 Applying ESP32-WROVER-KIT pin configuration"
+            sed -i.bak 's/PIN_UART_RX: "GPIO16"/PIN_UART_RX: "GPIO25"/' "$config_file"
+            sed -i.bak 's/PIN_UART_TX: "GPIO17"/PIN_UART_TX: "GPIO26"/' "$config_file"
+            sed -i.bak 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO27"/' "$config_file"
+            sed -i.bak 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO39"/' "$config_file"
+            sed -i.bak 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO5"/' "$config_file"
+            ;;
+        "esp32-s3-devkitc-1")
+            # ESP32-S3-DevKitC-1 - S3 specific pin mappings
+            echo "📋 Applying ESP32-S3-DevKitC-1 pin configuration"
+            sed -i.bak 's/PIN_UART_RX: "GPIO16"/PIN_UART_RX: "GPIO44"/' "$config_file"
+            sed -i.bak 's/PIN_UART_TX: "GPIO17"/PIN_UART_TX: "GPIO43"/' "$config_file"
+            sed -i.bak 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO21"/' "$config_file"
+            sed -i.bak 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO4"/' "$config_file"
+            sed -i.bak 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO48"/' "$config_file"
+            # ESP32-S3 has different SD card pins
+            sed -i.bak 's/clk_pin: GPIO14/clk_pin: GPIO39/' "$config_file"
+            sed -i.bak 's/cmd_pin: GPIO15/cmd_pin: GPIO38/' "$config_file"
+            sed -i.bak 's/data0_pin: GPIO2/data0_pin: GPIO40/' "$config_file"
+            sed -i.bak 's/data1_pin: GPIO4/data1_pin: GPIO41/' "$config_file"
+            sed -i.bak 's/data2_pin: GPIO12/data2_pin: GPIO42/' "$config_file"
+            sed -i.bak 's/data3_pin: GPIO13/data3_pin: GPIO1/' "$config_file"
+            # Update ESP32 framework to ESP32-S3
+            sed -i.bak '/^esp32:/a\
+  variant: esp32s3' "$config_file"
+            ;;
     esac
     
     # Clean up backup files
     rm -f "$config_file".bak
 }
 
-validate_board() {
+validate_board_variant() {
     local board=$1
+    local temp_sensor=${2:-"DHT11"}
     local board_name="${BOARD_NAMES[$board]}"
     local board_type="${BOARD_TYPES[$board]}"
     
-    echo "✅ Validating configuration for: $board_name ($board -> $board_type)"
+    echo "✅ Validating configuration for: $board_name ($board -> $board_type) with $temp_sensor"
     
-    # Create board-specific config
-    echo "📝 Creating board-specific configuration..."
-    cp firmware/firmware.yaml firmware/firmware-$board.yaml
+    # Create board-specific config with temperature sensor variant  
+    local config_name="firmware-$board-${temp_sensor,,}.yaml"
+    cp firmware/firmware.yaml "$config_name"
     
     # Update board in config
-    sed -i.bak "s/board: nodemcu-32s$/board: $board_type/" firmware/firmware-$board.yaml
-    sed -i.bak "s/name: gps-cartracker-nmcu$/name: gps-cartracker-$board/" firmware/firmware-$board.yaml
-    sed -i.bak "s/friendly_name: GPS Cartracker NMCU$/friendly_name: GPS Cartracker ($board_name)/" firmware/firmware-$board.yaml
-    sed -i.bak "s/username: gps-cartracker$/username: gps-cartracker-$board/" firmware/firmware-$board.yaml
-    rm firmware/firmware-$board.yaml.bak
+    sed -i.bak "s/board: nodemcu-32s$/board: $board_type/" "$config_name"
+    sed -i.bak "s/name: gps-cartracker-nmcu$/name: gps-cartracker-$board-${temp_sensor,,}/" "$config_name"
+    sed -i.bak "s/friendly_name: GPS Cartracker NMCU$/friendly_name: GPS Cartracker ($board_name + $temp_sensor)/" "$config_name"
+    sed -i.bak "s/username: gps-cartracker$/username: gps-cartracker-$board-${temp_sensor,,}/" "$config_name"
+    rm "$config_name.bak"
     
     # Apply board-specific pin configurations
-    echo "🔧 Applying board-specific pin configuration..."
-    apply_board_pins "$board" "firmware/firmware-$board.yaml"
+    apply_board_pins "$board" "$config_name"
+    
+    # Apply temperature sensor configuration
+    apply_temp_sensor "$config_name" "$temp_sensor"
     
     # Validate config with ESPHome
     echo "🔍 Validating YAML syntax..."
     if docker run --rm \
         -v "${PWD}:/config" \
         "esphome/esphome:$ESPHOME_VERSION" \
-        config "firmware/firmware-$board.yaml" > /dev/null 2>&1; then
-        echo "✅ Configuration valid for $board"
+        config "$config_name" > /dev/null 2>&1; then
+        echo "✅ Configuration valid for $board with $temp_sensor"
         
         # Show key changes
         echo "📋 Configuration summary:"
-        echo "   Device name: $(grep 'name:' firmware/firmware-$board.yaml | head -1 | cut -d':' -f2 | xargs)"
-        echo "   Board type: $(grep 'board:' firmware/firmware-$board.yaml | cut -d':' -f2 | xargs)"
-        echo "   Friendly name: $(grep 'friendly_name:' firmware/firmware-$board.yaml | cut -d':' -f2- | xargs)"
+        echo "   Device name: $(grep 'name:' "$config_name" | head -1 | cut -d':' -f2 | xargs)"
+        echo "   Board type: $(grep 'board:' "$config_name" | cut -d':' -f2 | xargs)"
+        echo "   Friendly name: $(grep 'friendly_name:' "$config_name" | cut -d':' -f2- | xargs)"
+        echo "   Temperature sensor: $temp_sensor"
         
         # Keep the config file for review
-        echo "   Config saved: firmware/firmware-$board.yaml"
+        echo "   Config saved: $config_name"
         echo ""
         return 0
     else
-        echo "❌ Configuration validation failed for $board"
-        rm -f firmware/firmware-$board.yaml
+        echo "❌ Configuration validation failed for $board with $temp_sensor"
+        rm -f "$config_name"
         return 1
     fi
 }
 
+# Backwards compatibility wrapper - builds with default DHT11 sensor
 build_board() {
+    build_board_variant "$1" "DHT11"
+}
+
+# Backwards compatibility wrapper - validates with default DHT11 sensor  
+validate_board() {
+    validate_board_variant "$1" "DHT11"
+}
+
+build_board_variant() {
     local board=$1
+    local temp_sensor=${2:-"DHT11"}
     local board_name="${BOARD_NAMES[$board]}"
     local board_type="${BOARD_TYPES[$board]}"
     local chip="${BOARD_CHIPS[$board]}"
     
-    echo "🔨 Building firmware for: $board_name ($board -> $board_type)"
+    echo "🔨 Building firmware for: $board_name ($board -> $board_type) with $temp_sensor sensor"
     
-    # Create board-specific config
-    echo "📝 Creating board-specific configuration..."
-    cp firmware/firmware.yaml firmware/firmware-$board.yaml
+    # Create board-specific config with temperature sensor variant
+    local config_name="firmware-$board-${temp_sensor,,}.yaml"  # lowercase sensor name
+    echo "📝 Creating board-specific configuration: $config_name"
+    cp firmware/firmware.yaml "$config_name"
     
     # Update board in config
-    sed -i.bak "s/board: nodemcu-32s$/board: $board_type/" firmware/firmware-$board.yaml
-    sed -i.bak "s/name: gps-cartracker-nmcu$/name: gps-cartracker-$board/" firmware/firmware-$board.yaml
-    sed -i.bak "s/friendly_name: GPS Cartracker NMCU$/friendly_name: GPS Cartracker ($board_name)/" firmware/firmware-$board.yaml
-    sed -i.bak "s/username: gps-cartracker$/username: gps-cartracker-$board/" firmware/firmware-$board.yaml
-    rm firmware/firmware-$board.yaml.bak
+    sed -i.bak "s/board: nodemcu-32s$/board: $board_type/" "$config_name"
+    sed -i.bak "s/name: gps-cartracker-nmcu$/name: gps-cartracker-$board-${temp_sensor,,}/" "$config_name"
+    sed -i.bak "s/friendly_name: GPS Cartracker NMCU$/friendly_name: GPS Cartracker ($board_name + $temp_sensor)/" "$config_name"
+    sed -i.bak "s/username: gps-cartracker$/username: gps-cartracker-$board-${temp_sensor,,}/" "$config_name"
+    rm "$config_name.bak"
     
     # Apply board-specific pin configurations
     echo "🔧 Applying board-specific pin configuration..."
-    apply_board_pins "$board" "firmware/firmware-$board.yaml"
+    apply_board_pins "$board" "$config_name"
+    
+    # Apply temperature sensor configuration
+    echo "🌡️ Applying temperature sensor configuration..."
+    apply_temp_sensor "$config_name" "$temp_sensor"
     
     # Compile with Docker
     echo "⚙️  Compiling firmware..."
     if ! docker run --rm \
         -v "${PWD}:/config" \
         "esphome/esphome:$ESPHOME_VERSION" \
-        compile "firmware/firmware-$board.yaml"; then
-        echo "❌ Compilation failed for $board"
-        rm -f firmware/firmware-$board.yaml
+        compile "$config_name"; then
+        echo "❌ Compilation failed for $board with $temp_sensor"
+        rm -f "$config_name"
         return 1
     fi
     
@@ -174,9 +280,10 @@ build_board() {
     # Find and copy binary
     echo "📦 Copying firmware binary..."
     binary_found=false
-    for binary in firmware/.esphome/build/gps-cartracker-$board/*.bin; do
+    device_name=$(basename "$config_name" .yaml)
+    for binary in .esphome/build/$device_name/*.bin; do
         if [ -f "$binary" ]; then
-            cp "$binary" "$BUILD_DIR/firmware-$board.bin"
+            cp "$binary" "$BUILD_DIR/firmware-$board-${temp_sensor,,}.bin"
             binary_found=true
             echo "   Binary: $(basename "$binary")"
             break
@@ -184,16 +291,16 @@ build_board() {
     done
     
     if [ "$binary_found" = false ]; then
-        echo "❌ No binary found for $board"
-        rm -f firmware/firmware-$board.yaml
+        echo "❌ No binary found for $board with $temp_sensor"
+        rm -f "$config_name"
         return 1
     fi
     
     # Create manifest for ESPHome Web Flasher
     echo "📋 Creating Web Flasher manifest..."
-    cat > "$BUILD_DIR/firmware-$board.json" << EOF
+    cat > "$BUILD_DIR/firmware-$board-${temp_sensor,,}.json" << EOF
 {
-  "name": "$board_name GPS Car Tracker",
+  "name": "$board_name GPS Car Tracker ($temp_sensor)",
   "version": "$(git describe --tags --always --dirty)",
   "home_assistant_domain": "esphome",
   "new_install_prompt_erase": true,
@@ -202,7 +309,7 @@ build_board() {
       "chipFamily": "$chip",
       "parts": [
         {
-          "path": "firmware-$board.bin",
+          "path": "firmware-$board-${temp_sensor,,}.bin",
           "offset": 0
         }
       ]
@@ -212,10 +319,10 @@ build_board() {
 EOF
     
     # Cleanup temp config
-    rm -f firmware/firmware-$board.yaml
+    rm -f "$config_name"
     
-    echo "✅ Build complete: $BUILD_DIR/firmware-$board.bin"
-    echo "   Web Flasher: $BUILD_DIR/firmware-$board.json"
+    echo "✅ Build complete: $BUILD_DIR/firmware-$board-${temp_sensor,,}.bin"
+    echo "   Web Flasher: $BUILD_DIR/firmware-$board-${temp_sensor,,}.json"
     echo ""
 }
 
@@ -240,14 +347,20 @@ if [ $# -eq 0 ]; then
     select board in "${BOARDS[@]}" "all" "validate" "quit"; do
         case $board in
             "all")
+                echo "Building all boards with all temperature sensor variants..."
                 for b in "${BOARDS[@]}"; do
-                    build_board "$b"
+                    for t in "${TEMP_SENSORS[@]}"; do
+                        build_board_variant "$b" "$t"
+                    done
                 done
                 break
                 ;;
             "validate")
+                echo "Validating all board configurations..."
                 for b in "${BOARDS[@]}"; do
-                    validate_board "$b"
+                    for t in "${TEMP_SENSORS[@]}"; do
+                        validate_board_variant "$b" "$t"
+                    done
                 done
                 break
                 ;;
@@ -265,14 +378,20 @@ if [ $# -eq 0 ]; then
         esac
     done
 elif [ "$1" = "all" ]; then
-    # Build all boards
+    # Build all boards with all temperature sensor variants
+    echo "Building all boards with all temperature sensor variants..."
     for board in "${BOARDS[@]}"; do
-        build_board "$board"
+        for temp_sensor in "${TEMP_SENSORS[@]}"; do
+            build_board_variant "$board" "$temp_sensor"
+        done
     done
 elif [ "$1" = "validate" ]; then
-    # Validate all board configs
+    # Validate all board configs with all temperature sensors
+    echo "Validating all board configurations..."
     for board in "${BOARDS[@]}"; do
-        validate_board "$board"
+        for temp_sensor in "${TEMP_SENSORS[@]}"; do
+            validate_board_variant "$board" "$temp_sensor"
+        done
     done
 elif [[ " ${BOARDS[@]} " =~ " $1 " ]]; then
     # Build specific board
