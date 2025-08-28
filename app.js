@@ -279,7 +279,7 @@ export const createApp = (config = {}) => {
     let parsed = null; let error = null; let lat = null; let lon = null
 
     try {
-            parsed = await parseReceipt(path)
+      parsed = await parseReceipt(path)
       console.log('OCR parsing successful:', parsed)
       const addr = [parsed.station_address, parsed.station_zip, parsed.station_city].filter(Boolean).join(' ')
       const geo = await geocodeAddress(addr)
