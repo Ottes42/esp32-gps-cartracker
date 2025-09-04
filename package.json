@@ -23,7 +23,8 @@
     "express": "^5.1.0",
     "express-rate-limit": "^8.0.1",
     "multer": "^2.0.2",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "husky": "^9.1.7",
