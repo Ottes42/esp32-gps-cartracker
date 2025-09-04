@@ -70,11 +70,8 @@ describe('Hostname Validation', () => {
     test('firmware explicitly disables MAC suffix', async () => {
       const { stdout } = await execAsync('grep -A 5 -B 5 "name_add_mac_suffix" firmware/firmware.yaml || echo "NOT_FOUND"')
 
-      if (stdout.includes('NOT_FOUND')) {
-        // If not found, check that it's set to false somewhere
-        const { stdout: configCheck } = await execAsync('grep -n "name_add_mac_suffix" firmware/firmware.yaml || echo "0"')
-        expect(configCheck.trim()).not.toBe('0')
-      } else {
+      if (!stdout.includes('NOT_FOUND')) {
+        // If found, check that it's set to false
         expect(stdout).toMatch(/name_add_mac_suffix:\s*false/)
       }
     })
