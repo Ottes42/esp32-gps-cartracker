@@ -24,6 +24,8 @@ esphome:
   name: gps-cartracker-nmcu
   friendly_name: GPS Cartracker NMCU
   min_version: 2025.8.0
+  # Disable MAC address suffix to prevent hostname overflow (max 31 chars)
+  name_add_mac_suffix: false
   on_shutdown:
     then:
       - script.execute: sync_logs
@@ -147,6 +149,9 @@ wifi:
 #        gateway: ${STATIC_GW_1}
 #        subnet: ${STATIC_MASK_1}
 #        dns: ${STATIC_DNS_1}
+  
+  # Explicitly disable MAC-based hostname to prevent length overflow
+  use_address: null
 
   ap:
     ssid: "gps-cartracker-setup"

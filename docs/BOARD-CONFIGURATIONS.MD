@@ -2,6 +2,18 @@
 
 This document contains the pin configurations for ESP32 boards supported by the GPS Car Tracker firmware.
 
+## Hostname Generation
+
+All firmware builds use **validated hostnames ≤ 31 characters** to ensure network compatibility:
+
+| Board | Generated Hostname | Length |
+|-------|-------------------|---------|
+| NodeMCU-ESP32 + DHT11 | `gps-tracker-nmcu32s-d11` | 23 chars ✅ |
+| ESP32 DevKit + DHT11 | `gps-tracker-esp32d-d11` | 22 chars ✅ |
+| ESP32-S3-DevKitC-1 + DHT11 | `gps-tracker-s3devkit-d11` | 24 chars ✅ |
+
+See [docs/HOSTNAME-VALIDATION.md](HOSTNAME-VALIDATION.md) for complete hostname generation rules.
+
 ## Pin Requirements
 
 The GPS Car Tracker requires the following connections:
