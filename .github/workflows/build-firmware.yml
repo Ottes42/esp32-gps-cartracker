@@ -322,6 +322,16 @@ jobs:
         run: |
           config_name="firmware-${{ matrix.board }}-$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]').yaml"
           
+          # Copy secrets.yaml to root directory for ESPHome compilation
+          # ESPHome expects secrets.yaml in the same directory as the config being compiled
+          if [ -f "firmware/secrets.yaml" ]; then
+            cp "firmware/secrets.yaml" "secrets.yaml"
+            echo "✅ Copied secrets.yaml to root directory for ESPHome"
+          else
+            echo "❌ secrets.yaml not found in firmware directory"
+            exit 1
+          fi
+          
           echo "🔍 Validating YAML syntax..."
           if docker run --rm \
               -v "${PWD}:/config" \
@@ -348,6 +358,10 @@ jobs:
             ls -la .esphome/build/ 2>/dev/null || echo "Build directory not found"
             exit 1
           fi
+          
+          # Clean up temporary secrets file
+          rm -f "secrets.yaml"
+          echo "🧹 Cleaned up temporary secrets.yaml file"
 
       - name: Copy firmware binary and create manifest
         run: |
