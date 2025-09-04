@@ -300,6 +300,29 @@ docker run --rm -v $(pwd):/config esphome/esphome compile /config/firmware/firmw
 docker run --rm -v $(pwd):/config esphome/esphome upload /config/firmware/firmware.yaml
 ```
 
+### Option 3: Use Build Script (Recommended)
+
+The build script automates firmware compilation for all supported boards with hostname validation:
+
+```bash
+# Validate all board configurations (fast)
+./scripts/build-firmware.sh validate
+
+# Build firmware for specific board
+./scripts/build-firmware.sh nodemcu-32s
+
+# Build firmware for all boards (takes 60-180 minutes)
+./scripts/build-firmware.sh all
+```
+
+The build script automatically:
+- ✅ **Validates hostname length** (≤31 characters for network compatibility)
+- ✅ **Applies board-specific pin configurations** 
+- ✅ **Generates optimized hostnames** using shortened board names
+- ✅ **Creates web flasher manifests** for easy installation
+
+See [docs/HOSTNAME-VALIDATION.md](HOSTNAME-VALIDATION.md) for details on hostname generation rules.
+
 ## Firmware Configuration
 
 Edit `firmware/firmware.yaml`:

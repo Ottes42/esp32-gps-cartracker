@@ -54,6 +54,22 @@ get_short_sensor_name() {
     esac
 }
 
+# Validate hostname length (ESPHome/mDNS limit is 31 characters)
+validate_hostname_length() {
+    local hostname=$1
+    local max_length=31
+    
+    if [ ${#hostname} -gt $max_length ]; then
+        echo "❌ ERROR: Hostname '$hostname' exceeds maximum length of $max_length characters (${#hostname} chars)"
+        echo "   This can cause network connectivity issues and device failures."
+        echo "   Consider using shorter board names or sensor abbreviations."
+        return 1
+    fi
+    
+    echo "✅ Hostname '$hostname' is valid (${#hostname} chars, ≤$max_length limit)"
+    return 0
+}
+
 # Functions
 print_usage() {
     echo "Usage: $0 [board_id|all|validate] [esphome_version]"
@@ -210,15 +226,21 @@ validate_board_variant() {
     
     echo "✅ Validating configuration for: $board_name ($board -> $board_type) with $temp_sensor"
     
+    # Generate hostname and validate length (ESPHome/mDNS limit is 31 characters)
+    local hostname="gps-tracker-$board_short-$sensor_short"
+    if ! validate_hostname_length "$hostname"; then
+        return 1
+    fi
+    
     # Create board-specific config with temperature sensor variant  
     local config_name="firmware-$board-${temp_sensor,,}.yaml"
     cp firmware/firmware.yaml "$config_name"
     
     # Update board in config using shortened names for hostname compliance (≤31 chars)
     sed -i.bak "s/board: nodemcu-32s$/board: $board_type/" "$config_name"
-    sed -i.bak "s/name: gps-cartracker-nmcu$/name: gps-tracker-$board_short-$sensor_short/" "$config_name"
+    sed -i.bak "s/name: gps-cartracker-nmcu$/name: $hostname/" "$config_name"
     sed -i.bak "s/friendly_name: GPS Cartracker NMCU$/friendly_name: GPS Cartracker ($board_name + $temp_sensor)/" "$config_name"
-    sed -i.bak "s/username: gps-cartracker$/username: gps-tracker-$board_short-$sensor_short/" "$config_name"
+    sed -i.bak "s/username: gps-cartracker$/username: $hostname/" "$config_name"
     rm "$config_name.bak"
     
     # Apply board-specific pin configurations
@@ -275,6 +297,12 @@ build_board_variant() {
     
     echo "🔨 Building firmware for: $board_name ($board -> $board_type) with $temp_sensor sensor"
     
+    # Generate hostname and validate length (ESPHome/mDNS limit is 31 characters)
+    local hostname="gps-tracker-$board_short-$sensor_short"
+    if ! validate_hostname_length "$hostname"; then
+        return 1
+    fi
+    
     # Create board-specific config with temperature sensor variant
     local config_name="firmware-$board-${temp_sensor,,}.yaml"  # lowercase sensor name
     echo "📝 Creating board-specific configuration: $config_name"
@@ -282,9 +310,9 @@ build_board_variant() {
     
     # Update board in config using shortened names for hostname compliance (≤31 chars)
     sed -i.bak "s/board: nodemcu-32s$/board: $board_type/" "$config_name"
-    sed -i.bak "s/name: gps-cartracker-nmcu$/name: gps-tracker-$board_short-$sensor_short/" "$config_name"
+    sed -i.bak "s/name: gps-cartracker-nmcu$/name: $hostname/" "$config_name"
     sed -i.bak "s/friendly_name: GPS Cartracker NMCU$/friendly_name: GPS Cartracker ($board_name + $temp_sensor)/" "$config_name"
-    sed -i.bak "s/username: gps-cartracker$/username: gps-tracker-$board_short-$sensor_short/" "$config_name"
+    sed -i.bak "s/username: gps-cartracker$/username: $hostname/" "$config_name"
     rm "$config_name.bak"
     
     # Apply board-specific pin configurations
