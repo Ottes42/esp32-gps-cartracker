@@ -35,6 +35,25 @@ declare -A BOARD_TYPES=(
     ["esp32-s3-devkitc-1"]="esp32-s3-devkitc-1"
 )
 
+# Mapping from board names to shortened hostname-safe names (≤31 chars total)
+declare -A BOARD_SHORT_NAMES=(
+    ["nodemcu-32s"]="nmcu32s"
+    ["esp32dev"]="esp32d"
+    ["esp-wrover-kit"]="wrover"
+    ["esp32-s3-devkitc-1"]="s3devkit"
+)
+
+# Helper function to shorten sensor names for hostname compatibility
+get_short_sensor_name() {
+    local sensor=$1
+    case "${sensor,,}" in
+        "dht11") echo "d11" ;;
+        "dht22") echo "d22" ;;
+        "none") echo "no" ;;
+        *) echo "${sensor,,}" ;;
+    esac
+}
+
 # Functions
 print_usage() {
     echo "Usage: $0 [board_id|all|validate] [esphome_version]"
@@ -186,6 +205,8 @@ validate_board_variant() {
     local temp_sensor=${2:-"DHT11"}
     local board_name="${BOARD_NAMES[$board]}"
     local board_type="${BOARD_TYPES[$board]}"
+    local board_short="${BOARD_SHORT_NAMES[$board]}"
+    local sensor_short=$(get_short_sensor_name "$temp_sensor")
     
     echo "✅ Validating configuration for: $board_name ($board -> $board_type) with $temp_sensor"
     
@@ -193,11 +214,11 @@ validate_board_variant() {
     local config_name="firmware-$board-${temp_sensor,,}.yaml"
     cp firmware/firmware.yaml "$config_name"
     
-    # Update board in config
+    # Update board in config using shortened names for hostname compliance (≤31 chars)
     sed -i.bak "s/board: nodemcu-32s$/board: $board_type/" "$config_name"
-    sed -i.bak "s/name: gps-cartracker-nmcu$/name: gps-cartracker-$board-${temp_sensor,,}/" "$config_name"
+    sed -i.bak "s/name: gps-cartracker-nmcu$/name: gps-tracker-$board_short-$sensor_short/" "$config_name"
     sed -i.bak "s/friendly_name: GPS Cartracker NMCU$/friendly_name: GPS Cartracker ($board_name + $temp_sensor)/" "$config_name"
-    sed -i.bak "s/username: gps-cartracker$/username: gps-cartracker-$board-${temp_sensor,,}/" "$config_name"
+    sed -i.bak "s/username: gps-cartracker$/username: gps-tracker-$board_short-$sensor_short/" "$config_name"
     rm "$config_name.bak"
     
     # Apply board-specific pin configurations
@@ -248,6 +269,8 @@ build_board_variant() {
     local temp_sensor=${2:-"DHT11"}
     local board_name="${BOARD_NAMES[$board]}"
     local board_type="${BOARD_TYPES[$board]}"
+    local board_short="${BOARD_SHORT_NAMES[$board]}"
+    local sensor_short=$(get_short_sensor_name "$temp_sensor")
     local chip="${BOARD_CHIPS[$board]}"
     
     echo "🔨 Building firmware for: $board_name ($board -> $board_type) with $temp_sensor sensor"
@@ -257,11 +280,11 @@ build_board_variant() {
     echo "📝 Creating board-specific configuration: $config_name"
     cp firmware/firmware.yaml "$config_name"
     
-    # Update board in config
+    # Update board in config using shortened names for hostname compliance (≤31 chars)
     sed -i.bak "s/board: nodemcu-32s$/board: $board_type/" "$config_name"
-    sed -i.bak "s/name: gps-cartracker-nmcu$/name: gps-cartracker-$board-${temp_sensor,,}/" "$config_name"
+    sed -i.bak "s/name: gps-cartracker-nmcu$/name: gps-tracker-$board_short-$sensor_short/" "$config_name"
     sed -i.bak "s/friendly_name: GPS Cartracker NMCU$/friendly_name: GPS Cartracker ($board_name + $temp_sensor)/" "$config_name"
-    sed -i.bak "s/username: gps-cartracker$/username: gps-cartracker-$board-${temp_sensor,,}/" "$config_name"
+    sed -i.bak "s/username: gps-cartracker$/username: gps-tracker-$board_short-$sensor_short/" "$config_name"
     rm "$config_name.bak"
     
     # Apply board-specific pin configurations
