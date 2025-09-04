@@ -11,3 +11,6 @@ Thumbs.db
 # Test coverage reports
 coverage/
 scripts/build-firmware.sh.backup
+
+# Temporary firmware configuration files (generated during builds)
+firmware-*.yaml
