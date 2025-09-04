@@ -1,0 +1,494 @@
+substitutions:
+  # WiFi Configuration
+  WIFI_SSID_1: !secret wifi_ssid
+  WIFI_PASS_1: !secret wifi_password
+  #STATIC_IP_1: "192.168.1.25" # TODO
+  #STATIC_GW_1: "192.168.1.1"
+  #STATIC_MASK_1: "255.255.255.0"
+  #STATIC_DNS_1: "192.168.1.3"
+
+  # GPIO Pin Assignments for BerryBase NodeMCU-ESP32 (standard ESP32)
+  PIN_UART_RX: "GPIO16"
+  PIN_UART_TX: "GPIO17" 
+  PIN_DHT: "GPIO22"     # Safe pin, away from SD card
+  DHT_MODEL: "DHT11"
+  PIN_ACC_SENSE: "GPIO35" # Safe pin, away from SD card
+  PIN_LED: "GPIO23"     # Safe pin, away from SD card
+  
+  # Upload Configuration
+  UPLOAD_TARGET: "https://gps.example.com/upload/"
+  BASIC_AUTH_USER: "gps-cartracker"
+  BASIC_AUTH_PASS: "CHANGEME_SECRET"
+
+esphome:
+  name: gps-tracker-esp32d-d11
+  friendly_name: GPS Cartracker (Generic ESP32 DevKit + DHT11)
+  min_version: 2025.8.0
+  on_shutdown:
+    then:
+      - script.execute: sync_logs
+
+esp32:
+  # Board updated to BerryBase NodeMCU-ESP32 (standard ESP32, not ESP32-C3)
+  board: esp32dev
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_FATFS_LFN_STACK: "y"
+
+# Use the external SD card custom component
+external_components:
+  - source: github://n-serrette/esphome_sd_card@main
+    components: [ sd_mmc_card ]
+
+# SD card custom component configuration - Standard ESP32 SDMMC pins
+# Note: GPIO15, GPIO2, GPIO12 are strapping pins but are standard for SD card interface
+sd_mmc_card:
+  id: sd_card
+  clk_pin: GPIO14
+  cmd_pin: GPIO15  # Strapping pin - accepted for SD card functionality
+  data0_pin: GPIO2  # Strapping pin - accepted for SD card functionality  
+  data1_pin: GPIO4
+  data2_pin: GPIO12  # Strapping pin - accepted for SD card functionality
+  data3_pin: GPIO13
+# Top-level intervals
+interval:
+  # 2s driving log when ACC is on
+  - interval: 2s
+    then:
+      - if:
+          condition:
+            binary_sensor.is_on: acc_present
+          then:
+            - logger.log:
+                format: "GPS_DATA: %s,%.6f,%.6f,%.1f,%.1f,%.2f,%.0f,%.0f,%.1f,%.1f"
+                args:
+                  - !lambda |
+                      auto t = id(gps_time).now();
+                      static char ts[32];
+                      if (t.is_valid()) {
+                        snprintf(ts, sizeof(ts), "%04d-%02d-%02dT%02d:%02d:%02dZ",
+                                 t.year, t.month, t.day_of_month, t.hour, t.minute, t.second);
+                      } else {
+                        // Fallback to SNTP time if GPS time is not available
+                        auto fallback_t = id(sntp_time).now();
+                        if (fallback_t.is_valid()) {
+                          snprintf(ts, sizeof(ts), "%04d-%02d-%02dT%02d:%02d:%02dZ",
+                                   fallback_t.year, fallback_t.month, fallback_t.day_of_month, 
+                                   fallback_t.hour, fallback_t.minute, fallback_t.second);
+                        } else {
+                          snprintf(ts, sizeof(ts), "no_time");
+                        }
+                      }
+                      return std::string(ts);
+                  - id(gps_latitude).state
+                  - id(gps_longitude).state
+                  - id(gps_altitude).state
+                  - id(speed_kmh).state
+                  - id(gps_hdop).state
+                  - id(gps_satellites).state
+                  - id(gps_course).state
+                  - id(car_temp_c).state
+                  - id(car_hum_pct).state
+            # Build a CSV line and append to RAM buffer
+            - lambda: |-
+                auto t = id(gps_time).now();
+                char ts[32];
+                if (t.is_valid()) {
+                  snprintf(ts, sizeof(ts), "%04d-%02d-%02dT%02d:%02d:%02dZ",
+                           t.year, t.month, t.day_of_month, t.hour, t.minute, t.second);
+                } else {
+                  // Fallback to SNTP time if GPS time is not available
+                  auto fallback_t = id(sntp_time).now();
+                  if (fallback_t.is_valid()) {
+                    snprintf(ts, sizeof(ts), "%04d-%02d-%02dT%02d:%02d:%02dZ",
+                             fallback_t.year, fallback_t.month, fallback_t.day_of_month, 
+                             fallback_t.hour, fallback_t.minute, fallback_t.second);
+                  } else {
+                    snprintf(ts, sizeof(ts), "no_time");
+                  }
+                }
+                char line[192];
+                snprintf(line, sizeof(line), "%s,%.6f,%.6f,%.1f,%.1f,%.2f,%.0f,%.0f,%.1f,%.1f\\n",
+                  ts,
+                  id(gps_latitude).state,
+                  id(gps_longitude).state,
+                  id(gps_altitude).state,
+                  id(speed_kmh).state,
+                  id(gps_hdop).state,
+                  id(gps_satellites).state,
+                  id(gps_course).state,
+                  id(car_temp_c).state,
+                  id(car_hum_pct).state);
+                id(csv_cache_ram) += std::string(line);
+
+  # Jede Minute: RAM-Buffer auf SD-Karte anhängen und leeren
+  - interval: 60s
+    then:
+      - lambda: |-
+          std::string str = id(csv_cache_ram);
+          if (str.size() == 0) return;
+          id(csv_cache_ram).clear();
+          // Use C file APIs to append to the SD card file (mount point provided by sd_mmc)
+          FILE* f = fopen("/sdcard/gpslog.csv", "a");
+          if (f) {
+            fwrite(str.c_str(), 1, str.length(), f);
+            fclose(f);
+          }
+      - logger.log: "CSV-Cache wurde auf SD-Karte gespeichert."
+
+# --- Networking, logging, and device peripherals ---
+wifi:
+  networks:
+    - ssid: ${WIFI_SSID_1}
+      password: ${WIFI_PASS_1}
+#      manual_ip:  # TODO: comment out to use second IP
+#        static_ip: ${STATIC_IP_1}
+#        gateway: ${STATIC_GW_1}
+#        subnet: ${STATIC_MASK_1}
+#        dns: ${STATIC_DNS_1}
+
+  ap:
+    ssid: "gps-cartracker-setup"
+    password: "setup-setup"
+
+  on_disconnect:
+    then:
+      - logger.log: "WiFi lost, keeping AP active"
+
+  on_connect:
+    then:
+      - script.execute: sync_logs
+
+logger:
+  level: INFO
+
+ota:
+  - platform: esphome
+    password: "9e3f7c8d2a1b5f6e4c9d8e7f2a3b4c5d"
+
+uart:
+  id: gps_uart
+  rx_pin: ${PIN_UART_RX}
+  tx_pin: ${PIN_UART_TX}
+  baud_rate: 9600
+
+# GPS component using ESPHome built-in support
+gps:
+  id: gps_module
+  uart_id: gps_uart
+  latitude:
+    id: gps_latitude
+  longitude:
+    id: gps_longitude
+  altitude:
+    id: gps_altitude
+  speed:
+    id: gps_speed
+  course:
+    id: gps_course
+  satellites:
+    id: gps_satellites
+
+# Use GPS time instead of SNTP
+time:
+  - platform: gps
+    id: gps_time
+    gps_id: gps_module
+    timezone: Europe/Berlin
+  # Keep SNTP as fallback when GPS is not available
+  - platform: sntp
+    id: sntp_time
+    timezone: Europe/Berlin
+
+# Placeholder HTTP upload component: implement auth and post details as needed
+http_request:
+  useragent: "gps-cartracker/1.0"
+
+# Simple web server for configuration
+web_server:
+  port: 80
+  auth:
+    username: gps-tracker-esp32d-d11
+    password: admin
+  include_internal: true
+
+sensor:
+  - platform: template
+    id: speed_kmh
+    unit_of_measurement: "km/h"
+    accuracy_decimals: 1
+    update_interval: 1s
+    lambda: |-
+      if (isnan(id(gps_speed).state)) return NAN;
+      return id(gps_speed).state * 3.6;
+
+  # HDOP sensor - we'll try to get it from GPS data
+  - platform: template
+    id: gps_hdop
+    unit_of_measurement: ""
+    accuracy_decimals: 2
+    update_interval: 2s
+    lambda: |-
+      // For now return a placeholder until we can access raw NMEA data
+      // ESPHome's built-in GPS component doesn't directly expose HDOP
+      return 1.5; // Placeholder - typical good HDOP value
+
+  - platform: dht
+    pin: ${PIN_DHT}
+    model: ${DHT_MODEL}
+    temperature:
+      id: car_temp_c
+    humidity:
+      id: car_hum_pct
+    update_interval: 15s
+
+binary_sensor:
+  - platform: gpio
+    id: acc_present
+    pin:
+      number: ${PIN_ACC_SENSE}
+      mode:
+        input: true
+        pullup: false
+        pulldown: true
+    filters:
+      - delayed_on: 50ms
+      - delayed_off: 500ms
+    on_press:
+      then:
+        - deep_sleep.prevent: ds1
+        - script.stop: shutdown_sequence
+    on_release:
+      then:
+        - script.execute: shutdown_sequence
+
+# Manual SD card implementation with ESP-IDF
+
+globals:
+  - id: sd_initialized
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+  - id: auth_b64
+    type: std::string
+    restore_value: no
+    initial_value: ""
+
+  # Configurable server settings (reset on restart unless persisted)
+  - id: server_url
+    type: std::string
+    restore_value: no
+    initial_value: '"${UPLOAD_TARGET}"'
+  - id: basic_auth_user
+    type: std::string
+    restore_value: no
+    initial_value: '"${BASIC_AUTH_USER}"'
+  - id: basic_auth_pass
+    type: std::string
+    restore_value: no
+    initial_value: '"${BASIC_AUTH_PASS}"'
+
+  # RAM-Buffer für CSV-Cache (anpassbar, z.B. 8kB)
+  - id: csv_cache_ram
+    type: std::string
+    restore_value: no
+    initial_value: ""
+  
+  # Upload data buffer
+  - id: upload_data
+    type: std::string
+    restore_value: no
+    initial_value: ""
+
+
+text_sensor:
+  - platform: template
+    id: logfile
+    lambda: |-
+      auto t = id(gps_time).now();
+      if (!t.is_valid()) {
+        // Fallback to SNTP time
+        auto fallback_t = id(sntp_time).now();
+        if (!fallback_t.is_valid()) return std::string("current.csv");
+        char buf[40];
+        snprintf(buf, sizeof(buf), "%04d-%02d-%02d_%02d.csv",
+                 fallback_t.year, fallback_t.month, fallback_t.day_of_month, fallback_t.hour);
+        return std::string(buf);
+      }
+      char buf[40];
+      snprintf(buf, sizeof(buf), "%04d-%02d-%02d_%02d.csv",
+               t.year, t.month, t.day_of_month, t.hour);
+      return std::string(buf);
+
+  # Configuration display sensors
+  - platform: template
+    name: "Server URL"
+    id: server_url_display
+    lambda: 'return id(server_url);'
+    update_interval: 10s
+
+  - platform: template  
+    name: "Auth User"
+    id: auth_user_display
+    lambda: 'return id(basic_auth_user);'
+    update_interval: 10s
+
+light:
+  - platform: status_led
+    id: status_light
+    pin: ${PIN_LED}  # Now GPIO19 instead of GPIO2
+
+script:
+  - id: sync_logs
+    mode: queued
+    then:
+      # Generate Basic Auth header from current settings
+      - lambda: |-
+          std::string creds = id(basic_auth_user) + ":" + id(basic_auth_pass);
+          // Simple base64 encoding
+          const std::string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+          std::string result;
+          int i = 0;
+          while (i < creds.length()) {
+            uint32_t a = i < creds.length() ? (uint8_t)creds[i++] : 0;
+            uint32_t b = i < creds.length() ? (uint8_t)creds[i++] : 0;
+            uint32_t c = i < creds.length() ? (uint8_t)creds[i++] : 0;
+            uint32_t bitmap = (a << 16) | (b << 8) | c;
+            result += chars[(bitmap >> 18) & 63];
+            result += chars[(bitmap >> 12) & 63];
+            result += chars[(bitmap >> 6) & 63];
+            result += chars[bitmap & 63];
+          }
+          // Add padding
+          while (result.length() % 4) result += '=';
+          id(auth_b64) = result;
+      
+      # Vor Upload: RAM-Buffer auf SD-Karte flushen (use consistent file paths)
+      - lambda: |-
+          std::string str = id(csv_cache_ram);
+          if (str.size() > 0) {
+            id(csv_cache_ram).clear();
+            // Write to SD using standard file operations (/sdcard/ mount point)
+            FILE* f = fopen("/sdcard/gpslog.csv", "a");
+            if (f) {
+              fwrite(str.c_str(), 1, str.length(), f);
+              fclose(f);
+            }
+          }
+      - logger.log: "RAM cache flushed to SD card."
+      
+      # Upload: CSV von SD-Karte lesen und senden
+      - lambda: |-
+          FILE* f = fopen("/sdcard/gpslog.csv", "r");
+          if (f) {
+            fseek(f, 0, SEEK_END);
+            long len = ftell(f);
+            if (len > 0) {
+              fseek(f, 0, SEEK_SET);
+              std::string content(len, '\0');
+              fread(&content[0], 1, len, f);
+              fclose(f);
+              id(upload_data) = content;
+              ESP_LOGI("sync_logs", "Read %ld bytes from SD card for upload", len);
+            } else {
+              fclose(f);
+              ESP_LOGW("sync_logs", "SD card file is empty, nothing to upload");
+              id(upload_data) = "";
+            }
+          } else {
+            ESP_LOGW("sync_logs", "Could not open SD card file for reading");
+            id(upload_data) = "";
+          }
+      - if:
+          condition:
+            lambda: 'return !id(upload_data).empty();'
+          then:
+            - http_request.post:
+                url: !lambda 'return (id(server_url) + id(logfile).state).c_str();'
+                request_headers: # leave this request_headers. it was changed!
+                  Authorization: !lambda 'return ("Basic " + id(auth_b64)).c_str();'
+                  Content-Type: text/csv
+                body: !lambda 'return id(upload_data);'
+            - logger.log: "Upload von SD-Karte durchgeführt."
+            # Nach Upload: Datei auf SD-Karte löschen
+            - lambda: 'remove("/sdcard/gpslog.csv");'
+            - logger.log: "CSV-Datei auf SD-Karte gelöscht."
+          else:
+            - logger.log: "Kein Upload - keine Daten auf SD-Karte gefunden."
+
+  # Configuration update scripts
+  - id: update_server_url
+    parameters:
+      new_url: string
+    then:
+      - lambda: 'id(server_url) = new_url;'
+      - logger.log: 
+          format: "Server URL updated to: %s"
+          args: ['new_url.c_str()']
+
+  - id: update_auth_credentials
+    parameters:
+      new_user: string
+      new_pass: string
+    then:
+      - lambda: |-
+          id(basic_auth_user) = new_user;
+          id(basic_auth_pass) = new_pass;
+      - logger.log: 
+          format: "Auth credentials updated for user: %s"
+          args: ['new_user.c_str()']
+
+  - id: shutdown_sequence
+    mode: restart
+    then:
+        - delay: 60s
+        # Vor Deep Sleep: RAM-Buffer auf SD-Karte flushen
+        - lambda: |-
+            std::string str = id(csv_cache_ram);
+            if (str.size() > 0) {
+              id(csv_cache_ram).clear();
+              // Write to SD using standard file operations
+              FILE* f = fopen("/sdcard/gpslog.csv", "a");
+              if (f) {
+                fwrite(str.c_str(), 1, str.length(), f);
+                fclose(f);
+              }
+            }
+        - if:
+            condition:
+              binary_sensor.is_off: acc_present
+            then:
+              - script.execute: sync_logs
+              - delay: 3s
+              - deep_sleep.enter: ds1
+
+  - id: temp_ping_once
+    then:
+      - logger.log:
+          format: "TEMP_PING: %s,nan,nan,0.0,0.0,nan,nan,nan,%.1f,%.1f"
+          args:
+            - !lambda |
+                auto t = id(gps_time).now();
+                static char ts[32];
+                if (t.is_valid()) {
+                  snprintf(ts, sizeof(ts), "%04d-%02d-%02dT%02d:%02d:%02dZ",
+                           t.year, t.month, t.day_of_month, t.hour, t.minute, t.second);
+                } else {
+                  // Fallback to SNTP time
+                  auto fallback_t = id(sntp_time).now();
+                  if (fallback_t.is_valid()) {
+                    snprintf(ts, sizeof(ts), "%04d-%02d-%02dT%02d:%02d:%02dZ",
+                             fallback_t.year, fallback_t.month, fallback_t.day_of_month, 
+                             fallback_t.hour, fallback_t.minute, fallback_t.second);
+                  } else {
+                    snprintf(ts, sizeof(ts), "no_time");
+                  }
+                }
+                return ts;
+            - id(car_temp_c).state
+            - id(car_hum_pct).state
+
+deep_sleep:
+  id: ds1
+  sleep_duration: 30min
