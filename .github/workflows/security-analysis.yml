@@ -108,6 +108,7 @@ jobs:
           load: true
 
       - name: Run Trivy vulnerability scanner
+        id: trivy-scan
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'gps-cartracker:security-test'
@@ -116,18 +117,29 @@ jobs:
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        # Only upload if Trivy scan succeeded and SARIF file was created
+        if: success() && hashFiles('trivy-results.sarif') != ''
         with:
           sarif_file: 'trivy-results.sarif'
 
       - name: Generate Docker security summary
+        if: always()
         run: |
           echo "# 🐳 Docker Security Scan Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Base Image**: Node.js 24 Alpine" >> $GITHUB_STEP_SUMMARY
           echo "**Scanner**: Trivy" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Detailed results uploaded to Security tab." >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ steps.trivy-scan.outcome }}" == "success" ]] && [ -f "trivy-results.sarif" ]; then
+            echo "✅ **Security Scan**: Completed successfully" >> $GITHUB_STEP_SUMMARY
+            echo "📊 **Results**: Uploaded to Security tab" >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ steps.trivy-scan.outcome }}" == "failure" ]]; then
+            echo "❌ **Security Scan**: Failed to complete" >> $GITHUB_STEP_SUMMARY
+            echo "🔍 **Action**: Check build logs for details" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Security Scan**: Skipped or no results generated" >> $GITHUB_STEP_SUMMARY
+          fi
 
   firmware-security:
     name: Firmware Configuration Security
