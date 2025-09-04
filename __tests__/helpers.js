@@ -26,10 +26,10 @@ export const cleanupTestFiles = () => {
 }
 
 export const createTestApp = (config = {}) => {
-  const mergedConfig = { 
-    ...testConfig, 
-    ...config, 
-    silentLogger: true 
+  const mergedConfig = {
+    ...testConfig,
+    ...config,
+    silentLogger: true
   }
   return createApp(mergedConfig)
 }

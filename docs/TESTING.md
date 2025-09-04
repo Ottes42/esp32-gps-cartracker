@@ -16,18 +16,20 @@ This project includes comprehensive unit and integration tests for the Node.js b
 ### 1. Unit Tests (`__tests__/unit/`)
 
 #### Helper Functions (`helpers.test.js`)
-Tests the core utility functions:
+Tests the core utility functions from `lib/helpers.js`:
 - **`distanceKm`**: GPS distance calculations between coordinates
 - **`geocodeAddress`**: Address-to-coordinates geocoding with caching
 - **`parseReceipt`**: Gemini AI OCR processing for fuel receipts
 
 Coverage includes:
 - Accurate distance calculations (Frankfurt ↔ Munich ~300km)
-- Geocoding API integration with error handling
-- OCR parsing with various response formats
+- Geocoding API integration with error handling and caching
+- OCR parsing with various response formats and error scenarios
+- File path handling (absolute paths for tests, relative for uploads)
 - Input validation and error cases
 
-#### Database Operations (`database.test.js`) 
+#### Database Operations (`database.test.js`)
+Tests the database functionality from `lib/database.js`: 
 Tests SQLite database schema and operations:
 - **`car_track` table**: GPS tracking data storage
 - **`fuel` table**: Fuel consumption records
@@ -143,9 +145,18 @@ The tests follow the project's **minimal change** philosophy:
 - In-memory databases prevent file system issues
 - Comprehensive coverage without over-engineering
 
-The codebase proved to be **highly testable** as-is, requiring only:
-1. Extraction of app creation into `app.js` module
-2. Helper function export for unit testing
-3. Configuration injection for test environments
+### Modular Architecture Benefits
 
-This demonstrates good separation of concerns and clean architecture in the original implementation.
+The refactored modular architecture provides additional testing benefits:
+- **Module Isolation**: Each `lib/` module can be unit tested independently
+- **Dependency Injection**: Test configurations can override production settings
+- **Structured Logging**: Silent logging during tests prevents output noise
+- **Mocking Support**: External APIs (Gemini AI, geocoding) properly mocked
+
+The architecture maintains **backward compatibility** while improving maintainability:
+1. Same `createApp(config)` interface for test creation
+2. Helper function exports preserved at `app.helpers.*`
+3. All 67 existing tests pass without modification
+4. Configuration injection for test environments
+
+This demonstrates excellent separation of concerns and clean architecture that scaled well during refactoring.

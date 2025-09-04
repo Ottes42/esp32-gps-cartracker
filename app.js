@@ -15,8 +15,8 @@ export const createApp = (configOverrides = {}) => {
   // Configure global logger settings
   setLoggerConfig({ silent: configOverrides.silentLogger || false })
 
-  // Initialize logger (used by modules)
-  const logger = createLogger()
+  // Initialize logger (creates global instance used by modules)
+  createLogger()
 
   // Initialize database
   const db = initializeDatabase(config.DB_FILE)

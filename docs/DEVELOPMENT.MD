@@ -2,13 +2,58 @@
 
 ## Project Structure
 
+### Core Application Files
+- **`app.js`** - Main application factory with dependency injection
+- **`index.js`** - Server startup script
+- **`lib/`** - Modular application components
+  - `config.js` - Environment configuration and directory setup
+  - `logger.js` - Winston-based structured logging 
+  - `database.js` - SQLite database initialization and schema
+  - `helpers.js` - OCR, geocoding, and utility functions
+  - `middleware.js` - Authentication, rate limiting, and Express middleware
+  - `routes.js` - API endpoints and route handlers
+
+### Additional Directories
 - **`scripts/`** - Utility scripts for development and testing
   - `generateTestCSV.js` - Generate GPS test data
   - `generateFuelData.js` - Generate fuel test data
 - **`docs/`** - Documentation files
   - `NGINX.MD` - Nginx configuration guide  
-  - `NGINX-PRROXY-MANAGER.MD` - NPM setup guide
+  - `NGINX-PROXY-MANAGER.MD` - NPM setup guide
 - **`public/`** - Frontend web dashboard files
+- **`__tests__/`** - Test suites (unit and integration tests)
+  - `helpers.js` - Test configuration and utilities
+  - `unit/` - Unit tests for individual functions
+  - `integration/` - API endpoint integration tests
+
+## Architecture Overview
+
+The application follows a modular architecture with dependency injection:
+
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│   index.js  │───▶│   app.js    │───▶│ Express App │
+└─────────────┘    └─────────────┘    └─────────────┘
+                           │
+                           ▼
+                   ┌─────────────┐
+                   │    lib/     │
+                   ├─────────────┤
+                   │ • config    │
+                   │ • logger    │
+                   │ • database  │
+                   │ • helpers   │
+                   │ • middleware│
+                   │ • routes    │
+                   └─────────────┘
+```
+
+### Key Design Principles
+- **Dependency Injection**: Configuration and dependencies passed to modules
+- **Separation of Concerns**: Each module has a single responsibility
+- **Backward Compatibility**: API and test interfaces remain unchanged
+- **Structured Logging**: Winston-based logging with dev/prod configurations
+- **Testability**: All modules can be unit tested independently
 
 ## Setup Development Environment
 
@@ -61,6 +106,48 @@ In exceptional cases, skip the pre-commit hook with:
 ```bash
 git commit --no-verify -m "emergency fix"
 ```
+
+## Logging
+
+The application uses **Winston** for structured logging with environment-specific configurations:
+
+### Development Mode
+- **Format**: Colorized console output with timestamps
+- **Level**: Debug (verbose logging)
+- **Output**: Human-readable format with metadata
+
+```bash
+2025-09-04T13:00:29.564Z [info] Initializing database {"dbFile":"data/gps/cartracker.db"}
+2025-09-04T13:00:30.123Z [debug] Processing GPS CSV upload {"device":"development","lineCount":42}
+```
+
+### Production Mode
+- **Format**: JSON structured logs
+- **Level**: Info and above (warn, error)
+- **Output**: Machine-readable format for log aggregation
+
+```json
+{"level":"info","message":"Database initialization completed","timestamp":"2025-09-04T13:00:29.574Z"}
+```
+
+### Configuration
+
+Logging can be configured via environment variables or programmatically:
+
+```javascript
+// Silent logging for tests
+const app = createApp({ silentLogger: true })
+
+// Custom log level
+process.env.NODE_ENV = 'production'  // Uses 'info' level
+```
+
+### Log Categories
+- **Database operations**: Table initialization, query execution
+- **Authentication**: User authorization, request validation
+- **File processing**: GPS CSV uploads, fuel receipt OCR
+- **API requests**: Endpoint calls, rate limiting
+- **Error handling**: Failed operations, validation errors
 
 ## Test Data Generation
 
