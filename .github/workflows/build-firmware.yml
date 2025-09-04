@@ -82,6 +82,22 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-esphome-2025.8.0-
 
+      - name: Create secrets file
+        run: |
+          if [ ! -f "firmware/secrets.yaml" ]; then
+            cat > firmware/secrets.yaml << EOF
+          # Default secrets for CI builds - device will use AP mode for setup
+          wifi_ssid: "gps-cartracker-setup"
+          wifi_password: "setup-setup"
+          server_url: "http://192.168.1.100:3000"
+          server_auth_user: "admin"
+          server_auth_pass: "password"
+          EOF
+            echo "✅ Created firmware/secrets.yaml for CI build"
+          else
+            echo "✅ Using existing firmware/secrets.yaml"
+          fi
+
       - name: Build firmware variant
         run: |
           echo "🔨 Quick validation build for ${{ matrix.board_name }} with ${{ matrix.sensor }} sensor"
