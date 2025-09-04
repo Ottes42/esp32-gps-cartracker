@@ -183,6 +183,11 @@ GitHub Release with 24 assets (12 .bin + 12 .json)
    - Verify file paths and permissions
    - Check artifact size limits (10GB per workflow)
 
+5. **SARIF Upload Failures**
+   - Ensure security scan (Trivy) completes successfully before upload
+   - Check that SARIF file exists with `hashFiles()` condition
+   - Use proper conditional upload: `if: success() && hashFiles('file.sarif') != ''`
+
 ## 📈 Continuous Improvement
 
 ### Metrics to Track
