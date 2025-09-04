@@ -417,3 +417,210 @@ pkill -f "node index.js"
 **Total validation time**: ~30 seconds (excluding manual browser test)
 
 REMEMBER: NEVER CANCEL firmware builds - they take 5-15+ minutes per board and 60-180+ minutes for all boards.
+
+## Path-Specific Development Guidance
+
+### `/` - Root Directory
+**Core application files**: Main server entry point and Express app configuration
+- **`index.js`**: Server startup, environment loading, port configuration
+- **`app.js`**: Express app creation, middleware setup, all API routes (testable module)
+- **`package.json`**: Dependencies, scripts, project metadata
+
+**Development patterns**:
+```javascript
+// Always use authentication middleware pattern
+app.use('/api/*', (req, res, next) => {
+  req.authUser = req.get('x-auth-user') || 'development'
+  next()
+})
+
+// User isolation in all database queries
+const stmt = db.prepare('SELECT * FROM table WHERE user = ?')
+const results = stmt.all(req.authUser)
+```
+
+### `/firmware/` - ESPHome Configuration
+**Hardware abstraction**: ESP32 firmware configuration using ESPHome framework
+- **`firmware.yaml`**: Base ESPHome configuration template for all board variants
+- **`secrets.yaml`**: WiFi credentials (create manually, not in git)
+- **`manifest-*.json`**: Web flasher manifests for OTA updates
+
+**ESPHome patterns**:
+```yaml
+# GPS UART configuration (standard pins)
+uart:
+  id: gps_uart
+  tx_pin: GPIO17
+  rx_pin: GPIO16
+  baud_rate: 9600
+
+# SD card with SDMMC (NodeMCU-ESP32 default)
+esp32_sdmmc:
+  clk_pin: GPIO14
+  cmd_pin: GPIO15
+  d0_pin: GPIO2
+  d1_pin: GPIO4
+  d2_pin: GPIO12
+  d3_pin: GPIO13
+```
+
+### `/public/` - Frontend Dashboard
+**Vanilla JavaScript SPA**: No frameworks, direct DOM manipulation, OpenLayers mapping
+- **`index.html`**: Main dashboard with map, statistics, navigation
+- **`trips.html`**: Trip history and analysis
+- **`fuel.html`**: Fuel receipt management and OCR results
+- **`flasher.html`**: Web-based ESP32 firmware flasher
+
+**Frontend patterns**:
+```javascript
+// API calls with authentication (NPM proxy provides auth headers)
+const response = await fetch('/api/endpoint', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(data)
+})
+
+// OpenLayers map initialization
+const map = new ol.Map({
+  target: 'map',
+  layers: [new ol.layer.Tile({ source: new ol.source.OSM() })]
+})
+```
+
+### `/__tests__/` - Test Suites
+**Jest testing framework**: Unit tests for core functions, integration tests for API endpoints
+- **`unit/`**: Core functions (distance calculation, geocoding, OCR parsing)
+- **`integration/`**: API endpoints, authentication, database operations
+- **`helpers.js`**: Test utilities and common patterns
+
+**Testing patterns**:
+```javascript
+// In-memory database for test isolation
+const testDb = new Database(':memory:')
+
+// Mock external APIs (Gemini AI, geocoding)
+jest.mock('googleapis', () => ({
+  google: { generativeai: jest.fn() }
+}))
+
+// Expected test results: 61/67 tests pass (6 known failures)
+```
+
+### `/docs/` - Comprehensive Documentation
+**Technical documentation**: 15 detailed guides covering all aspects
+- **`DEVELOPMENT.MD`**: Local development setup and workflows
+- **`DEPLOYMENT.MD`**: Production deployment with Docker and Nginx
+- **`HARDWARE.MD`**: ESP32 wiring, GPS modules, SD card setup
+- **`API.MD`**: REST endpoint documentation and examples
+- **`SECURITY.MD`**: Authentication, proxy configuration, rate limiting
+
+**Documentation standards**:
+- Technical accuracy over comprehensive coverage
+- Code examples for all procedures
+- Troubleshooting sections for common issues
+- Version-specific information (ESPHome 2025.8.0)
+
+### `/scripts/` - Build Automation
+**DevOps and testing utilities**: Firmware builds, test data generation, validation
+- **`build-firmware.sh`**: ESPHome compilation for all board variants
+- **`generateTestCSV.js`**: GPS tracking test data (1980 rows)
+- **`generateFuelData.js`**: Fuel receipt test data (3 records)
+- **`validate_esphome.py`**: ESPHome configuration validation
+
+**Script usage patterns**:
+```bash
+# Firmware validation (1 second)
+./scripts/build-firmware.sh validate
+
+# Test data generation (0.2 seconds each)
+npm run testCsv && npm run testFuel
+
+# Single board build (5-15 minutes - NEVER CANCEL)
+./scripts/build-firmware.sh nodemcu-32s DHT11
+```
+
+### `/.github/` - CI/CD and Development Tools
+**GitHub Actions workflows**: Automated testing, firmware builds, deployments
+- **`workflows/`**: CI/CD pipelines for testing, building, security analysis
+- **`copilot-instructions.md`**: Comprehensive AI coding agent instructions (this file)
+- **`COPILOT-SETUP.md`**: Team setup guide for GitHub Copilot optimization
+
+**Workflow timing expectations**:
+- **Tests**: 3-4 seconds (67 tests, 61 pass expected)
+- **Firmware validation**: 1 second (12 board variants)
+- **Single firmware build**: 5-15 minutes per board
+- **All firmware builds**: 60-180 minutes total
+
+## File Type Specific Guidelines
+
+### JavaScript Files (`*.js`)
+**Context**: Express.js backend, frontend vanilla JS, test suites
+- Follow StandardJS style (no semicolons, 2-space indent, single quotes)
+- Use authentication middleware pattern for all API routes
+- Implement user isolation in all database queries
+- Handle errors gracefully with user-friendly messages
+
+### YAML Files (`*.yaml`, `*.yml`)
+**Context**: ESPHome configuration, GitHub Actions workflows
+- Pin-specific ESPHome configurations for different ESP32 variants
+- Use consistent GPIO pin assignments across board types
+- Include component validation and error handling
+
+### HTML Files (`*.html`)
+**Context**: Frontend dashboard pages, web flasher interface
+- Bootstrap 5 for responsive design
+- OpenLayers for interactive mapping
+- Vanilla JavaScript for DOM manipulation
+- No build process - direct browser execution
+
+### Test Files (`*.test.js`)
+**Context**: Jest test suites with mocking and in-memory databases
+- Expect 61/67 tests to pass (6 known failures in path validation)
+- Use in-memory SQLite for test isolation
+- Mock external APIs (Gemini AI, OpenStreetMap)
+- Test both success and error conditions
+
+### Documentation Files (`*.md`)
+**Context**: Technical guides, API documentation, setup instructions
+- Focus on practical implementation over theory
+- Include code examples for all procedures
+- Maintain version-specific information
+- Provide troubleshooting guidance
+
+### Configuration Files
+**Environment files** (`.env*`): API keys, development settings
+**Docker files** (`Dockerfile`, `docker-compose.yaml`): Production deployment
+**Package files** (`package.json`): Dependencies and scripts
+**Git files** (`.gitignore`): Exclude secrets, build artifacts, dependencies
+
+## Development Workflow by Path
+
+### Backend Development (`/app.js`, `/index.js`)
+1. **Setup**: `npm install` → `cp .env.example .env.local` → edit API keys
+2. **Development**: `npm run dev` (instant startup with hot reload)
+3. **Testing**: `npm test` (3-4 seconds, expect 61/67 pass)
+4. **Validation**: `npm run lint` (2 seconds, must pass completely)
+
+### Firmware Development (`/firmware/`)
+1. **Validation**: `./scripts/build-firmware.sh validate` (1 second)
+2. **Development**: Edit `firmware.yaml` for pin configurations
+3. **Testing**: `./scripts/build-firmware.sh nodemcu-32s` (5-15 minutes)
+4. **Deployment**: OTA via web flasher or ESPHome upload
+
+### Frontend Development (`/public/`)
+1. **Local server**: `npm run dev` → navigate to http://localhost:8080
+2. **Live reload**: Changes reflected immediately (no build process)
+3. **API testing**: Use browser DevTools to inspect API calls
+4. **Map testing**: Verify OpenLayers functionality with test data
+
+### Documentation Updates (`/docs/`)
+1. **Technical accuracy**: Verify all code examples work
+2. **Version updates**: Keep ESPHome versions current
+3. **Cross-references**: Ensure internal links work
+4. **Practical focus**: Include troubleshooting for common issues
+
+### Test Development (`/__tests__/`)
+1. **Test isolation**: Use in-memory databases
+2. **API mocking**: Mock external services (Gemini, geocoding)
+3. **Expected failures**: 6 tests fail due to path validation security
+4. **Coverage goals**: Focus on core functionality, not 100% coverage
