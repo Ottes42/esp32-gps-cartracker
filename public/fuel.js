@@ -17,9 +17,7 @@ form.addEventListener('submit', async (e) => {
 
   result.textContent = 'Uploading…'
   try {
-    const r = await fetch('/uploadReceipt', { method: 'POST', body: fd })
-    const j = await r.json()
-    if (!r.ok) { throw new Error(j.error || r.statusText) }
+    const j = await window.api.post('/uploadReceipt', fd)
     renderResult(j)
   } catch (err) {
     result.innerHTML = `<span class="badge err">Error</span> ${err.message}`

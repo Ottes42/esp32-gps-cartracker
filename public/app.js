@@ -42,7 +42,8 @@ class API {
   async get (endpoint) {
     const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: 'GET',
-      headers: this.getHeaders()
+      headers: this.getHeaders(),
+      credentials: 'include'
     })
 
     return this.handleResponse(response)
@@ -62,7 +63,8 @@ class API {
     const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: 'POST',
       headers,
-      body
+      body,
+      credentials: 'include'
     })
 
     return this.handleResponse(response)
