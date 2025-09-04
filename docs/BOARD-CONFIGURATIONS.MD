@@ -148,6 +148,48 @@ sd_mmc_card:
 - ✅ More GPIO pins available
 - ⚠️ Different pin layout than ESP32
 
+### **ESP32-CAM** (esp32-cam)
+
+**Board**: ESP32-CAM  
+**Chip**: ESP32 (240MHz dual-core)  
+**Flash**: 4MB  
+**RAM**: 520KB  
+**Camera**: OV2640 2MP  
+
+```yaml
+# GPIO Pin Assignments for ESP32-CAM
+PIN_UART_RX: "GPIO16"
+PIN_UART_TX: "GPIO17" 
+PIN_DHT: "GPIO3"
+DHT_MODEL: "DHT11|DHT22|NONE"
+PIN_ACC_SENSE: "GPIO33"
+PIN_LED: "GPIO32"
+
+# SD card SDMMC interface (same as standard ESP32)
+sd_mmc_card:
+  clk_pin: GPIO14
+  cmd_pin: GPIO15
+  data0_pin: GPIO2
+  data1_pin: GPIO4
+  data2_pin: GPIO12
+  data3_pin: GPIO13
+```
+
+**Features**:
+- ✅ SDMMC SD card support
+- ✅ Built-in camera module
+- ✅ Compact form factor
+- ⚠️ Limited available GPIO pins due to camera usage
+- ⚠️ GPIO3 (DHT sensor) shares with UART RX - disable serial debug when using DHT sensor
+
+**Pin Usage Notes**:
+- **Camera pins are reserved**: GPIO 0, 2, 4, 5, 12, 13, 14, 15, 18, 19, 25, 26, 27
+- **GPIO16/17**: UART for GPS module (safe, not used by camera)
+- **GPIO3**: DHT sensor (RX pin, safe when serial debugging disabled)
+- **GPIO33**: ACC detection (analog capable, not used by camera)
+- **GPIO32**: Status LED (safe, not used by camera)
+- **SD Card**: Uses same SDMMC pins as standard ESP32, some overlap with camera
+
 ## Temperature Sensor Options
 
 The firmware supports three temperature sensor configurations:
@@ -182,6 +224,9 @@ Each board can be built with any temperature sensor option:
 - `gps-cartracker-esp32dev-dht11.bin`
 - `gps-cartracker-esp32dev-dht22.bin`
 - `gps-cartracker-esp32dev-none.bin`
+- `gps-cartracker-esp32-cam-dht11.bin`
+- `gps-cartracker-esp32-cam-dht22.bin`
+- `gps-cartracker-esp32-cam-none.bin`
 - ... and so on for all boards
 
 ## Implementation Notes
@@ -192,6 +237,7 @@ Each board can be built with any temperature sensor option:
 - ACC detection requires appropriate voltage divider for 12V car systems
 - Status LED provides visual feedback for GPS fix, WiFi connection, and data logging
 - ESP32-S3 uses different GPIO pins due to chip architecture differences
+- **ESP32-CAM specific**: GPIO3 (DHT sensor) shares with serial debug - disable serial monitor when using temperature sensor
 
 ## Board Selection Guidelines
 
@@ -214,6 +260,12 @@ Each board can be built with any temperature sensor option:
 - You want the latest ESP32 technology
 - You need AI acceleration features
 - You want native USB support
+
+**Choose ESP32-CAM** if:
+- You already have an ESP32-CAM board
+- You want a compact form factor
+- You plan to add camera features later
+- You don't mind limited GPIO pins
 
 ## Why Multiple Boards Now?
 

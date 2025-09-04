@@ -53,7 +53,11 @@ Ready-to-flash firmware binary is available for the BerryBase NodeMCU-ESP32 boar
 
 **Supported Hardware:**
 
-- `nodemcu-32s` - BerryBase NodeMCU-ESP32 (only supported board)
+- `nodemcu-32s` - BerryBase NodeMCU-ESP32 (primary recommended board)
+- `esp32dev` - Generic ESP32 DevKit 
+- `esp-wrover-kit` - ESP32-WROVER-KIT (with PSRAM)
+- `esp32-s3-devkitc-1` - ESP32-S3-DevKitC-1 (latest with AI acceleration)
+- `esp32-cam` - ESP32-CAM (compact form factor with camera)
 
 📖 **Full Flashing Guide**: [FIRMWARE-FLASHING.MD](docs/FIRMWARE-FLASHING.MD)
 

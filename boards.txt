@@ -2,3 +2,4 @@ nodemcu-32s
 esp32dev
 esp-wrover-kit
 esp32-s3-devkitc-1
+esp32-cam
