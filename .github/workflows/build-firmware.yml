@@ -165,7 +165,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Cache ESPHome
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.esphome
           key: ${{ runner.os }}-esphome-${{ env.ESPHOME_VERSION }}-${{ hashFiles('firmware/firmware.yaml') }}
