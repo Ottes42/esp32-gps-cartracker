@@ -20,6 +20,9 @@ RUN npm ci --omit=dev --ignore-scripts
 
 COPY . .
 
+# Rebuild better-sqlite3 to create native bindings
+RUN npm rebuild better-sqlite3
+
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S cartracker -u 1001 -G nodejs && \
