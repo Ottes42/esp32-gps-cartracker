@@ -238,7 +238,7 @@ jobs:
           fi
           device_name="gps-board-${sensor_short}"
           
-          sed -i "s/name: gps-board-d11$/name: ${device_name}/" "$config_name"
+          sed -i "s/^name: gps-board-.*/name: ${device_name}/" "$config_name"
           sed -i "s/friendly_name: GPS Board$/friendly_name: GPS Cartracker (${{ matrix.board_name }} + ${{ matrix.sensor }})/" "$config_name"
           
           # Apply board-specific pin configurations
