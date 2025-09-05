@@ -41,7 +41,7 @@ describe('Firmware Binary Naming Consistency', () => {
   it('should use consistent naming between CI workflow and build script patterns', () => {
     // Simulate CI workflow logic (the fixed version)
     const ciWorkflowDeviceName = (sensor) => {
-      const sensorLower = sensor.toUpperCase().toLowerCase()
+      const sensorLower = sensor.toLowerCase()
       let sensorShort
       switch (sensorLower) {
         case 'dht11': sensorShort = 'd11'; break
