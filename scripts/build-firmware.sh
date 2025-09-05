@@ -1,12 +1,27 @@
 #!/bin/bash
 
-# Build firmware for BerryBase NodeMCU-ESP32 board locally
-# Usage: ./scripts/build-firmware.sh [board_id] [esphome_version]
+# Build firmware for ESP32-based GPS Car Tracker boards
+# Usage: ./scripts/build-firmware.sh [board_id] [sensor_type] [esphome_version]
+#        ./scripts/build-firmware.sh [action] [esphome_version]
 
 set -e
 
-# Configuration
-ESPHOME_VERSION="${2:-${ESPHOME_VERSION:-2025.8.0}}"
+# Read supported boards from shared configuration file
+mapfile -t BOARDS < "${BASH_SOURCE[0]%/*}/../boards.txt"
+TEMP_SENSORS=("DHT11" "DHT22" "NONE")
+
+# Configuration - ESPHome version handling
+# For 3-arg calls: board sensor version
+# For 2-arg calls: check if 2nd arg is sensor or version
+if [ $# -eq 3 ]; then
+    ESPHOME_VERSION="${3:-${ESPHOME_VERSION:-2025.8.0}}"
+elif [ $# -eq 2 ] && [[ " ${TEMP_SENSORS[@]} " =~ " $2 " ]]; then
+    # Second arg is a sensor type
+    ESPHOME_VERSION="${ESPHOME_VERSION:-2025.8.0}"
+else
+    # Second arg is ESPHome version (legacy behavior)
+    ESPHOME_VERSION="${2:-${ESPHOME_VERSION:-2025.8.0}}"
+fi
 # Read supported boards from shared configuration file
 mapfile -t BOARDS < "${BASH_SOURCE[0]%/*}/../boards.txt"
 TEMP_SENSORS=("DHT11" "DHT22" "NONE")
@@ -76,28 +91,33 @@ validate_hostname_length() {
 
 # Functions
 print_usage() {
-    echo "Usage: $0 [board_id|all|validate] [esphome_version]"
+    echo "Usage: $0 [board_id] [sensor_type] [esphome_version]"
+    echo "       $0 [action] [esphome_version]"
     echo ""
     echo "Available boards:"
     for board in "${BOARDS[@]}"; do
         echo "  $board - ${BOARD_NAMES[$board]}"
     done
     echo ""
+    echo "Available sensors: ${TEMP_SENSORS[*]}"
+    echo ""
     echo "Parameters:"
-    echo "  board_id        - Board to build for, 'all', 'validate', or empty for interactive"
+    echo "  board_id        - Board to build for, or action (all/validate)"
+    echo "  sensor_type     - Temperature sensor (${TEMP_SENSORS[*]}) (default: DHT11)"
     echo "  esphome_version - ESPHome version to use (default: ${ESPHOME_VERSION})"
     echo ""
     echo "Examples:"
-    echo "  $0 nodemcu-32s           # Build for specific board with default ESPHome version"
-    echo "  $0 nodemcu-32s 2025.9.0  # Build for specific board with specific ESPHome version"
-    echo "  $0 all                   # Build for all boards"
-    echo "  $0 validate              # Just validate configs without compiling"
-    echo "  $0                       # Interactive selection"
+    echo "  $0 nodemcu-32s               # Build for specific board with DHT11 sensor"
+    echo "  $0 nodemcu-32s DHT22         # Build for specific board with DHT22 sensor"
+    echo "  $0 nodemcu-32s DHT11 2025.9.0 # Build with specific ESPHome version"
+    echo "  $0 all                       # Build for all boards with all sensors"
+    echo "  $0 validate                  # Just validate configs without compiling"
+    echo "  $0                           # Interactive selection"
     echo ""
     echo "Environment variables:"
     echo "  ESPHOME_VERSION - Default ESPHome version (current: ${ESPHOME_VERSION})"
-    echo "  KEEP_CONFIG=1     # Keep temporary configuration files for debugging"
-    echo "                    # Generated configs saved as firmware-BOARD-SENSOR.yaml"
+    echo "  KEEP_CONFIG=1   - Keep temporary configuration files for debugging"
+    echo "                  # Generated configs saved as firmware-BOARD-SENSOR.yaml"
 
 }
 
@@ -257,7 +277,7 @@ validate_board_variant() {
     
     # Update board in config using shortened names for hostname compliance (≤31 chars)
     sed -i.bak "s/board: nodemcu-32s$/board: $board_type/" "$config_name"
-    sed -i.bak "s/^name: gps-board-.*/name: $hostname/" "$config_name"
+    sed -i.bak "s/^  name: gps-board-.*/  name: $hostname/" "$config_name"
     sed -i.bak "s/friendly_name: GPS Board$/friendly_name: GPS Board ($board_name + $temp_sensor)/" "$config_name"
     sed -i.bak "s/username: gps-cartracker$/username: $hostname/" "$config_name"
     rm "$config_name.bak"
@@ -329,7 +349,7 @@ build_board_variant() {
     
     # Update board in config using shortened names for hostname compliance (≤31 chars)
     sed -i.bak "s/board: nodemcu-32s$/board: $board_type/" "$config_name"
-    sed -i.bak "s/name: gps-board-d11$/name: $hostname/" "$config_name"
+    sed -i.bak "s/^  name: gps-board-.*/  name: $hostname/" "$config_name"
     sed -i.bak "s/friendly_name: GPS Board$/friendly_name: GPS Cartracker ($board_name + $temp_sensor)/" "$config_name"
     sed -i.bak "s/username: gps-cartracker$/username: $hostname/" "$config_name"
     rm "$config_name.bak"
@@ -484,6 +504,16 @@ elif [ "$1" = "validate" ]; then
             echo "Available sensors: ${TEMP_SENSORS[*]}"
             exit 1
         fi
+    elif [ -n "$2" ]; then
+        # Validate specific board with default DHT11 sensor
+        if [[ " ${BOARDS[@]} " =~ " $2 " ]]; then
+            echo "Validating specific configuration: $2 with DHT11 sensor..."
+            validate_board_variant "$2" "DHT11"
+        else
+            echo "❌ Invalid board '$2'"
+            echo "Available boards: ${BOARDS[*]}"
+            exit 1
+        fi
     else
         # Validate all board configs with all temperature sensors
         echo "Validating all board configurations..."
@@ -494,8 +524,15 @@ elif [ "$1" = "validate" ]; then
         done
     fi
 elif [[ " ${BOARDS[@]} " =~ " $1 " ]]; then
-    # Build specific board
-    build_board "$1"
+    # Build specific board - check if sensor type is specified
+    if [ -n "$2" ] && [[ " ${TEMP_SENSORS[@]} " =~ " $2 " ]]; then
+        # Build specific board with specific sensor
+        echo "Building specific configuration: $1 with $2 sensor..."
+        build_board_variant "$1" "$2"
+    else
+        # Build specific board with default sensor (backward compatibility)
+        build_board "$1"
+    fi
 elif [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     print_usage
 else
