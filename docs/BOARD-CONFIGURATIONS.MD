@@ -128,11 +128,11 @@ sd_mmc_card:
 - ✅ Built-in LCD and camera connectors
 - ⚠️ Some pins used by onboard peripherals
 
-### **ESP32-S3-DevKitC-1** (esp32-s3-devkitc-1)
+### **ESP32-S3-DevKitC-1** (esp32-s3-devkitc-1) - *Enhanced Networking*
 
 **Board**: ESP32-S3-DevKitC-1  
 **Chip**: ESP32-S3 (240MHz dual-core, AI acceleration)  
-**Flash**: 8MB  
+**Flash**: 16MB (enhanced configuration)
 **RAM**: 512KB  
 **USB**: USB-C with native USB support  
 
@@ -145,6 +145,26 @@ DHT_MODEL: "DHT11|DHT22|NONE"
 PIN_ACC_SENSE: "GPIO4"
 PIN_LED: "GPIO48"
 
+# ESP32-S3 Enhanced Configuration
+esphome:
+  platformio_options:
+    board_build.flash_mode: dio
+    board_upload.maximum_size: 16777216
+
+esp32:
+  variant: esp32s3
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      # Enhanced WiFi/TCP performance for GPS data uploads
+      CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM: "16"
+      CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM: "512"
+      CONFIG_TCPIP_RECVMBOX_SIZE: "512"
+      CONFIG_TCP_SND_BUF_DEFAULT: "65535"
+      CONFIG_TCP_WND_DEFAULT: "512000"
+      CONFIG_TCP_RECVMBOX_SIZE: "512"
+
 # SD card SDMMC interface (S3-specific pins)
 sd_mmc_card:
   clk_pin: GPIO39
@@ -156,11 +176,14 @@ sd_mmc_card:
 ```
 
 **Features**:
-- ✅ SDMMC SD card support
-- ✅ Latest ESP32-S3 with AI acceleration
-- ✅ Native USB support
-- ✅ More GPIO pins available
-- ⚠️ Different pin layout than ESP32
+- ✅ SDMMC SD card support with S3-specific pin mapping
+- ✅ Latest ESP32-S3 with AI acceleration capabilities
+- ✅ Native USB support for debugging and firmware updates
+- ✅ **Enhanced networking**: Optimized WiFi and TCP buffers for faster GPS data uploads
+- ✅ **16MB flash**: Larger flash size for extended firmware features
+- ✅ **DIO flash mode**: Optimized flash access for better performance
+- ✅ More GPIO pins available than standard ESP32
+- ⚠️ Different pin layout than ESP32 - requires S3-specific wiring
 
 ### **ESP32-CAM** (esp32-cam)
 

@@ -196,8 +196,8 @@ apply_board_pins() {
             sed -i.bak 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO5"/' "$config_file"
             ;;
         "esp32-s3-devkitc-1")
-            # ESP32-S3-DevKitC-1 - S3 specific pin mappings
-            echo "📋 Applying ESP32-S3-DevKitC-1 pin configuration"
+            # ESP32-S3-DevKitC-1 - S3 specific pin mappings and optimizations
+            echo "📋 Applying ESP32-S3-DevKitC-1 pin configuration with networking optimizations"
             sed -i.bak 's/PIN_UART_RX: "GPIO16"/PIN_UART_RX: "GPIO44"/' "$config_file"
             sed -i.bak 's/PIN_UART_TX: "GPIO17"/PIN_UART_TX: "GPIO43"/' "$config_file"
             sed -i.bak 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO21"/' "$config_file"
@@ -210,9 +210,23 @@ apply_board_pins() {
             sed -i.bak 's/data1_pin: GPIO4/data1_pin: GPIO41/' "$config_file"
             sed -i.bak 's/data2_pin: GPIO12/data2_pin: GPIO42/' "$config_file"
             sed -i.bak 's/data3_pin: GPIO13/data3_pin: GPIO1/' "$config_file"
-            # Update ESP32 framework to ESP32-S3
+            # Update ESP32 framework to ESP32-S3 with enhanced networking and flash configuration
             sed -i.bak '/^esp32:/a\
-  variant: esp32s3' "$config_file"
+  variant: esp32s3\
+  flash_size: 16MB' "$config_file"
+            # Add ESPHome platformio options for ESP32-S3 optimization
+            sed -i.bak '/^esphome:/a\
+  platformio_options:\
+    board_build.flash_mode: dio\
+    board_upload.maximum_size: 16777216' "$config_file"
+            # Enhance sdkconfig options for ESP32-S3 networking performance
+            sed -i.bak '/CONFIG_FATFS_LFN_STACK: "y"/a\
+      CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM: "16"\
+      CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM: "512"\
+      CONFIG_TCPIP_RECVMBOX_SIZE: "512"\
+      CONFIG_TCP_SND_BUF_DEFAULT: "65535"\
+      CONFIG_TCP_WND_DEFAULT: "512000"\
+      CONFIG_TCP_RECVMBOX_SIZE: "512"' "$config_file"
             ;;
         "esp32-cam")
             # ESP32-CAM - avoid pins used by camera module
