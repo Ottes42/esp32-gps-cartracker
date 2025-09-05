@@ -246,7 +246,7 @@ validate_board_variant() {
     echo "✅ Validating configuration for: $board_name ($board -> $board_type) with $temp_sensor"
     
     # Generate hostname and validate length (ESPHome/mDNS limit is 31 characters)
-    local hostname="gps-tracker-$board_short-$sensor_short"
+    local hostname="gps-board-$sensor_short"
     if ! validate_hostname_length "$hostname"; then
         return 1
     fi
@@ -257,8 +257,8 @@ validate_board_variant() {
     
     # Update board in config using shortened names for hostname compliance (≤31 chars)
     sed -i.bak "s/board: nodemcu-32s$/board: $board_type/" "$config_name"
-    sed -i.bak "s/name: gps-cartracker-nmcu$/name: $hostname/" "$config_name"
-    sed -i.bak "s/friendly_name: GPS Cartracker NMCU$/friendly_name: GPS Cartracker ($board_name + $temp_sensor)/" "$config_name"
+    sed -i.bak "s/name: gps-board-d11$/name: $hostname/" "$config_name"
+    sed -i.bak "s/friendly_name: GPS Board$/friendly_name: GPS Cartracker ($board_name + $temp_sensor)/" "$config_name"
     sed -i.bak "s/username: gps-cartracker$/username: $hostname/" "$config_name"
     rm "$config_name.bak"
     
@@ -317,7 +317,7 @@ build_board_variant() {
     echo "🔨 Building firmware for: $board_name ($board -> $board_type) with $temp_sensor sensor"
     
     # Generate hostname and validate length (ESPHome/mDNS limit is 31 characters)
-    local hostname="gps-tracker-$board_short-$sensor_short"
+    local hostname="gps-board-$sensor_short"
     if ! validate_hostname_length "$hostname"; then
         return 1
     fi
@@ -329,8 +329,8 @@ build_board_variant() {
     
     # Update board in config using shortened names for hostname compliance (≤31 chars)
     sed -i.bak "s/board: nodemcu-32s$/board: $board_type/" "$config_name"
-    sed -i.bak "s/name: gps-cartracker-nmcu$/name: $hostname/" "$config_name"
-    sed -i.bak "s/friendly_name: GPS Cartracker NMCU$/friendly_name: GPS Cartracker ($board_name + $temp_sensor)/" "$config_name"
+    sed -i.bak "s/name: gps-board-d11$/name: $hostname/" "$config_name"
+    sed -i.bak "s/friendly_name: GPS Board$/friendly_name: GPS Cartracker ($board_name + $temp_sensor)/" "$config_name"
     sed -i.bak "s/username: gps-cartracker$/username: $hostname/" "$config_name"
     rm "$config_name.bak"
     

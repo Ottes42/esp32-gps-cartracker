@@ -21,8 +21,8 @@ substitutions:
   BASIC_AUTH_PASS: "CHANGEME_SECRET"
 
 esphome:
-  name: gps-cartracker-nmcu
-  friendly_name: GPS Cartracker NMCU
+  name: gps-board-d11
+  friendly_name: GPS Board
   min_version: 2025.8.0
   # Disable MAC address suffix to prevent hostname overflow (max 31 chars)
   name_add_mac_suffix: false

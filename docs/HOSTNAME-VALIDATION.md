@@ -12,43 +12,35 @@ This document describes the hostname generation rules and validation implemented
 
 ## Current Hostname Pattern
 
-The build system generates hostnames using the pattern:
+The build system generates hostnames using the simplified pattern:
 ```
-gps-tracker-{board_short}-{sensor_short}
+gps-board-{sensor_short}
 ```
 
-### Board Short Names
-To ensure hostname compliance, board names are shortened:
-
-| Board ID | Full Name | Short Name | Used In Hostname |
-|----------|-----------|------------|------------------|
-| `nodemcu-32s` | BerryBase NodeMCU-ESP32 | `nmcu32s` | `gps-tracker-nmcu32s-*` |
-| `esp32dev` | Generic ESP32 DevKit | `esp32d` | `gps-tracker-esp32d-*` |
-| `esp-wrover-kit` | ESP32-WROVER-KIT | `wrover` | `gps-tracker-wrover-*` |
-| `esp32-s3-devkitc-1` | ESP32-S3-DevKitC-1 | `s3devkit` | `gps-tracker-s3devkit-*` |
+This pattern provides maximum compatibility and safety margin, with hostnames ranging from 12-13 characters (well under the 31-character limit).
 
 ### Sensor Short Names
 Temperature sensor names are abbreviated:
 
-| Sensor | Short Name | Used In Hostname |
-|--------|------------|------------------|
-| `DHT11` | `d11` | `*-d11` |
-| `DHT22` | `d22` | `*-d22` |
-| `NONE` | `no` | `*-no` |
+| Sensor | Short Name | Generated Hostname |
+|--------|------------|--------------------|
+| `DHT11` | `d11` | `gps-board-d11` |
+| `DHT22` | `d22` | `gps-board-d22` |
+| `NONE` | `no` | `gps-board-no` |
 
 ## Current Hostname Lengths
 
-All generated hostnames are well under the 31-character limit:
+All generated hostnames are very short with significant safety margin:
 
-| Board + Sensor | Generated Hostname | Length |
-|----------------|-------------------|---------|
-| NodeMCU + DHT11 | `gps-tracker-nmcu32s-d11` | 23 chars ✅ |
-| NodeMCU + DHT22 | `gps-tracker-nmcu32s-d22` | 23 chars ✅ |
-| NodeMCU + NONE | `gps-tracker-nmcu32s-no` | 22 chars ✅ |
-| ESP32 DevKit + DHT11 | `gps-tracker-esp32d-d11` | 22 chars ✅ |
-| S3 DevKit + DHT11 | `gps-tracker-s3devkit-d11` | 24 chars ✅ |
+| Sensor Configuration | Generated Hostname | Length |
+|---------------------|-------------------|---------|
+| DHT11 Temperature Sensor | `gps-board-d11` | 13 chars ✅ |
+| DHT22 Temperature Sensor | `gps-board-d22` | 13 chars ✅ |
+| No Temperature Sensor | `gps-board-no` | 12 chars ✅ |
 
-**Maximum length: 24 characters (7 characters under the 31-char limit)**
+**Maximum length: 13 characters (18 characters under the 31-char limit)**
+
+This provides excellent safety margin and universal compatibility across all supported ESP32 boards.
 
 ## Problematic Hostname Example
 
