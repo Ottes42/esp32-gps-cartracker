@@ -4,13 +4,15 @@ This document contains the pin configurations for ESP32 boards supported by the 
 
 ## Hostname Generation
 
-All firmware builds use **validated hostnames ≤ 31 characters** to ensure network compatibility:
+All firmware builds use **validated short hostnames ≤ 31 characters** to ensure network compatibility:
 
-| Board | Generated Hostname | Length |
-|-------|-------------------|---------|
-| NodeMCU-ESP32 + DHT11 | `gps-tracker-nmcu32s-d11` | 23 chars ✅ |
-| ESP32 DevKit + DHT11 | `gps-tracker-esp32d-d11` | 22 chars ✅ |
-| ESP32-S3-DevKitC-1 + DHT11 | `gps-tracker-s3devkit-d11` | 24 chars ✅ |
+| Temperature Sensor | Generated Hostname | Length |
+|--------------------|-------------------|---------|
+| DHT11 | `gps-board-d11` | 13 chars ✅ |
+| DHT22 | `gps-board-d22` | 13 chars ✅ |
+| None | `gps-board-no` | 12 chars ✅ |
+
+**Note**: All ESP32 boards now use the same simplified hostname pattern for maximum compatibility.
 
 See [docs/HOSTNAME-VALIDATION.md](HOSTNAME-VALIDATION.md) for complete hostname generation rules.
 

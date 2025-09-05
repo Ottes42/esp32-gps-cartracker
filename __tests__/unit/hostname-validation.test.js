@@ -52,8 +52,8 @@ describe('Hostname Validation', () => {
         const hostname = line.split('Device name: ')[1]?.trim()
         expect(hostname).toBeTruthy()
 
-        // Validate hostname follows expected pattern: gps-tracker-{board}-{sensor}
-        expect(hostname).toMatch(/^gps-tracker-[a-z0-9]+-[a-z0-9]+$/)
+        // Validate hostname follows expected pattern: gps-board-{sensor}
+        expect(hostname).toMatch(/^gps-board-[a-z0-9]+$/)
 
         // Validate length
         expect(hostname.length).toBeLessThanOrEqual(31)
