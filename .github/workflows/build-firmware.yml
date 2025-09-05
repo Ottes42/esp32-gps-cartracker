@@ -228,18 +228,25 @@ jobs:
           config_name="firmware-${{ matrix.board }}-$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]').yaml"
           cp firmware/firmware.yaml "$config_name"
           
-          # Update board and device naming
+          # Update board and device naming with shortened names (max 31 chars for ESPHome)
           sed -i "s/board: nodemcu-32s$/board: ${{ matrix.board }}/" "$config_name"
-          sed -i "s/name: gps-cartracker-nmcu$/name: gps-cartracker-${{ matrix.board }}-$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]')/" "$config_name"
-          sed -i "s/friendly_name: GPS Cartracker NMCU$/friendly_name: GPS Cartracker (${{ matrix.board_name }} + ${{ matrix.sensor }})/" "$config_name"
-          sed -i "s/username: gps-cartracker$/username: gps-cartracker-${{ matrix.board }}-$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]')/" "$config_name"
+          
+          # Create shorter device names to match build-firmware.sh naming (≤31 chars)
+          sensor_short=$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]' | cut -c1-3)
+          if [ "$sensor_short" = "non" ]; then
+              sensor_short="no"
+          fi
+          device_name="gps-board-${sensor_short}"
+          
+          sed -i "s/name: gps-board-d11$/name: ${device_name}/" "$config_name"
+          sed -i "s/friendly_name: GPS Board$/friendly_name: GPS Cartracker (${{ matrix.board_name }} + ${{ matrix.sensor }})/" "$config_name"
           
           # Apply board-specific pin configurations
           case "${{ matrix.board }}" in
             "esp32dev")
               echo "📋 Applying ESP32 DevKit pin configuration"
               sed -i 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO22"/' "$config_name"
-              sed -i 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO35"/' "$config_name"
+              sed -i 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO32"/' "$config_name"  # Use GPIO32 instead of GPIO35 (no pulldown support)
               sed -i 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO23"/' "$config_name"
               ;;
             "esp-wrover-kit")
@@ -247,14 +254,14 @@ jobs:
               sed -i 's/PIN_UART_RX: "GPIO16"/PIN_UART_RX: "GPIO25"/' "$config_name"
               sed -i 's/PIN_UART_TX: "GPIO17"/PIN_UART_TX: "GPIO26"/' "$config_name"
               sed -i 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO27"/' "$config_name"
-              sed -i 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO39"/' "$config_name"
+              sed -i 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO32"/' "$config_name"  # Use GPIO32 instead of GPIO39 (no pulldown support)
               sed -i 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO5"/' "$config_name"
               ;;
             "esp32-s3-devkitc-1")
               echo "📋 Applying ESP32-S3-DevKitC-1 pin configuration"
               sed -i 's/PIN_UART_RX: "GPIO16"/PIN_UART_RX: "GPIO44"/' "$config_name"
               sed -i 's/PIN_UART_TX: "GPIO17"/PIN_UART_TX: "GPIO43"/' "$config_name"
-              sed -i 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO4"/' "$config_name"
+              sed -i 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO4"/' "$config_name"   # GPIO4 supports pulldown on ESP32-S3
               sed -i 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO48"/' "$config_name"
               # ESP32-S3 has different SD card pins
               sed -i 's/clk_pin: GPIO14/clk_pin: GPIO39/' "$config_name"
@@ -366,8 +373,15 @@ jobs:
       - name: Copy firmware binary and create manifest
         run: |
           config_name="firmware-${{ matrix.board }}-$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]').yaml"
-          device_name="gps-cartracker-${{ matrix.board }}-$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]')"
-          output_name="gps-cartracker-${{ matrix.board }}-$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]')"
+          
+          # Use the same shortened device name logic as in config creation (matches build-firmware.sh)
+          sensor_short=$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]' | cut -c1-3)
+          if [ "$sensor_short" = "non" ]; then
+              sensor_short="no"
+          fi
+          device_name="gps-board-${sensor_short}"
+          
+          output_name="firmware-${{ matrix.board }}-$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]')"
           
           # Create build directory
           mkdir -p firmware_output
