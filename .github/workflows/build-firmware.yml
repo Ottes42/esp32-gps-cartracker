@@ -232,10 +232,13 @@ jobs:
           sed -i "s/board: nodemcu-32s$/board: ${{ matrix.board }}/" "$config_name"
           
           # Create shorter device names to match build-firmware.sh naming (≤31 chars)
-          sensor_short=$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]' | cut -c1-3)
-          if [ "$sensor_short" = "non" ]; then
-              sensor_short="no"
-          fi
+          # Use the same logic as get_short_sensor_name() function in build-firmware.sh
+          case "$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]')" in
+            "dht11") sensor_short="d11" ;;
+            "dht22") sensor_short="d22" ;;
+            "none") sensor_short="no" ;;
+            *) sensor_short="$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]')" ;;
+          esac
           device_name="gps-board-${sensor_short}"
           
           sed -i "s/^name: gps-board-.*/name: ${device_name}/" "$config_name"
@@ -375,10 +378,12 @@ jobs:
           config_name="firmware-${{ matrix.board }}-$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]').yaml"
           
           # Use the same shortened device name logic as in config creation (matches build-firmware.sh)
-          sensor_short=$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]' | cut -c1-3)
-          if [ "$sensor_short" = "non" ]; then
-              sensor_short="no"
-          fi
+          case "$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]')" in
+            "dht11") sensor_short="d11" ;;
+            "dht22") sensor_short="d22" ;;
+            "none") sensor_short="no" ;;
+            *) sensor_short="$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]')" ;;
+          esac
           device_name="gps-board-${sensor_short}"
           
           output_name="firmware-${{ matrix.board }}-$(echo '${{ matrix.sensor }}' | tr '[:upper:]' '[:lower:]')"
@@ -455,8 +460,8 @@ jobs:
         with:
           name: firmware-${{ matrix.board }}-${{ matrix.sensor }}
           path: |
-            firmware_output/gps-cartracker-${{ matrix.board }}-*.bin
-            firmware_output/gps-cartracker-${{ matrix.board }}-*.json
+            firmware_output/firmware-${{ matrix.board }}-*.bin
+            firmware_output/firmware-${{ matrix.board }}-*.json
 
   create-release:
     name: Create GitHub Release
@@ -504,24 +509,24 @@ jobs:
           Each supported board now has 3 firmware variants:
           
           ### NodeMCU-ESP32 (Primary Recommended)
-          - `gps-cartracker-nodemcu-32s-dht11.bin` - With DHT11 sensor
-          - `gps-cartracker-nodemcu-32s-dht22.bin` - With DHT22 sensor  
-          - `gps-cartracker-nodemcu-32s-none.bin` - No temperature sensor
+          - `firmware-nodemcu-32s-dht11.bin` - With DHT11 sensor
+          - `firmware-nodemcu-32s-dht22.bin` - With DHT22 sensor  
+          - `firmware-nodemcu-32s-none.bin` - No temperature sensor
           
           ### ESP32 DevKit (Generic)
-          - `gps-cartracker-esp32dev-dht11.bin` - With DHT11 sensor
-          - `gps-cartracker-esp32dev-dht22.bin` - With DHT22 sensor
-          - `gps-cartracker-esp32dev-none.bin` - No temperature sensor
+          - `firmware-esp32dev-dht11.bin` - With DHT11 sensor
+          - `firmware-esp32dev-dht22.bin` - With DHT22 sensor
+          - `firmware-esp32dev-none.bin` - No temperature sensor
           
           ### ESP32-WROVER-KIT (With PSRAM)
-          - `gps-cartracker-esp-wrover-kit-dht11.bin` - With DHT11 sensor
-          - `gps-cartracker-esp-wrover-kit-dht22.bin` - With DHT22 sensor
-          - `gps-cartracker-esp-wrover-kit-none.bin` - No temperature sensor
+          - `firmware-esp-wrover-kit-dht11.bin` - With DHT11 sensor
+          - `firmware-esp-wrover-kit-dht22.bin` - With DHT22 sensor
+          - `firmware-esp-wrover-kit-none.bin` - No temperature sensor
           
           ### ESP32-S3-DevKitC-1 (Latest)
-          - `gps-cartracker-esp32-s3-devkitc-1-dht11.bin` - With DHT11 sensor
-          - `gps-cartracker-esp32-s3-devkitc-1-dht22.bin` - With DHT22 sensor
-          - `gps-cartracker-esp32-s3-devkitc-1-none.bin` - No temperature sensor
+          - `firmware-esp32-s3-devkitc-1-dht11.bin` - With DHT11 sensor
+          - `firmware-esp32-s3-devkitc-1-dht22.bin` - With DHT22 sensor
+          - `firmware-esp32-s3-devkitc-1-none.bin` - No temperature sensor
           
           ## 🌐 Web Flasher Support
           

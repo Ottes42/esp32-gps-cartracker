@@ -359,8 +359,9 @@ build_board_variant() {
     # Find and copy binary
     echo "📦 Copying firmware binary..."
     binary_found=false
-    device_name=$(basename "$config_name" .yaml)
-    for binary in .esphome/build/$device_name/*.bin; do
+    # ESPHome uses the 'name' field from the YAML, not the filename
+    # Use the same hostname that was set in the config
+    for binary in .esphome/build/$hostname/*.bin; do
         if [ -f "$binary" ]; then
             cp "$binary" "$BUILD_DIR/firmware-$board-${temp_sensor,,}.bin"
             binary_found=true
@@ -371,6 +372,8 @@ build_board_variant() {
     
     if [ "$binary_found" = false ]; then
         echo "❌ No binary found for $board with $temp_sensor"
+        echo "Expected binary in: .esphome/build/$hostname/*.bin"
+        ls -la ".esphome/build/" 2>/dev/null || echo "Build directory not found"
         rm -f "$config_name"
         return 1
     fi
