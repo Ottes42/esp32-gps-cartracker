@@ -22,9 +22,6 @@ else
     # Second arg is ESPHome version (legacy behavior)
     ESPHOME_VERSION="${2:-${ESPHOME_VERSION:-2025.8.0}}"
 fi
-# Read supported boards from shared configuration file
-mapfile -t BOARDS < "${BASH_SOURCE[0]%/*}/../boards.txt"
-TEMP_SENSORS=("DHT11" "DHT22" "NONE")
 BUILD_DIR="build"
 
 # Board information
