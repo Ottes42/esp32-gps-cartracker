@@ -80,8 +80,14 @@
             border-top: 1px solid #eee;
             padding-top: 1rem;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .flash-buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
         }
         
         .version-info {
@@ -241,11 +247,21 @@
                 <span class="feature-tag">Well Documented</span>
             </div>
             <div class="flash-section">
-                <div class="version-info">Latest firmware build</div>
-                <esp-web-install-button
-                    manifest="https://github.com/Ottes42/esp32-gps-cartracker/releases/latest/download/firmware-nodemcu-32s-manifest.json">
-                    <button slot="activate">Install GPS Tracker</button>
-                </esp-web-install-button>
+                <div class="version-info">Latest firmware builds - choose your sensor type</div>
+                <div class="flash-buttons-grid">
+                    <esp-web-install-button
+                        manifest="https://github.com/Ottes42/esp32-gps-cartracker/releases/latest/download/firmware-nodemcu-32s-dht11.json">
+                        <button slot="activate">Install GPS Tracker (DHT11)</button>
+                    </esp-web-install-button>
+                    <esp-web-install-button
+                        manifest="https://github.com/Ottes42/esp32-gps-cartracker/releases/latest/download/firmware-nodemcu-32s-dht22.json">
+                        <button slot="activate">Install GPS Tracker (DHT22)</button>
+                    </esp-web-install-button>
+                    <esp-web-install-button
+                        manifest="https://github.com/Ottes42/esp32-gps-cartracker/releases/latest/download/firmware-nodemcu-32s-none.json">
+                        <button slot="activate">Install GPS Tracker (No Sensor)</button>
+                    </esp-web-install-button>
+                </div>
             </div>
         </div>
 
