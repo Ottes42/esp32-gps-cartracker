@@ -149,9 +149,6 @@ wifi:
 #        gateway: ${STATIC_GW_1}
 #        subnet: ${STATIC_MASK_1}
 #        dns: ${STATIC_DNS_1}
-  
-  # Explicitly disable MAC-based hostname to prevent length overflow
-  use_address: null
 
   ap:
     ssid: "gps-cartracker-setup"

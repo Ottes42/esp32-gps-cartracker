@@ -68,13 +68,13 @@ Each supported board now has 3 firmware variants:
 
 All boards use optimized pin configurations with reliable SDMMC SD card interface:
 
-| Component | NodeMCU-32S | ESP32 DevKit | WROVER-KIT | ESP32-S3 |
-|-----------|-------------|--------------|------------|----------|
-| GPS RX | GPIO16 | GPIO16 | GPIO25 | GPIO44 |
-| GPS TX | GPIO17 | GPIO17 | GPIO26 | GPIO43 |
-| DHT Sensor | GPIO21 | GPIO22 | GPIO27 | GPIO21 |
-| ACC Sense | GPIO18 | GPIO35 | GPIO39 | GPIO4 |
-| Status LED | GPIO19 | GPIO23 | GPIO5 | GPIO48 |
+| Component | NodeMCU-32S | ESP32 DevKit | WROVER-KIT | ESP32-S3 | ESP32-CAM |
+|-----------|-------------|--------------|------------|----------|-----------|
+| GPS RX | GPIO16 | GPIO16 | GPIO25 | GPIO44 | GPIO16 |
+| GPS TX | GPIO17 | GPIO17 | GPIO26 | GPIO43 | GPIO17 |
+| DHT Sensor | GPIO21 | GPIO22 | GPIO27 | GPIO21 | GPIO3 |
+| ACC Sense | GPIO18 | GPIO35 | GPIO39 | GPIO4 | GPIO33 |
+| Status LED | GPIO19 | GPIO23 | GPIO5 | GPIO48 | GPIO32 |
 
 ## ⚡ Power Management
 

@@ -18,6 +18,7 @@ declare -A BOARD_NAMES=(
     ["esp32dev"]="Generic ESP32 DevKit"
     ["esp-wrover-kit"]="ESP32-WROVER-KIT"
     ["esp32-s3-devkitc-1"]="ESP32-S3-DevKitC-1"
+    ["esp32-cam"]="ESP32-CAM"
 )
 
 declare -A BOARD_CHIPS=(
@@ -25,6 +26,7 @@ declare -A BOARD_CHIPS=(
     ["esp32dev"]="ESP32"
     ["esp-wrover-kit"]="ESP32"
     ["esp32-s3-devkitc-1"]="ESP32-S3"
+    ["esp32-cam"]="ESP32"
 )
 
 # Mapping from short board names to ESPHome board types
@@ -33,6 +35,7 @@ declare -A BOARD_TYPES=(
     ["esp32dev"]="esp32dev"
     ["esp-wrover-kit"]="esp-wrover-kit"
     ["esp32-s3-devkitc-1"]="esp32-s3-devkitc-1"
+    ["esp32-cam"]="esp32dev"
 )
 
 # Mapping from board names to shortened hostname-safe names (≤31 chars total)
@@ -41,6 +44,7 @@ declare -A BOARD_SHORT_NAMES=(
     ["esp32dev"]="esp32d"
     ["esp-wrover-kit"]="wrover"
     ["esp32-s3-devkitc-1"]="s3devkit"
+    ["esp32-cam"]="esp32cam"
 )
 
 # Helper function to shorten sensor names for hostname compatibility
@@ -209,6 +213,21 @@ apply_board_pins() {
             # Update ESP32 framework to ESP32-S3
             sed -i.bak '/^esp32:/a\
   variant: esp32s3' "$config_file"
+            ;;
+        "esp32-cam")
+            # ESP32-CAM - avoid pins used by camera module
+            echo "📋 Applying ESP32-CAM pin configuration"
+            # Use GPIO 16/17 for UART (safe, not used by camera)
+            sed -i.bak 's/PIN_UART_RX: "GPIO16"/PIN_UART_RX: "GPIO16"/' "$config_file"
+            sed -i.bak 's/PIN_UART_TX: "GPIO17"/PIN_UART_TX: "GPIO17"/' "$config_file"
+            # Use GPIO 3 for DHT sensor (RX pin, safe when not using serial debug)
+            sed -i.bak 's/PIN_DHT: "GPIO21"/PIN_DHT: "GPIO3"/' "$config_file"
+            # Use GPIO 33 for ACC sense (analog capable, not used by camera)
+            sed -i.bak 's/PIN_ACC_SENSE: "GPIO18"/PIN_ACC_SENSE: "GPIO33"/' "$config_file"
+            # Use GPIO 32 for LED (safe, not used by camera)
+            sed -i.bak 's/PIN_LED: "GPIO19"/PIN_LED: "GPIO32"/' "$config_file"
+            # ESP32-CAM typically uses SPI for SD card due to camera pin conflicts
+            # Keep SDMMC pins for now - user can modify if needed
             ;;
     esac
     
