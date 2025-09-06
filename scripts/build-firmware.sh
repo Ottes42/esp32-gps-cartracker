@@ -359,6 +359,17 @@ build_board_variant() {
     echo "🌡️ Applying temperature sensor configuration..."
     apply_temp_sensor "$config_name" "$temp_sensor"
     
+    # Copy secrets.yaml to root directory for ESPHome compilation
+    # ESPHome expects secrets.yaml in the same directory as the config being compiled
+    if [ -f "firmware/secrets.yaml" ]; then
+        cp "firmware/secrets.yaml" "secrets.yaml"
+        echo "✅ Copied secrets.yaml to root directory for ESPHome"
+    else
+        echo "❌ secrets.yaml not found in firmware directory"
+        rm -f "$config_name"
+        return 1
+    fi
+    
     # Compile with Docker
     echo "⚙️  Compiling firmware..."
     if ! docker run --rm \
@@ -416,6 +427,10 @@ build_board_variant() {
   ]
 }
 EOF
+    
+    # Clean up temporary secrets file
+    rm -f "secrets.yaml"
+    echo "🧹 Cleaned up temporary secrets.yaml file"
     
     # Cleanup temp config or keep for debugging
     if [ "${KEEP_CONFIG}" = "1" ]; then

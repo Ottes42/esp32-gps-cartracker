@@ -346,7 +346,7 @@ jobs:
           if docker run --rm \
               -v "${PWD}:/config" \
               "esphome/esphome:${{ env.ESPHOME_VERSION }}" \
-              config "/config/$config_name"; then
+              config "$config_name"; then
             echo "✅ Configuration is valid"
           else
             echo "❌ Configuration validation failed"
@@ -360,7 +360,7 @@ jobs:
               -v "${PWD}:/config" \
               -v ~/.esphome:/config/.esphome \
               "esphome/esphome:${{ env.ESPHOME_VERSION }}" \
-              compile "/config/$config_name"; then
+              compile "$config_name"; then
             echo "✅ Compilation successful"
           else
             echo "❌ Compilation failed"
