@@ -1,4 +1,4 @@
-FROM node:24-alpine
+FROM node:22-alpine
 
 # Build arguments
 ARG BUILDTIME
@@ -22,6 +22,9 @@ COPY . .
 
 # Rebuild better-sqlite3 to create native bindings
 RUN npm rebuild better-sqlite3
+
+# Verify that better-sqlite3 bindings were created successfully
+RUN test -f node_modules/better-sqlite3/build/Release/better_sqlite3.node || (echo "❌ better-sqlite3 native bindings not found" && exit 1)
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
