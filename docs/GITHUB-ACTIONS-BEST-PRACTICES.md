@@ -188,6 +188,16 @@ GitHub Release with 24 assets (12 .bin + 12 .json)
    - Check that SARIF file exists with `hashFiles()` condition
    - Use proper conditional upload: `if: success() && hashFiles('file.sarif') != ''`
 
+6. **"No binary found" Errors (Issue #110 Resolution)**
+   - **Symptoms:** `❌ No binary found for [board] with [sensor]` during firmware build
+   - **Root Cause:** Path inconsistency between GitHub Actions workflow and build script
+   - **Critical Requirements:**
+     - ESPHome compile commands must use relative paths: `compile "$config_name"` (not `/config/$config_name`)
+     - Device name regex patterns must match exactly between workflow and build script
+     - Secrets file must be copied to root directory before compilation: `cp "firmware/secrets.yaml" "secrets.yaml"`
+   - **Validation:** Ensure `.esphome/build/gps-board-*//*.bin` directories are created correctly
+   - **Prevention:** Keep GitHub Actions workflow paths consistent with `scripts/build-firmware.sh`
+
 ## 📈 Continuous Improvement
 
 ### Metrics to Track
