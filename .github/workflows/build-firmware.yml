@@ -101,6 +101,8 @@ jobs:
       - name: Build firmware variant
         run: |
           echo "🔨 Quick validation build for ${{ matrix.board_name }} with ${{ matrix.sensor }} sensor"
+          # Ensure .esphome directory exists for Docker container
+          mkdir -p ~/.esphome
           if ! docker run --rm \
               -v "${PWD}:/config" \
               -v ~/.esphome:/config/.esphome \
@@ -356,6 +358,8 @@ jobs:
           fi
           
           echo "⚙️ Compiling firmware..."
+          # Ensure .esphome directory exists for Docker container
+          mkdir -p ~/.esphome
           if docker run --rm \
               -v "${PWD}:/config" \
               -v ~/.esphome:/config/.esphome \
