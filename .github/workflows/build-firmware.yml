@@ -243,8 +243,27 @@ jobs:
           esac
           device_name="gps-board-${sensor_short}"
           
+          echo "🔍 Device naming debug:"
+          echo "   Input sensor: ${{ matrix.sensor }}"
+          echo "   Sensor short: ${sensor_short}"
+          echo "   Device name: ${device_name}"
+          
           sed -i "s/^[[:space:]]*name: gps-board-.*/  name: ${device_name}/" "$config_name"
           sed -i "s/friendly_name: GPS Board$/friendly_name: GPS Cartracker (${{ matrix.board_name }} + ${{ matrix.sensor }})/" "$config_name"
+          
+          # Verify the device name was set correctly in the config
+          echo "🔍 Verifying device name in config:"
+          actual_device_name=$(grep -E "^[[:space:]]*name:" "$config_name" | head -1 | sed 's/.*name:[[:space:]]*//')
+          echo "   Config device name: ${actual_device_name}"
+          if [ "$device_name" != "$actual_device_name" ]; then
+            echo "❌ Device name mismatch in config!"
+            echo "   Expected: $device_name"
+            echo "   Found: $actual_device_name"
+            echo "🔍 Config file content around name field:"
+            grep -n -A2 -B2 "name:" "$config_name" || true
+            exit 1
+          fi
+          echo "✅ Device name correctly set in config"
           
           # Apply board-specific pin configurations
           case "${{ matrix.board }}" in
@@ -366,6 +385,28 @@ jobs:
               "esphome/esphome:${{ env.ESPHOME_VERSION }}" \
               compile "$config_name"; then
             echo "✅ Compilation successful"
+            
+            # Verify that ESPHome created the expected build directory structure
+            echo "🔍 Post-compilation verification:"
+            if [ -d ".esphome/build/" ]; then
+              echo "   ✅ .esphome/build/ directory exists"
+              echo "   📁 Build directories created:"
+              ls -la ".esphome/build/" | head -10
+              
+              # Check specifically for our expected device directory
+              expected_device_name=$(grep -E "^[[:space:]]*name:" "$config_name" | head -1 | sed 's/.*name:[[:space:]]*//')
+              echo "   🔍 Looking for device directory: $expected_device_name"
+              if [ -d ".esphome/build/$expected_device_name" ]; then
+                echo "   ✅ Expected device directory exists: .esphome/build/$expected_device_name"
+                echo "   📁 Contents:"
+                ls -la ".esphome/build/$expected_device_name/" | head -10
+              else
+                echo "   ❌ Expected device directory missing: .esphome/build/$expected_device_name"
+                echo "   This may cause the binary search to fail later."
+              fi
+            else
+              echo "   ❌ .esphome/build/ directory was not created"
+            fi
           else
             echo "❌ Compilation failed"
             echo "📋 Build directory contents:"
@@ -396,6 +437,24 @@ jobs:
           mkdir -p firmware_output
           
           echo "📦 Looking for firmware binary..."
+          echo "🔍 Debug info: Expected device name: $device_name"
+          echo "🔍 Debug info: Expected binary path: .esphome/build/$device_name/*.bin"
+          echo "🔍 Debug info: Output name: $output_name"
+          
+          # Enhanced debugging: Check the build directory structure first
+          echo "🔍 Build directory structure:"
+          if [ -d ".esphome/build/" ]; then
+            ls -la ".esphome/build/" | head -20
+            echo "🔍 Contents of expected device directory (.esphome/build/$device_name):"
+            if [ -d ".esphome/build/$device_name" ]; then
+              ls -la ".esphome/build/$device_name/" | head -20
+            else
+              echo "   Directory does not exist"
+            fi
+          else
+            echo "   .esphome/build/ directory does not exist"
+          fi
+          
           binary_found=false
           
           # Search for the compiled binary
@@ -418,10 +477,29 @@ jobs:
           
           if [ "$binary_found" = false ]; then
             echo "❌ No binary found for ${{ matrix.board }} with ${{ matrix.sensor }}"
-            echo "Available .bin files:"
-            find ".esphome/build/$device_name" -name "*.bin" 2>/dev/null | head -10 || echo "None found"
-            echo "Available directories:"
-            ls -la ".esphome/build/" 2>/dev/null || echo "Build directory not accessible"
+            echo "🔍 Detailed debugging information:"
+            echo "   Expected device name: $device_name"
+            echo "   Expected config name: $config_name"
+            echo "   Expected binary pattern: .esphome/build/$device_name/*.bin"
+            echo "   Generated output name: $output_name"
+            
+            # Show actual config name field
+            echo "🔍 Device name in config file:"
+            grep -n "name:" "$config_name" | head -3 || echo "   Could not read config file"
+            
+            echo "🔍 Available .bin files in build directory:"
+            find ".esphome/build/" -name "*.bin" 2>/dev/null | head -20 || echo "   None found"
+            
+            echo "🔍 Available directories in .esphome/build/:"
+            ls -la ".esphome/build/" 2>/dev/null || echo "   Build directory not accessible"
+            
+            echo "🔍 All files in expected device directory:"
+            ls -la ".esphome/build/$device_name/" 2>/dev/null || echo "   Device directory not accessible"
+            
+            # Additional debugging: check for similar directory names
+            echo "🔍 Similar directory names (case sensitivity check):"
+            find ".esphome/build/" -type d -iname "*gps-board*" 2>/dev/null || echo "   No similar directories found"
+            
             exit 1
           fi
           
@@ -455,6 +533,31 @@ jobs:
           EOF
           
           echo "✅ Created Web Flasher manifest: firmware_output/${output_name}.json"
+          
+          # Final validation: Ensure both binary and manifest were created successfully
+          echo "🔍 Final validation:"
+          if [ -f "firmware_output/${output_name}.bin" ]; then
+            bin_size=$(stat -c%s "firmware_output/${output_name}.bin")
+            echo "   ✅ Binary file created: firmware_output/${output_name}.bin (${bin_size} bytes)"
+          else
+            echo "   ❌ Binary file missing: firmware_output/${output_name}.bin"
+            exit 1
+          fi
+          
+          if [ -f "firmware_output/${output_name}.json" ]; then
+            echo "   ✅ Manifest file created: firmware_output/${output_name}.json"
+            # Validate JSON syntax
+            if python3 -m json.tool "firmware_output/${output_name}.json" > /dev/null 2>&1; then
+              echo "   ✅ Manifest JSON is valid"
+            else
+              echo "   ⚠️  Warning: Manifest JSON may be invalid"
+            fi
+          else
+            echo "   ❌ Manifest file missing: firmware_output/${output_name}.json"
+            exit 1
+          fi
+          
+          echo "✅ All firmware artifacts created successfully for ${{ matrix.board }} + ${{ matrix.sensor }}"
           
           # Clean up temp config
           rm -f "$config_name"
