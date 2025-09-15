@@ -1,4 +1,4 @@
-// Test to verify firmware binary naming and search logic
+// Unit tests for firmware binary naming and search logic used in GitHub Actions workflow
 import { describe, it, expect } from '@jest/globals'
 
 describe('Firmware Binary Search Debugging', () => {
