@@ -372,9 +372,9 @@ build_board_variant() {
     
     # Compile with Docker
     echo "⚙️  Compiling firmware..."
-    echo "   ESPHome version: $ESPHOME_VERSION"
-    echo "   Configuration: $config_name"
-    echo "   Device name in config: $hostname"
+    echo "ESPHome version: $ESPHOME_VERSION"
+    echo "Configuration: $config_name"
+    echo "Device name in config: $hostname"
     
     if ! docker run --rm \
         -v "${PWD}:/config" \
