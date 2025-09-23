@@ -396,24 +396,22 @@ build_board_variant() {
     # Find and copy binary
     echo "📦 Looking for firmware binary..."
     echo "   Device name: $hostname"
-    echo "   Expected path: .esphome/build/$hostname/*.bin"
+    echo "   Expected path: .esphome/build/$hostname/.pioenvs/$hostname/firmware.bin"
     
     binary_found=false
     # ESPHome uses the 'name' field from the YAML, not the filename
-    # Use the same hostname that was set in the config
-    for binary in .esphome/build/$hostname/*.bin; do
-        if [ -f "$binary" ]; then
-            cp "$binary" "$BUILD_DIR/firmware-$board-${temp_sensor,,}.bin"
-            binary_found=true
-            echo "✅ Binary found: $(basename "$binary")"
-            echo "   Copied to: $BUILD_DIR/firmware-$board-${temp_sensor,,}.bin"
-            break
-        fi
-    done
+    # The firmware binary is generated in the .pioenvs subdirectory
+    firmware_binary=".esphome/build/$hostname/.pioenvs/$hostname/firmware.bin"
+    if [ -f "$firmware_binary" ]; then
+        cp "$firmware_binary" "$BUILD_DIR/firmware-$board-${temp_sensor,,}.bin"
+        binary_found=true
+        echo "✅ Binary found: $firmware_binary"
+        echo "   Copied to: $BUILD_DIR/firmware-$board-${temp_sensor,,}.bin"
+    fi
     
     if [ "$binary_found" = false ]; then
         echo "❌ No binary found for $board with $temp_sensor"
-        echo "Expected binary in: .esphome/build/$hostname/*.bin"
+        echo "Expected binary in: .esphome/build/$hostname/.pioenvs/$hostname/firmware.bin"
         echo ""
         echo "Debug information:"
         if [ -d ".esphome" ]; then
@@ -427,6 +425,19 @@ build_board_variant() {
                     echo "✅ .esphome/build/$hostname directory exists"
                     echo "Available files in .esphome/build/$hostname/:"
                     ls -la ".esphome/build/$hostname/" | head -10
+                    echo ""
+                    if [ -d ".esphome/build/$hostname/.pioenvs" ]; then
+                        echo "✅ .esphome/build/$hostname/.pioenvs directory exists"
+                        if [ -d ".esphome/build/$hostname/.pioenvs/$hostname" ]; then
+                            echo "✅ .esphome/build/$hostname/.pioenvs/$hostname directory exists"
+                            echo "Available firmware files:"
+                            ls -la ".esphome/build/$hostname/.pioenvs/$hostname/"firmware*.bin 2>/dev/null || echo "No firmware binaries found"
+                        else
+                            echo "❌ .esphome/build/$hostname/.pioenvs/$hostname directory not found"
+                        fi
+                    else
+                        echo "❌ .esphome/build/$hostname/.pioenvs directory not found"
+                    fi
                 else
                     echo "❌ .esphome/build/$hostname directory not found"
                     echo "This indicates ESPHome compilation may have failed or used a different device name"

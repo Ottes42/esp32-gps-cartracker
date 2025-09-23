@@ -166,7 +166,7 @@ server_auth_pass: "test"
         const result = await runScript(['validate', 'nodemcu-32s', sensors[i]])
 
         expect(result.code).toBe(0)
-        expect(result.stdout).toContain(`Device name: ${expectedNames[i]}`)
+        expect(result.stdout).toContain(`   Device name: ${expectedNames[i]}`)
 
         // The device name in the config should match what ESPHome will use for build directory
         const configPath = `firmware-nodemcu-32s-${sensors[i].toLowerCase()}.yaml`
@@ -208,7 +208,7 @@ server_auth_pass: "test"
 
       // Should correctly identify sensor type
       expect(result.stdout).toContain('with DHT22 sensor')
-      expect(result.stdout).toContain('Device name: gps-board-d22')
+      expect(result.stdout).toContain('   Device name: gps-board-d22')
     })
 
     it('should handle all supported board and sensor combinations', async () => {
