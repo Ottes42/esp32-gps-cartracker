@@ -248,7 +248,7 @@ jobs:
           echo "   Sensor short: ${sensor_short}"
           echo "   Device name: ${device_name}"
           
-          sed -i "s/^[[:space:]]*name: gps-board-.*/  name: ${device_name}/" "$config_name"
+          sed -i "s/^  name: gps-board-.*/  name: ${device_name}/" "$config_name"
           sed -i "s/friendly_name: GPS Board$/friendly_name: GPS Cartracker (${{ matrix.board_name }} + ${{ matrix.sensor }})/" "$config_name"
           
           # Verify the device name was set correctly in the config
