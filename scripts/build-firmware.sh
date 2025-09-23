@@ -346,7 +346,7 @@ build_board_variant() {
     
     # Update board in config using shortened names for hostname compliance (≤31 chars)
     sed -i.bak "s/board: nodemcu-32s$/board: $board_type/" "$config_name"
-    sed -i.bak "s/^[[:space:]]*name: gps-board-.*/  name: $hostname/" "$config_name"
+    sed -i.bak "s/^  name: gps-board-.*/  name: $hostname/" "$config_name"
     sed -i.bak "s/friendly_name: GPS Board$/friendly_name: GPS Cartracker ($board_name + $temp_sensor)/" "$config_name"
     sed -i.bak "s/username: gps-cartracker$/username: $hostname/" "$config_name"
     rm "$config_name.bak"
@@ -372,20 +372,32 @@ build_board_variant() {
     
     # Compile with Docker
     echo "⚙️  Compiling firmware..."
+    echo "   ESPHome version: $ESPHOME_VERSION"
+    echo "   Configuration: $config_name"
+    echo "   Device name in config: $hostname"
+    
     if ! docker run --rm \
         -v "${PWD}:/config" \
         "esphome/esphome:$ESPHOME_VERSION" \
         compile "$config_name"; then
-        echo "❌ Compilation failed for $board with $temp_sensor"
+        echo "❌ ESPHome compilation failed for $board with $temp_sensor"
+        echo "   This likely means there's an issue with the configuration file or ESPHome version"
+        echo "   Check the compilation output above for specific error details"
         rm -f "$config_name"
         return 1
     fi
+    
+    echo "✅ ESPHome compilation completed successfully"
+    echo "   Build should be available in: .esphome/build/$hostname/"
     
     # Create build directory
     mkdir -p "$BUILD_DIR"
     
     # Find and copy binary
-    echo "📦 Copying firmware binary..."
+    echo "📦 Looking for firmware binary..."
+    echo "   Device name: $hostname"
+    echo "   Expected path: .esphome/build/$hostname/*.bin"
+    
     binary_found=false
     # ESPHome uses the 'name' field from the YAML, not the filename
     # Use the same hostname that was set in the config
@@ -393,7 +405,8 @@ build_board_variant() {
         if [ -f "$binary" ]; then
             cp "$binary" "$BUILD_DIR/firmware-$board-${temp_sensor,,}.bin"
             binary_found=true
-            echo "   Binary: $(basename "$binary")"
+            echo "✅ Binary found: $(basename "$binary")"
+            echo "   Copied to: $BUILD_DIR/firmware-$board-${temp_sensor,,}.bin"
             break
         fi
     done
@@ -401,7 +414,31 @@ build_board_variant() {
     if [ "$binary_found" = false ]; then
         echo "❌ No binary found for $board with $temp_sensor"
         echo "Expected binary in: .esphome/build/$hostname/*.bin"
-        ls -la ".esphome/build/" 2>/dev/null || echo "Build directory not found"
+        echo ""
+        echo "Debug information:"
+        if [ -d ".esphome" ]; then
+            echo "✅ .esphome directory exists"
+            if [ -d ".esphome/build" ]; then
+                echo "✅ .esphome/build directory exists"
+                echo "Available build directories:"
+                ls -la ".esphome/build/" | head -10
+                echo ""
+                if [ -d ".esphome/build/$hostname" ]; then
+                    echo "✅ .esphome/build/$hostname directory exists"
+                    echo "Available files in .esphome/build/$hostname/:"
+                    ls -la ".esphome/build/$hostname/" | head -10
+                else
+                    echo "❌ .esphome/build/$hostname directory not found"
+                    echo "This indicates ESPHome compilation may have failed or used a different device name"
+                fi
+            else
+                echo "❌ .esphome/build directory not found"
+                echo "This indicates ESPHome compilation failed completely"
+            fi
+        else
+            echo "❌ .esphome directory not found"
+            echo "This indicates ESPHome was never run or failed to initialize"
+        fi
         rm -f "$config_name"
         return 1
     fi
