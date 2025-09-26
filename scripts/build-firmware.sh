@@ -431,7 +431,7 @@ build_board_variant() {
                         if [ -d ".esphome/build/$hostname/.pioenvs/$hostname" ]; then
                             echo "✅ .esphome/build/$hostname/.pioenvs/$hostname directory exists"
                             echo "Available firmware files:"
-                            ls -la ".esphome/build/$hostname/.pioenvs/$hostname/"firmware*.bin 2>/dev/null || echo "No firmware binaries found"
+                            ls -la ".esphome/build/$hostname/.pioenvs/$hostname/firmware*.bin" 2>/dev/null || echo "No firmware binaries found"
                         else
                             echo "❌ .esphome/build/$hostname/.pioenvs/$hostname directory not found"
                         fi
