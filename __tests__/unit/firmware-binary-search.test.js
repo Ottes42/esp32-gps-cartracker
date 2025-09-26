@@ -24,7 +24,7 @@ describe('Firmware Binary Search Debugging', () => {
   }
 
   const generateBinaryPath = (deviceName) => {
-    return `.esphome/build/${deviceName}/*.bin`
+    return `.esphome/build/${deviceName}/.pioenvs/${deviceName}/firmware.bin`
   }
 
   it('should generate correct device names for all sensor types', () => {
@@ -70,9 +70,9 @@ describe('Firmware Binary Search Debugging', () => {
 
   it('should generate correct binary search paths', () => {
     const testCases = [
-      { sensor: 'DHT11', deviceName: 'gps-board-d11', expectedPath: '.esphome/build/gps-board-d11/*.bin' },
-      { sensor: 'DHT22', deviceName: 'gps-board-d22', expectedPath: '.esphome/build/gps-board-d22/*.bin' },
-      { sensor: 'NONE', deviceName: 'gps-board-no', expectedPath: '.esphome/build/gps-board-no/*.bin' }
+      { sensor: 'DHT11', deviceName: 'gps-board-d11', expectedPath: '.esphome/build/gps-board-d11/.pioenvs/gps-board-d11/firmware.bin' },
+      { sensor: 'DHT22', deviceName: 'gps-board-d22', expectedPath: '.esphome/build/gps-board-d22/.pioenvs/gps-board-d22/firmware.bin' },
+      { sensor: 'NONE', deviceName: 'gps-board-no', expectedPath: '.esphome/build/gps-board-no/.pioenvs/gps-board-no/firmware.bin' }
     ]
 
     testCases.forEach(({ sensor, deviceName, expectedPath }) => {
